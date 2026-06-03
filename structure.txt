@@ -1,0 +1,204 @@
+폴더 PATH의 목록입니다.
+볼륨 일련 번호는 ECAC-A7D1입니다.
+C:.
+│  db.sqlite3
+│  manage.py
+│  structure.txt
+│  아이디 비번.txt
+│  장고설명서.txt
+│  
+├─active
+│      missions_scenario.csv
+│      
+├─archive
+│      missions_auto.csv
+│      missions_final_old.csv
+│      
+├─core
+│  │  admin.py
+│  │  apps.py
+│  │  models.py
+│  │  style.css
+│  │  tests.py
+│  │  __init__.py
+│  │  
+│  ├─management
+│  │  │  __init__.py
+│  │  │  
+│  │  ├─commands
+│  │  │  │  create_problem_sets.py
+│  │  │  │  create_wrong_patterns.py
+│  │  │  │  dedupe_missions.py
+│  │  │  │  import_missions.py
+│  │  │  │  mark_low_quality_missions.py
+│  │  │  │  __init__.py
+│  │  │  │  
+│  │  │  └─__pycache__
+│  │  │          create_problem_sets.cpython-311.pyc
+│  │  │          create_wrong_patterns.cpython-311.pyc
+│  │  │          dedupe_missions.cpython-311.pyc
+│  │  │          import_missions.cpython-311.pyc
+│  │  │          mark_low_quality_missions.cpython-311.pyc
+│  │  │          __init__.cpython-311.pyc
+│  │  │          
+│  │  └─__pycache__
+│  │          __init__.cpython-311.pyc
+│  │          
+│  ├─migrations
+│  │  │  0001_initial.py
+│  │  │  0002_dailymission_attempt_daily_date_and_more.py
+│  │  │  0003_alter_attempt_mission.py
+│  │  │  0004_alter_dailymission_mission.py
+│  │  │  0005_attempt_core_attemp_user_id_f8a7f9_idx_and_more.py
+│  │  │  0006_userstreak.py
+│  │  │  0007_examsession_examsessionmission_and_more.py
+│  │  │  0008_examsession_attempts_synced.py
+│  │  │  0009_useraccess.py
+│  │  │  0010_mission_answer_input_type_mission_correct_answer_and_more.py
+│  │  │  0011_attempt_submitted_answer.py
+│  │  │  0012_alter_mission_answer_input_type.py
+│  │  │  0013_mission_answer_schema.py
+│  │  │  0014_attemptitem.py
+│  │  │  0015_alter_mission_unique_together_mission_external_id.py
+│  │  │  0016_alter_mission_external_id.py
+│  │  │  0017_delete_attemptitem.py
+│  │  │  0018_problemset_problemsetitem.py
+│  │  │  0019_problemsetsession_problemsetsessionitem_and_more.py
+│  │  │  0020_alter_mission_question_type.py
+│  │  │  0021_mission_is_quality_checked_mission_is_usable_for_set_and_more.py
+│  │  │  0022_wrongpattern_attemptwrongpattern.py
+│  │  │  0023_mission_wrong_pattern_code.py
+│  │  │  0024_mission_variation_group.py
+│  │  │  0025_patterntrainingsession.py
+│  │  │  __init__.py
+│  │  │  
+│  │  └─__pycache__
+│  │          0001_initial.cpython-311.pyc
+│  │          0002_dailymission_attempt_daily_date_and_more.cpython-311.pyc
+│  │          0003_alter_attempt_mission.cpython-311.pyc
+│  │          0004_alter_dailymission_mission.cpython-311.pyc
+│  │          0005_attempt_core_attemp_user_id_f8a7f9_idx_and_more.cpython-311.pyc
+│  │          0006_userstreak.cpython-311.pyc
+│  │          0007_examsession_examsessionmission_and_more.cpython-311.pyc
+│  │          0008_examsession_attempts_synced.cpython-311.pyc
+│  │          0009_useraccess.cpython-311.pyc
+│  │          0010_mission_answer_input_type_mission_correct_answer_and_more.cpython-311.pyc
+│  │          0011_attempt_submitted_answer.cpython-311.pyc
+│  │          0012_alter_mission_answer_input_type.cpython-311.pyc
+│  │          0013_mission_answer_schema.cpython-311.pyc
+│  │          0014_attemptitem.cpython-311.pyc
+│  │          0015_alter_mission_unique_together_mission_external_id.cpython-311.pyc
+│  │          0016_alter_mission_external_id.cpython-311.pyc
+│  │          0017_delete_attemptitem.cpython-311.pyc
+│  │          0018_problemset_problemsetitem.cpython-311.pyc
+│  │          0019_problemsetsession_problemsetsessionitem_and_more.cpython-311.pyc
+│  │          0020_alter_mission_question_type.cpython-311.pyc
+│  │          0021_mission_is_quality_checked_mission_is_usable_for_set_and_more.cpython-311.pyc
+│  │          0022_wrongpattern_attemptwrongpattern.cpython-311.pyc
+│  │          0023_mission_wrong_pattern_code.cpython-311.pyc
+│  │          0024_mission_variation_group.cpython-311.pyc
+│  │          0025_patterntrainingsession.cpython-311.pyc
+│  │          __init__.cpython-311.pyc
+│  │          
+│  ├─services
+│  │  │  access.py
+│  │  │  attempts.py
+│  │  │  daily.py
+│  │  │  exams.py
+│  │  │  exam_analysis.py
+│  │  │  grading.py
+│  │  │  problem_sets.py
+│  │  │  problem_set_recommendations.py
+│  │  │  recommendations.py
+│  │  │  streaks.py
+│  │  │  
+│  │  └─__pycache__
+│  │          access.cpython-311.pyc
+│  │          attempts.cpython-311.pyc
+│  │          daily.cpython-311.pyc
+│  │          exams.cpython-311.pyc
+│  │          exam_analysis.cpython-311.pyc
+│  │          grading.cpython-311.pyc
+│  │          problem_sets.cpython-311.pyc
+│  │          problem_set_recommendations.cpython-311.pyc
+│  │          recommendations.cpython-311.pyc
+│  │          streaks.cpython-311.pyc
+│  │          
+│  ├─templates
+│  │  ├─core
+│  │  │      exam_history.html
+│  │  │      exam_result.html
+│  │  │      exam_start.html
+│  │  │      exam_take.html
+│  │  │      mission_detail.html
+│  │  │      mission_list.html
+│  │  │      pattern_training_empty.html
+│  │  │      pattern_training_result.html
+│  │  │      premium_info.html
+│  │  │      problem_set_detail.html
+│  │  │      problem_set_list.html
+│  │  │      problem_set_result.html
+│  │  │      problem_set_wrong_retry_result.html
+│  │  │      stats.html
+│  │  │      wrong_notes.html
+│  │  │      
+│  │  └─registration
+│  │          login.html
+│  │          
+│  ├─templatetags
+│  │  │  mission_tags.py
+│  │  │  __init__.py
+│  │  │  
+│  │  └─__pycache__
+│  │          mission_tags.cpython-311.pyc
+│  │          __init__.cpython-311.pyc
+│  │          
+│  ├─views
+│  │  │  billing.py
+│  │  │  exams.py
+│  │  │  missions.py
+│  │  │  pattern_training.py
+│  │  │  payments.py
+│  │  │  problem_sets.py
+│  │  │  stats.py
+│  │  │  wrong_notes.py
+│  │  │  __init__.py
+│  │  │  
+│  │  └─__pycache__
+│  │          billing.cpython-311.pyc
+│  │          exams.cpython-311.pyc
+│  │          missions.cpython-311.pyc
+│  │          pattern_training.cpython-311.pyc
+│  │          problem_sets.cpython-311.pyc
+│  │          stats.cpython-311.pyc
+│  │          wrong_notes.cpython-311.pyc
+│  │          __init__.cpython-311.pyc
+│  │          
+│  └─__pycache__
+│          admin.cpython-311.pyc
+│          apps.cpython-311.pyc
+│          models.cpython-311.pyc
+│          views.cpython-311.pyc
+│          __init__.cpython-311.pyc
+│          
+├─generated
+│      missions_scenario.csv
+│      
+├─myproject
+│  │  asgi.py
+│  │  settings.py
+│  │  urls.py
+│  │  wsgi.py
+│  │  __init__.py
+│  │  
+│  └─__pycache__
+│          settings.cpython-311.pyc
+│          urls.cpython-311.pyc
+│          wsgi.cpython-311.pyc
+│          __init__.cpython-311.pyc
+│          
+└─scripts
+        convert_prompts.py
+        generate_missions.py
+        validate_missions_csv.py
+        

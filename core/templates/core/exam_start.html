@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>시험 시작</title>
+</head>
+<body>
+  <h1>실전 모의고사</h1>
+
+  <p>총 40문제 / 제한시간 40분</p>
+  <p>문제를 순서대로 풀고 마지막에 결과를 확인합니다.</p>
+
+  {% if limit_error %}
+    <p style="padding:10px; border:1px solid #f99; background:#fee; color:#900;">
+      {{ limit_error }}
+    </p>
+  {% endif %}
+
+  {% if is_premium %}
+    <p style="padding:8px; border:1px solid #ddd;">
+      현재 회원 상태: 프리미엄
+    </p>
+  {% else %}
+    <p style="padding:8px; border:1px solid #ddd;">
+      현재 회원 상태: 무료 / 실전 모의고사 하루 1회
+    </p>
+  {% endif %}
+
+  <form method="post" action="{% url 'exam_create' %}">
+    {% csrf_token %}
+    <button type="submit">시험 시작하기</button>
+  </form>
+
+  {% if not is_premium %}
+    <p style="margin-top:12px;">
+      <a href="{% url 'premium_info' %}">프리미엄 보기</a>
+    </p>
+  {% endif %}
+
+  <hr>
+  <a href="{% url 'exam_history' %}">시험 히스토리</a> |
+  <a href="{% url 'mission_list' %}">미션 목록으로 돌아가기</a>
+</body>
+</html>

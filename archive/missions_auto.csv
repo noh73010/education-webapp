@@ -1,0 +1,541 @@
+﻿id,title,skill_auto,level,prompt,question_type,answer_input_type,correct_answer,answer_schema,explanation
+CNT_CH_0,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_0,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_0,예약 건수 계산,COUNT,1,예약 데이터가 총 10개 있다. 전체 건수를 구하시오.,value_answer,number,10,,전체 개수를 계산
+CNT_CH_1,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_1,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_1,예약 건수 계산,COUNT,1,예약 데이터가 총 16개 있다. 전체 건수를 구하시오.,value_answer,number,16,,전체 개수를 계산
+CNT_CH_2,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_2,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_2,예약 건수 계산,COUNT,1,예약 데이터가 총 17개 있다. 전체 건수를 구하시오.,value_answer,number,17,,전체 개수를 계산
+CNT_CH_3,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_3,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_3,예약 건수 계산,COUNT,1,예약 데이터가 총 16개 있다. 전체 건수를 구하시오.,value_answer,number,16,,전체 개수를 계산
+CNT_CH_4,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_4,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_4,예약 건수 계산,COUNT,1,예약 데이터가 총 12개 있다. 전체 건수를 구하시오.,value_answer,number,12,,전체 개수를 계산
+CNT_CH_5,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_5,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_5,예약 건수 계산,COUNT,1,예약 데이터가 총 19개 있다. 전체 건수를 구하시오.,value_answer,number,19,,전체 개수를 계산
+CNT_CH_6,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_6,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_6,예약 건수 계산,COUNT,1,예약 데이터가 총 4개 있다. 전체 건수를 구하시오.,value_answer,number,4,,전체 개수를 계산
+CNT_CH_7,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_7,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_7,예약 건수 계산,COUNT,1,예약 데이터가 총 16개 있다. 전체 건수를 구하시오.,value_answer,number,16,,전체 개수를 계산
+CNT_CH_8,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_8,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_8,예약 건수 계산,COUNT,1,예약 데이터가 총 9개 있다. 전체 건수를 구하시오.,value_answer,number,9,,전체 개수를 계산
+CNT_CH_9,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_9,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_9,예약 건수 계산,COUNT,1,예약 데이터가 총 18개 있다. 전체 건수를 구하시오.,value_answer,number,18,,전체 개수를 계산
+CNT_CH_10,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_10,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_10,예약 건수 계산,COUNT,1,예약 데이터가 총 14개 있다. 전체 건수를 구하시오.,value_answer,number,14,,전체 개수를 계산
+CNT_CH_11,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_11,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_11,예약 건수 계산,COUNT,1,예약 데이터가 총 7개 있다. 전체 건수를 구하시오.,value_answer,number,7,,전체 개수를 계산
+CNT_CH_12,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_12,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_12,예약 건수 계산,COUNT,1,예약 데이터가 총 17개 있다. 전체 건수를 구하시오.,value_answer,number,17,,전체 개수를 계산
+CNT_CH_13,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_13,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_13,예약 건수 계산,COUNT,1,예약 데이터가 총 12개 있다. 전체 건수를 구하시오.,value_answer,number,12,,전체 개수를 계산
+CNT_CH_14,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_14,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_14,예약 건수 계산,COUNT,1,예약 데이터가 총 12개 있다. 전체 건수를 구하시오.,value_answer,number,12,,전체 개수를 계산
+CNT_CH_15,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_15,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_15,예약 건수 계산,COUNT,1,예약 데이터가 총 5개 있다. 전체 건수를 구하시오.,value_answer,number,5,,전체 개수를 계산
+CNT_CH_16,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_16,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_16,예약 건수 계산,COUNT,1,예약 데이터가 총 20개 있다. 전체 건수를 구하시오.,value_answer,number,20,,전체 개수를 계산
+CNT_CH_17,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_17,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_17,예약 건수 계산,COUNT,1,예약 데이터가 총 6개 있다. 전체 건수를 구하시오.,value_answer,number,6,,전체 개수를 계산
+CNT_CH_18,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_18,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_18,예약 건수 계산,COUNT,1,예약 데이터가 총 13개 있다. 전체 건수를 구하시오.,value_answer,number,13,,전체 개수를 계산
+CNT_CH_19,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_19,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_19,예약 건수 계산,COUNT,1,예약 데이터가 총 15개 있다. 전체 건수를 구하시오.,value_answer,number,15,,전체 개수를 계산
+CNT_CH_20,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_20,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_20,예약 건수 계산,COUNT,1,예약 데이터가 총 17개 있다. 전체 건수를 구하시오.,value_answer,number,17,,전체 개수를 계산
+CNT_CH_21,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_21,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_21,예약 건수 계산,COUNT,1,예약 데이터가 총 8개 있다. 전체 건수를 구하시오.,value_answer,number,8,,전체 개수를 계산
+CNT_CH_22,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_22,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_22,예약 건수 계산,COUNT,1,예약 데이터가 총 20개 있다. 전체 건수를 구하시오.,value_answer,number,20,,전체 개수를 계산
+CNT_CH_23,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_23,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_23,예약 건수 계산,COUNT,1,예약 데이터가 총 11개 있다. 전체 건수를 구하시오.,value_answer,number,11,,전체 개수를 계산
+CNT_CH_24,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_24,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_24,예약 건수 계산,COUNT,1,예약 데이터가 총 10개 있다. 전체 건수를 구하시오.,value_answer,number,10,,전체 개수를 계산
+CNT_CH_25,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_25,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_25,예약 건수 계산,COUNT,1,예약 데이터가 총 3개 있다. 전체 건수를 구하시오.,value_answer,number,3,,전체 개수를 계산
+CNT_CH_26,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_26,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_26,예약 건수 계산,COUNT,1,예약 데이터가 총 10개 있다. 전체 건수를 구하시오.,value_answer,number,10,,전체 개수를 계산
+CNT_CH_27,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_27,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_27,예약 건수 계산,COUNT,1,예약 데이터가 총 14개 있다. 전체 건수를 구하시오.,value_answer,number,14,,전체 개수를 계산
+CNT_CH_28,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_28,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_28,예약 건수 계산,COUNT,1,예약 데이터가 총 5개 있다. 전체 건수를 구하시오.,value_answer,number,5,,전체 개수를 계산
+CNT_CH_29,COUNT 함수 선택,COUNT,1,전체 건수를 구하려면 어떤 함수를 사용해야 하는가?,choice_one,text,B,"A|=COUNT(A1:A10)
+B|=COUNTA(A1:A10)
+C|=SUM(A1:A10)
+D|=AVERAGE(A1:A10)",COUNTA는 비어있지 않은 셀을 센다
+CNT_ERR_29,COUNT 오류 찾기,COUNT,1,=COUNT(A1:A10)으로 건수를 세려고 했다. 문제점은?,error_detect,text,B,"A|범위 오류
+B|문자 데이터는 COUNT로 안됨
+C|SUM 필요
+D|참조 오류",COUNT는 숫자만 센다
+CNT_VAL_29,예약 건수 계산,COUNT,1,예약 데이터가 총 5개 있다. 전체 건수를 구하시오.,value_answer,number,5,,전체 개수를 계산
+IF_CH_0,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_0,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_0,IF 결과 계산,IF,2,"값이 13일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,100,,조건에 따라 결과가 달라진다
+IF_CH_1,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_1,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_1,IF 결과 계산,IF,2,"값이 15일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,100,,조건에 따라 결과가 달라진다
+IF_CH_2,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_2,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_2,IF 결과 계산,IF,2,"값이 19일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,100,,조건에 따라 결과가 달라진다
+IF_CH_3,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_3,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_3,IF 결과 계산,IF,2,"값이 17일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,100,,조건에 따라 결과가 달라진다
+IF_CH_4,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_4,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_4,IF 결과 계산,IF,2,"값이 11일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,100,,조건에 따라 결과가 달라진다
+IF_CH_5,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_5,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_5,IF 결과 계산,IF,2,"값이 5일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,0,,조건에 따라 결과가 달라진다
+IF_CH_6,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_6,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_6,IF 결과 계산,IF,2,"값이 12일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,100,,조건에 따라 결과가 달라진다
+IF_CH_7,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_7,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_7,IF 결과 계산,IF,2,"값이 7일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,0,,조건에 따라 결과가 달라진다
+IF_CH_8,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_8,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_8,IF 결과 계산,IF,2,"값이 7일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,0,,조건에 따라 결과가 달라진다
+IF_CH_9,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_9,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_9,IF 결과 계산,IF,2,"값이 7일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,0,,조건에 따라 결과가 달라진다
+IF_CH_10,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_10,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_10,IF 결과 계산,IF,2,"값이 15일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,100,,조건에 따라 결과가 달라진다
+IF_CH_11,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_11,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_11,IF 결과 계산,IF,2,"값이 10일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,0,,조건에 따라 결과가 달라진다
+IF_CH_12,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_12,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_12,IF 결과 계산,IF,2,"값이 15일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,100,,조건에 따라 결과가 달라진다
+IF_CH_13,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_13,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_13,IF 결과 계산,IF,2,"값이 7일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,0,,조건에 따라 결과가 달라진다
+IF_CH_14,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_14,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_14,IF 결과 계산,IF,2,"값이 19일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,100,,조건에 따라 결과가 달라진다
+IF_CH_15,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_15,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_15,IF 결과 계산,IF,2,"값이 8일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,0,,조건에 따라 결과가 달라진다
+IF_CH_16,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_16,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_16,IF 결과 계산,IF,2,"값이 16일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,100,,조건에 따라 결과가 달라진다
+IF_CH_17,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_17,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_17,IF 결과 계산,IF,2,"값이 10일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,0,,조건에 따라 결과가 달라진다
+IF_CH_18,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_18,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_18,IF 결과 계산,IF,2,"값이 15일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,100,,조건에 따라 결과가 달라진다
+IF_CH_19,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_19,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_19,IF 결과 계산,IF,2,"값이 14일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,100,,조건에 따라 결과가 달라진다
+IF_CH_20,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_20,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_20,IF 결과 계산,IF,2,"값이 8일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,0,,조건에 따라 결과가 달라진다
+IF_CH_21,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_21,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_21,IF 결과 계산,IF,2,"값이 11일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,100,,조건에 따라 결과가 달라진다
+IF_CH_22,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_22,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_22,IF 결과 계산,IF,2,"값이 14일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,100,,조건에 따라 결과가 달라진다
+IF_CH_23,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_23,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_23,IF 결과 계산,IF,2,"값이 11일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,100,,조건에 따라 결과가 달라진다
+IF_CH_24,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_24,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_24,IF 결과 계산,IF,2,"값이 18일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,100,,조건에 따라 결과가 달라진다
+IF_CH_25,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_25,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_25,IF 결과 계산,IF,2,"값이 19일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,100,,조건에 따라 결과가 달라진다
+IF_CH_26,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_26,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_26,IF 결과 계산,IF,2,"값이 10일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,0,,조건에 따라 결과가 달라진다
+IF_CH_27,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_27,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_27,IF 결과 계산,IF,2,"값이 8일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,0,,조건에 따라 결과가 달라진다
+IF_CH_28,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_28,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_28,IF 결과 계산,IF,2,"값이 19일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,100,,조건에 따라 결과가 달라진다
+IF_CH_29,IF 함수 선택,IF,1,조건에 따라 다른 값을 반환하는 함수는?,choice_one,text,C,"A|SUM
+B|AVERAGE
+C|IF
+D|MAX",IF는 조건 함수
+IF_ERR_29,IF 오류 찾기,IF,1,"=IF(A1>10,100) 이 수식의 문제점은?",error_detect,text,A,"A|false 값이 없음
+B|조건이 잘못됨
+C|SUM 써야 함
+D|참조 오류",IF는 3개 인자 필요
+IF_VAL_29,IF 결과 계산,IF,2,"값이 14일 때, 10보다 크면 100, 아니면 0을 반환하시오.",value_answer,number,100,,조건에 따라 결과가 달라진다

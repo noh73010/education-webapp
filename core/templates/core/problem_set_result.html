@@ -1,0 +1,118 @@
+{% extends 'core/base.html' %}
+
+{% block title %}
+문제 세트 결과
+{% endblock %}
+
+{% block content %}
+
+<section class="card">
+  <h1 class="section-title">문제 세트 결과</h1>
+
+  <p><b>세트명:</b> {{ session.problem_set.title }}</p>
+  <p><b>상태:</b> {{ session.get_status_display }}</p>
+  <p><b>점수:</b> {{ session.score }}점</p>
+  <p><b>정답:</b> {{ session.correct_count }} / <b>오답:</b> {{ session.wrong_count }}</p>
+
+  <div class="info-box">
+    <b>판정:</b> {{ result_message }}
+  </div>
+</section>
+
+  <section class="card result-wrong">
+    <h2 class="card-title">👉 다음 행동</h2>
+
+    {% if next_action_id %}
+      {% if next_action_url_name == "problem_set_wrong_retry" %}
+        <p>틀린 문제가 있습니다. 그냥 넘어가면 같은 유형에서 또 틀립니다.</p>
+        <p>
+          <a href="{% url 'problem_set_wrong_retry' next_action_id %}" class="main-button">
+            🔥 {{ next_action_label }}
+          </a>
+        </p>
+      {% elif next_action_url_name == "problem_set_start" %}
+        <p>이 세트는 통과했습니다. 다음 세트로 넘어가세요.</p>
+        <p>
+          <a href="{% url 'problem_set_start' next_action_id %}" class="main-button">
+            🚀 {{ next_action_label }}
+          </a>
+        </p>
+      {% endif %}
+    {% else %}
+      <p>다음 추천 세트가 없습니다. 학습 홈으로 돌아가세요.</p>
+      <p>
+        <a href="{% url 'mission_list' %}" class="main-button">
+          학습 홈으로
+        </a>
+      </p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h2 class="card-title">문제별 결과</h2>
+
+    <ol class="clean-list">
+    {% for item in items %}
+      <li>
+        <div>
+          <b>{{ item.order_no }}번. {{ item.mission.title }}</b>
+          <span>
+            ({{ item.mission.skill }} / Lv {{ item.mission.level }})
+          </span>
+        </div>
+
+        <div class="form-field">
+          {% if item.is_correct is True %}
+            <span class="text-success">정답</span>
+          {% elif item.is_correct is False %}
+            <span class="text-danger">오답</span>
+          {% else %}
+            <span class="text-warning">미응답</span>
+          {% endif %}
+        </div>
+
+        {% if item.is_correct is not True %}
+          <div class="info-box">
+            <p>
+              <b>정답:</b>
+              {% if item.mission.correct_answer %}
+                {{ item.mission.correct_answer }}
+              {% else %}
+                정답 정보 없음
+              {% endif %}
+            </p>
+
+            {% if item.mission.explanation %}
+              <p class="pre-line">
+                <b>해설:</b> {{ item.mission.explanation }}
+              </p>
+            {% else %}
+              <p>해설이 없습니다.</p>
+            {% endif %}
+
+            <p>
+              <a href="{% url 'mission_detail' item.mission.id %}">
+                이 문제 다시 보기
+              </a>
+            </p>
+          </div>
+        {% endif %}
+      </li>
+    {% endfor %}
+    </ol>
+  </section>
+
+  <section class="card">
+    <p>
+      <a href="{% url 'problem_set_start' session.problem_set.id %}" class="main-button">
+        🔁 이 세트 전체 다시 풀기
+      </a>
+    </p>
+
+    <p>
+      <a href="{% url 'problem_set_detail' session.problem_set.id %}" class="sub-link">세트 상세로</a> |
+      <a href="{% url 'problem_set_list' %}" class="sub-link">세트 목록</a> |
+      <a href="{% url 'mission_list' %}" class="sub-link">학습 홈</a>
+    </p>
+  </section>
+{% endblock %}

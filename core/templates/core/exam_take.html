@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>시험 진행</title>
+</head>
+<body>
+
+  <h1>{{ exam.title }}</h1>
+
+  <p>
+    진행 문제: {{ order_no }} / {{ total_count }}
+  </p>
+
+  <h3>남은 시간: <span id="timer"></span></h3>
+
+  <hr>
+
+  <h2>{{ mission.title }}</h2>
+  <p><b>스킬:</b> {{ mission.skill }} / <b>난이도:</b> {{ mission.level }}</p>
+  <p><b>문제유형:</b> {{ mission.get_question_type_display }}</p>
+  {% load mission_tags %}
+
+  {% for block in mission.prompt|prompt_blocks %}
+    <div style="border:1px solid #ddd; padding:12px; margin:12px 0;">
+      <h3>{{ block.label }}</h3>
+      <div style="white-space: pre-line;">{{ block.content }}</div>
+    </div>
+  {% endfor %}
+
+  <form method="post">
+    {% csrf_token %}
+
+    {% if mission.question_type == "manual" %}
+      <h3>풀이 결과 제출</h3>
+
+      <label>
+        <input type="radio" name="is_correct" value="true" required>
+        정답
+      </label>
+
+      <label>
+        <input type="radio" name="is_correct" value="false" required>
+        오답
+      </label>
+
+    {% else %}
+      {% if schema_items %}
+        <h3>답안을 입력하세요</h3>
+        <p><b>아래 각 항목의 결과값을 입력하세요.</b></p>
+
+        {% for item in schema_items %}
+          <div style="margin-bottom:12px;">
+            <label><b>{{ item.label }}</b></label><br>
+
+            {% if item.input_type == "number" %}
+              <input type="number" step="any" name="submitted_answers" placeholder="숫자 입력" required>
+            {% elif item.input_type == "date" %}
+              <input type="text" name="submitted_answers" placeholder="예: 2024-03-25" required>
+            {% else %}
+              <input type="text" name="submitted_answers" placeholder="답안 입력" required>
+            {% endif %}
+          </div>
+        {% endfor %}
+      {% else %}
+        <h3>답안을 입력하세요</h3>
+
+        {% if mission.answer_input_type == "number" %}
+          <input type="number" step="any" name="submitted_answer" placeholder="숫자 입력" required>
+        {% elif mission.answer_input_type == "date" %}
+          <input type="text" name="submitted_answer" placeholder="예: 2024-03-25" required>
+        {% else %}
+          <input type="text" name="submitted_answer" placeholder="답안 입력" required>
+        {% endif %}
+      {% endif %}
+    {% endif %}
+
+    <br><br>
+
+    <button type="submit">
+      {% if order_no == total_count %}
+        마지막 문제 제출
+      {% else %}
+        다음 문제
+      {% endif %}
+    </button>
+  </form>
+
+  <hr>
+
+  <form method="post" action="{% url 'exam_submit' exam.id %}">
+    {% csrf_token %}
+    <button type="submit" onclick="return confirm('시험을 지금 제출할까요?');">
+      시험 바로 제출
+    </button>
+  </form>
+
+<script>
+let remaining = {{ remaining_seconds }};
+
+function updateTimer() {
+    let minutes = Math.floor(remaining / 60);
+    let seconds = remaining % 60;
+
+    document.getElementById("timer").innerText =
+        minutes + ":" + String(seconds).padStart(2,"0");
+
+    if (remaining <= 0) {
+        alert("시험 시간이 종료되었습니다.");
+        window.location.href = "{% url 'exam_submit' exam.id %}";
+        return;
+    }
+
+    remaining--;
+}
+
+setInterval(updateTimer, 1000);
+updateTimer();
+</script>
+
+</body>
+</html>

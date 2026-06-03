@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>문제 세트 목록</title>
+</head>
+<body>
+  <h1>문제 세트 목록</h1>
+
+  <hr>
+
+  <h2>처음이신가요?</h2>
+  <p>👉 아래 추천 세트부터 시작해보세요</p>
+
+  {% if today_sets %}
+    <a href="{% url 'problem_set_start' today_sets.0.id %}">
+      <b>🚀 추천 세트 바로 시작</b>
+    </a>
+  {% else %}
+    <p>추천 세트를 준비 중입니다.</p>
+  {% endif %}
+
+  <hr>
+
+  <h2>오늘 할 세트</h2>
+  <ul>
+    {% for ps in today_sets %}
+      <li style="margin-bottom:12px;">
+        <a href="{% url 'problem_set_detail' ps.id %}">
+          <b>{{ ps.title }}</b>
+        </a>
+        <br>
+        유형: {{ ps.get_set_type_display }} /
+        스킬그룹: {{ ps.skill_group }} /
+        난이도: {{ ps.level }}
+      </li>
+    {% empty %}
+      <li>추천할 세트가 없습니다.</li>
+    {% endfor %}
+  </ul>
+
+  <hr>
+
+  <h2>약점 기반 추천 세트</h2>
+
+  {% if weak_sets %}
+    <p>최근 오답이 많았던 스킬을 기준으로 추천합니다.</p>
+    <ul>
+      {% for ps in weak_sets %}
+        <li style="margin-bottom:12px;">
+          <a href="{% url 'problem_set_detail' ps.id %}">
+            <b>{{ ps.title }}</b>
+          </a>
+          <br>
+          스킬: {{ ps.skill_group }} / 난이도: {{ ps.level }}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>아직 약점 추천을 만들 만큼의 오답 기록이 없습니다.</p>
+  {% endif %}
+
+  <hr>
+
+  <h2>복습 추천 세트</h2>
+  <ul>
+    {% for ps in review_sets %}
+      <li style="margin-bottom:12px;">
+        <a href="{% url 'problem_set_detail' ps.id %}">
+          <b>{{ ps.title }}</b>
+        </a>
+        <br>
+        유형: {{ ps.get_set_type_display }} /
+        스킬그룹: {{ ps.skill_group }} /
+        난이도: {{ ps.level }}
+      </li>
+    {% empty %}
+      <li>아직 복습 추천 세트가 없습니다.</li>
+    {% endfor %}
+  </ul>
+
+  <hr>
+
+  <h2>전체 세트</h2>
+  <ul>
+    {% for ps in problem_sets %}
+      <li style="margin-bottom:16px;">
+        <a href="{% url 'problem_set_detail' ps.id %}">
+          <b>{{ ps.title }}</b>
+        </a>
+        <br>
+        유형: {{ ps.get_set_type_display }} /
+        스킬그룹: {{ ps.skill_group }} /
+        난이도: {{ ps.level }}
+        {% if ps.description %}
+          <br>
+          {{ ps.description }}
+        {% endif %}
+      </li>
+    {% empty %}
+      <li>등록된 문제 세트가 없습니다.</li>
+    {% endfor %}
+  </ul>
+
+  <hr>
+  <a href="{% url 'mission_list' %}">미션 목록</a>
+</body>
+</html>

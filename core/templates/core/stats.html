@@ -1,0 +1,198 @@
+{% extends 'core/base.html' %}
+
+{% block title %}
+학습 통계
+{% endblock %}
+
+{% block content %}
+  <section class="card">
+    <h1 class="section-title">학습 통계</h1>
+    <p>내 풀이 기록, 반복 오답, 패턴 훈련 기록을 확인합니다.</p>
+  </section>
+  <section class="card result-wrong">
+    <h2 class="card-title">지금 가장 먼저 복습할 것</h2>
+
+    {% if top_wrong_pattern %}
+      <p>
+        가장 많이 반복된 약점:
+        <b>{{ top_wrong_pattern.wrong_pattern__name }}</b>
+        ({{ top_wrong_pattern.cnt }}회)
+      </p>
+
+      <p>
+        <a href="{% url 'pattern_training_start' top_wrong_pattern.wrong_pattern__code %}"
+          class="main-button">
+          이 약점 집중 훈련 시작
+        </a>
+      </p>
+    {% else %}
+      <p>아직 충분한 오답 패턴 데이터가 없습니다.</p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h2 class="card-title">현재 상태 (미션별 최신 풀이 기준)</h2>
+
+    <p>
+      전체 미션: {{ current_summary.missions_total }} /
+    시도한 미션: {{ current_summary.attempted }} /
+    해결(최근 정답): {{ current_summary.solved }} /
+    미해결(최근 오답): {{ current_summary.open }} /
+    해결률: {{ current_summary.solve_rate }}%
+    </p>
+
+  <h3>스킬별 현재 상태</h3>
+    <table class="data-table">
+      <tr>
+        <th>카테고리</th>
+        <th>스킬</th>
+        <th>시도한 미션</th>
+        <th>해결</th>
+        <th>미해결</th>
+        <th>해결률</th>
+      </tr>
+      {% for row in skill_current_rows %}
+        <tr>
+          <td>{{ row.category }}</td>
+          <td>{{ row.skill_label }}</td>
+          <td>{{ row.attempted }}</td>
+          <td>{{ row.solved }}</td>
+          <td>{{ row.open }}</td>
+          <td>{{ row.solve_rate }}%</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6">아직 풀이 기록이 없습니다.</td></tr>
+      {% endfor %}
+    </table>
+  </section>
+
+  <hr>
+
+  <section class="card">
+    <h2 class="card-title">기간별 통계</h2>
+
+    <p>
+      <a href="?period=all" class="sub-link">전체</a> |
+      <a href="?period=7" class="sub-link">최근 7일</a> |
+      <a href="?period=30" class="sub-link">최근 30일</a>
+    </p>
+
+  <ul class="clean-list">
+    <li><b>전체 풀이:</b> {{ summary.total }}</li>
+    <li><b>정답:</b> {{ summary.correct }}</li>
+    <li><b>오답:</b> {{ summary.wrong }}</li>
+    <li><b>정답률:</b> {{ summary.accuracy }}%</li>
+  </ul>
+
+  {% if since %}
+    <div class="info-box">
+      집계 시작: {{ since }}
+    </div>
+  {% endif %}
+
+  </section>
+
+<section class="card">
+  <h2 class="card-title">스킬별 성적</h2>
+  <table class="data-table">
+    <tr>
+      <th>스킬</th>
+      <th>총 풀이</th>
+      <th>정답</th>
+      <th>오답</th>
+      <th>정답률</th>
+    </tr>
+    {% for row in skill_rows %}
+      <tr>
+        <td>{{ row.skill_label }}</td>
+        <td>{{ row.total }}</td>
+        <td>{{ row.correct }}</td>
+        <td>{{ row.wrong }}</td>
+        <td>{{ row.accuracy }}%</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5">아직 스킬별 기록이 없습니다.</td></tr>
+    {% endfor %}
+  </table>
+</section>
+
+<section class="card">
+  <h2 class="card-title">오답 원인 TOP 5</h2>
+  <ol>
+    {% for r in wrong_reason_rows %}
+      <li>{{ r.wrong_reason__name }} ({{ r.cnt }})</li>
+    {% empty %}
+      <li>아직 오답 원인이 없습니다.</li>
+    {% endfor %}
+    </ol>
+</section>
+
+<section class="card">
+  <h2 class="card-title">반복 오답 패턴 TOP 10</h2>
+  <table class="data-table">
+    <tr>
+      <th>스킬</th>
+      <th>오답 패턴</th>
+      <th>코드</th>
+      <th>횟수</th>
+    </tr>
+    {% for row in wrong_pattern_rows %}
+      <tr>
+        <td>{{ row.wrong_pattern__skill }}</td>
+        <td>{{ row.wrong_pattern__name }}</td>
+        <td>{{ row.wrong_pattern__code }}</td>
+        <td>{{ row.cnt }}</td>
+      </tr>
+    {% empty %}
+      <tr>
+        <td colspan="4">아직 반복 오답 패턴이 없습니다.</td>
+      </tr>
+    {% endfor %}
+  </table>
+</section>
+
+<section class="card">
+  <h2 class="card-title">패턴 집중 훈련 기록</h2>
+  {% if pattern_training_rows %}
+    <table class="data-table">
+      <tr>
+        <th>날짜</th>
+        <th>패턴</th>
+        <th>점수</th>
+        <th>정답</th>
+        <th>오답</th>
+      </tr>
+      {% for row in pattern_training_rows %}
+        <tr>
+          <td>{{ row.created_at|date:"m-d H:i" }}</td>
+          <td>{{ row.wrong_pattern.name }}</td>
+          <td><b>{{ row.score }}점</b></td>
+          <td>{{ row.correct }}</td>
+          <td>{{ row.wrong }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p>아직 패턴 집중 훈련 기록이 없습니다.</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2 class="card-title">최근 풀이 20개</h2>
+  <ul class="clean-list">
+    {% for a in recent_attempts %}
+      <li>
+        {{ a.created_at }} /
+        {{ a.mission.title }} /
+        {% if a.is_correct %}정답{% else %}오답{% endif %}
+      </li>
+    {% empty %}
+      <li>아직 풀이 기록이 없습니다.</li>
+    {% endfor %}
+  </ul>
+
+  <hr>
+  <a href="{% url 'mission_list' %}" class="sub-link">학습 홈으로 돌아가기</a>
+</section>
+
+{% endblock %}

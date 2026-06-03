@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>프리미엄 안내</title>
+</head>
+<body>
+  <h1>프리미엄 안내</h1>
+
+  {% if is_premium %}
+    <p style="padding:10px; border:1px solid #ddd;">
+      현재 프리미엄 회원입니다.
+      {% if premium_ended_at %}
+        / 이용 종료 예정: {{ premium_ended_at }}
+      {% endif %}
+    </p>
+  {% else %}
+    <p style="padding:10px; border:1px solid #ddd;">
+      무료 회원은 실전 모의고사를 하루 1회만 이용할 수 있습니다.
+    </p>
+
+    <h3>프리미엄에서 가능한 것</h3>
+    <ul>
+      <li>실전 모의고사 무제한</li>
+      <li>시험 결과 약점 분석 전체 보기</li>
+      <li>우선 복습 스킬 확인</li>
+      <li>상세 피드백 기반 반복 학습</li>
+    </ul>
+
+    <p style="padding:10px; border:1px solid #ddd; background:#f9f9f9;">
+      지금은 테스트 단계라 관리자에서 수동으로 프리미엄 전환 중입니다.
+    </p>
+  {% endif %}
+
+  <hr>
+
+  <a href="{% url 'exam_start' %}">실전 모의고사</a> |
+  <a href="{% url 'mission_list' %}">미션 목록</a>
+</body>
+</html>

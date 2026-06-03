@@ -1,0 +1,179 @@
+{% extends 'core/base.html' %}
+{% load mission_tags %}
+
+{% block title %}
+{{ mission.title }}
+{% endblock %}
+
+{% block content %}
+
+<section class="card">
+<h1>{{ mission.title }}</h1>
+
+<p>
+    <b>스킬:</b> {{ mission.skill }} /
+    <b>난이도:</b> {{ mission.level }}
+</p>
+
+<p><b>문제유형:</b> {{ mission.get_question_type_display }}</p>
+</section>
+
+{% for block in mission.prompt|prompt_blocks %}
+  <section class="card">
+    <h3 class="card-title">{{ block.label }}</h3>
+    <div class="pre-line">{{ block.content }}</div>
+  </section>
+{% endfor %}
+
+{% if saved %}
+  {% if saved_is_correct %}
+    <section class="card result-correct">
+      <b>정답입니다.</b>
+    </section>
+  {% else %}
+    <section class="card result-wrong">
+      <b>오답입니다. 다시 풀어야 합니다.</b>
+
+      {% if mission.question_type != "manual" %}
+        <p><b>정답:</b> {{ mission.correct_answer }}</p>
+
+        {% if mission.explanation %}
+          <p class="pre-line">
+            <b>해설:</b> {{ mission.explanation }}
+          </p>
+        {% endif %}
+      {% endif %}
+    </section>
+  {% endif %}
+{% endif %}
+
+{% if saved and next_daily_mission %}
+  <section class="card">
+    <p>해설을 확인했다면 다음 추천 문제로 넘어가세요.</p>
+
+    <a href="{% url 'mission_detail' next_daily_mission.id %}"
+       class="main-button">
+      다음 추천 문제 풀기
+    </a>
+  </section>
+{% elif saved %}
+  <section class="card">
+    <p>오늘 추천 문제를 모두 풀었습니다.</p>
+
+    <a href="{% url 'mission_list' %}"
+       class="main-button">
+      학습 홈으로 돌아가기
+    </a>
+  </section>
+{% endif %}
+
+
+{% if saved and grading_rows %}
+  <section class="card info-box">
+    <h4>항목별 채점 결과</h4>
+    <ul>
+      {% for row in grading_rows %}
+        <li>
+          {{ row.label }} :
+          {% if row.is_correct %}
+            정답
+          {% else %}
+            오답
+          {% endif %}
+          / 입력값: {{ row.submitted_answer }} / 정답: {{ row.correct_answer }}
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+{% endif %}
+
+{% if error %}
+  <section class="card result-wrong">
+    {{ error }}
+  </section>
+{% endif %}
+
+<section class="card">
+  <form method="POST">
+    {% csrf_token %}
+
+    <h3>풀이 결과 제출</h3>
+
+    {% if mission.question_type == "manual" %}
+        <label>
+            <input type="radio" name="is_correct" value="true">
+            정답
+        </label>
+
+        <label>
+            <input type="radio" name="is_correct" value="false">
+            오답
+        </label>
+
+        <br><br>
+
+        <hr>
+
+        <h4>오답 원인 (오답일 때만 체크)</h4>
+        {% for wr in wrong_reasons %}
+          <label class="form-option">
+            <input type="checkbox" name="wrong_reason_ids" value="{{ wr.id }}">
+            {{ wr.name }}
+        </label>
+        {% endfor %}
+
+    {% else %}
+
+        {% if mission.question_type == "choice_one" or mission.question_type == "true_false" or mission.question_type == "error_detect" %}
+            <p><b>선택지를 고르세요.</b></p>
+
+            {% for item in choice_items %}
+                <label class="form-option">
+                  <input type="radio" name="submitted_answer" value="{{ item.key }}" required>
+                  {{ item.key }}. {{ item.label }}
+              </label>
+            {% empty %}
+                <p class="text-danger">선택지가 없습니다. answer_schema를 확인하세요.</p>
+            {% endfor %}
+
+        {% elif schema_items %}
+            <p><b>아래 결과값을 입력하세요.</b></p>
+
+            {% for item in schema_items %}
+                <div class="form-field">
+                  <label><b>{{ item.label }}</b></label><br>
+
+                    {% if item.input_type == "number" %}
+                        <input type="number" step="any" name="submitted_answers" placeholder="숫자 입력">
+                    {% elif item.input_type == "date" %}
+                        <input type="text" name="submitted_answers" placeholder="예: 2024-03-25">
+                    {% else %}
+                        <input type="text" name="submitted_answers" placeholder="답안 입력">
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+        {% else %}
+            <p><b>답안을 입력하세요.</b></p>
+
+            {% if mission.answer_input_type == "number" %}
+                <input type="number" step="any" name="submitted_answer" placeholder="숫자 입력">
+            {% elif mission.answer_input_type == "date" %}
+                <input type="text" name="submitted_answer" placeholder="예: 2024-03-25">
+            {% else %}
+                <input type="text" name="submitted_answer" placeholder="답안 입력">
+            {% endif %}
+        {% endif %}
+
+    {% endif %}
+
+    <br><br>
+    <button type="submit">제출</button>
+  </form>
+</section>
+
+<section class="card">
+  <a href="{% url 'mission_list' %}" class="sub-link">← 목록으로</a>
+</section>
+
+{% endblock %}

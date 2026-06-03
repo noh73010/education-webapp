@@ -1,0 +1,33 @@
+python -m pip install django : 장고 설치
+
+django-admin: 장고 메뉴들 보여줌
+
+django-admin startproject myproject (프로젝트): 프로젝트 폴더에 myproject로 시작함
+
+
+python manage.py runserver (8888): 런서버만듬 (8888번 포트)
+
+django-admin startapp myapp : 앱만들기 
+
+Chat-GPT 채팅 옮기는 법
+1. 지정된 프로젝트 에서 'tree /f > structure.txt'
+
+2.core/views 파일들
+models.py, admin.py
+core/templates/core/mission_detail.html(이하 html들) 붙여주기
+core/templates/registration/login.html
+core/management/commands/import_missions.py
+core/services/recommendations.py
+core/services/daily.py
+core/services/streaks.py
+core/services/exams.py
+core/services/exam_analysis.py
+
+
+
+
+mission.csv
+
+3.나는 Django로 컴활2급 교육 웹앱을 만들고 있다.
+프로젝트 경로: C:\노세영\코딩\프로젝트\컴활2급
+단계별로 이어서 진행해줘.

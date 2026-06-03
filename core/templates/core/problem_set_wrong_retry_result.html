@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>오답 복습 완료</title>
+</head>
+<body>
+
+  <h1>오답 복습 완료</h1>
+
+  <p>
+    <b>{{ original_session.problem_set.title }}</b>의 틀린 문제 복습을 완료했습니다.
+  </p>
+
+  <hr>
+
+  <h2>오답 복습 결과</h2>
+
+  <p>
+    다시 푼 문제: {{ retry_total_count }}개 /
+    정답: {{ retry_correct_count }}개 /
+    오답: {{ retry_wrong_count }}개
+  </p>
+
+  <ul>
+    {% for row in retry_results %}
+      <li>
+        {{ row.mission_title }} -
+        {% if row.is_correct %}
+          <span style="color:green;">정답</span>
+        {% else %}
+          <span style="color:red;">오답</span>
+        {% endif %}
+      </li>
+    {% empty %}
+      <li>오답 복습 결과가 없습니다.</li>
+    {% endfor %}
+  </ul>
+
+  <hr>
+
+  <!-- 🔥 핵심: 바로 다음 행동 -->
+  <h2>👉 다음 학습</h2>
+
+  {% if next_set %}
+    <p>이어서 이 세트를 추천합니다.</p>
+
+    <p>
+      <a href="{% url 'problem_set_start' next_set.id %}">
+        🚀 <b>{{ next_set.title }} 바로 시작</b>
+      </a>
+    </p>
+  {% else %}
+    <p>추천 세트를 준비 중입니다.</p>
+  {% endif %}
+
+  <hr>
+
+  <!-- 📊 정보는 뒤로 -->
+  <p>
+    원래 세트 점수: {{ original_session.score }}점 /
+    정답 {{ original_session.correct_count }} /
+    오답 {{ original_session.wrong_count }}
+  </p>
+
+  <p>
+    오답 복습은 일반 풀이 기록에 저장됩니다.<br>
+    같은 유형을 다시 틀리면 약점 복습에 계속 반영됩니다.
+  </p>
+
+  <hr>
+
+  <!-- 🔁 보조 행동 -->
+  <p>
+    <a href="{% url 'problem_set_start' original_session.problem_set.id %}">
+      🔁 이 세트 전체 다시 풀기
+    </a>
+  </p>
+
+  <p>
+    <a href="{% url 'problem_set_result' original_session.id %}">
+      원래 결과 보기
+    </a>
+  </p>
+
+  <p>
+    <a href="{% url 'mission_list' %}">
+      학습 홈으로
+    </a>
+  </p>
+
+</body>
+</html>

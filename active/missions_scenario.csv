@@ -1,0 +1,236 @@
+﻿id,title,skill_auto,level,prompt,question_type,answer_input_type,correct_answer,answer_schema,explanation,wrong_pattern_code
+SCN_COUNTA_001,비어있지 않은 주문번호 개수 계산,COUNTA,1,"[CONTEXT]
+쇼핑몰 주문 관리표입니다. 주문번호가 입력된 행만 실제 주문으로 봅니다.
+[/CONTEXT]
+
+[TABLE]
+행 | 주문번호 | 고객명 | 결제상태
+1 | A-1001 | 김민수 | 결제완료
+2 | A-1002 | 이지은 | 결제완료
+3 |        | 박도윤 | 취소
+4 | A-1003 | 최서연 | 결제대기
+5 |        | 한지호 | 취소
+[/TABLE]
+
+[RULES]
+- 주문번호가 비어 있으면 실제 주문 건수에서 제외합니다.
+- 주문번호가 입력된 행만 셉니다.
+[/RULES]
+
+[QUESTION]
+실제 주문 건수는 몇 건인가요?
+[/QUESTION]",value_answer,number,3,,"주문번호가 있는 행은 A-1001, A-1002, A-1003 총 3건입니다. Excel에서는 COUNTA로 비어있지 않은 셀 개수를 셀 수 있습니다.",
+SCN_COUNTA_002,COUNTA 함수 선택,COUNTA,1,"[CONTEXT]
+출석부에서 이름이 입력된 학생 수를 세려고 합니다.
+[/CONTEXT]
+
+[TABLE]
+번호 | 이름 | 출석여부
+1 | 김민수 | 출석
+2 | 이지은 | 출석
+3 |       | 결석
+4 | 최서연 | 출석
+[/TABLE]
+
+[RULES]
+- 이름이 입력된 셀만 셉니다.
+- 빈 셀은 제외합니다.
+[/RULES]
+
+[QUESTION]
+이 상황에서 가장 적절한 함수는 무엇인가요?
+[/QUESTION]",choice_one,text,B,"A|=COUNT(B2:B5)
+B|=COUNTA(B2:B5)
+C|=SUM(B2:B5)
+D|=AVERAGE(B2:B5)","COUNT는 숫자만 세고, COUNTA는 비어있지 않은 셀을 셉니다.",
+SCN_COUNTA_003,COUNT 사용 오류 찾기,COUNTA,1,"[CONTEXT]
+담당자가 고객명이 입력된 행의 개수를 세려고 합니다.
+[/CONTEXT]
+
+[TABLE]
+행 | 고객명
+1 | 김민수
+2 | 이지은
+3 |
+4 | 최서연
+[/TABLE]
+
+[RULES]
+- 고객명은 문자 데이터입니다.
+- 빈 셀은 제외해야 합니다.
+[/RULES]
+
+[QUESTION]
+=COUNT(B1:B4)를 사용했을 때 생기는 문제는 무엇인가요?
+[/QUESTION]",error_detect,text,B,"A|범위가 너무 짧다
+B|문자 데이터는 COUNT로 세지 못한다
+C|SUM 함수를 써야 한다
+D|항상 4가 나온다",COUNT는 숫자 데이터만 셉니다. 고객명처럼 문자 데이터 개수를 세려면 COUNTA가 적절합니다.,COUNT_CONFUSION
+SCN_IF_001,합격 여부 판단,IF,1,"[CONTEXT]
+자격시험 결과표입니다. 점수가 60점 이상이면 합격, 아니면 불합격입니다.
+[/CONTEXT]
+
+[TABLE]
+이름 | 점수
+김민수 | 75
+이지은 | 58
+최서연 | 60
+[/TABLE]
+
+[RULES]
+- 60점 이상이면 합격입니다.
+- 60점 미만이면 불합격입니다.
+[/RULES]
+
+[QUESTION]
+이지은의 판정 결과를 입력하세요.
+[/QUESTION]",value_answer,text,불합격,,이지은의 점수는 58점입니다. 60점 미만이므로 불합격입니다.,
+SCN_IF_002,IF 함수 수식 선택,IF,1,"[CONTEXT]
+B2 셀의 점수가 60점 이상이면 합격, 아니면 불합격을 표시하려고 합니다.
+[/CONTEXT]
+
+[TABLE]
+셀 | 값
+B2 | 75
+[/TABLE]
+
+[RULES]
+- 조건은 B2>=60 입니다.
+- 참이면 합격입니다.
+- 거짓이면 불합격입니다.
+[/RULES]
+
+[QUESTION]
+올바른 수식은 무엇인가요?
+[/QUESTION]",choice_one,text,A,"A|=IF(B2>=60,""합격"",""불합격"")
+B|=IF(B2<60,""합격"",""불합격"")
+C|=SUM(B2>=60,""합격"",""불합격"")
+D|=COUNT(B2>=60)",60점 이상이면 합격이므로 조건식은 B2>=60이어야 합니다.,IF_DIRECTION
+SCN_IF_003,IF 수식 오류 찾기,IF,2,"[CONTEXT]
+점수에 따라 합격/불합격을 표시하려고 합니다.
+[/CONTEXT]
+
+[TABLE]
+셀 | 값
+B2 | 45
+[/TABLE]
+
+[RULES]
+- 60점 이상이면 합격입니다.
+- 60점 미만이면 불합격입니다.
+[/RULES]
+
+[QUESTION]
+=IF(B2>=60,""합격"") 수식의 문제점은 무엇인가요?
+[/QUESTION]",error_detect,text,C,"A|조건식이 없다
+B|참일 때 값이 없다
+C|거짓일 때 값이 없다
+D|B2 셀은 사용할 수 없다","IF 함수는 조건, 참일 때 값, 거짓일 때 값의 구조가 필요합니다.",IF_MISSING_FALSE
+SCN_SUMIF_001,부서별 매출 합계 계산,SUMIF,2,"[CONTEXT]
+부서별 매출 데이터입니다. 영업팀의 매출 합계를 구해야 합니다.
+[/CONTEXT]
+
+[TABLE]
+부서 | 매출
+영업 | 120000
+관리 | 80000
+영업 | 150000
+개발 | 200000
+영업 | 100000
+[/TABLE]
+
+[RULES]
+- 부서가 영업인 행만 합산합니다.
+- 관리, 개발 부서는 제외합니다.
+[/RULES]
+
+[QUESTION]
+영업팀의 총 매출은 얼마인가요?
+[/QUESTION]",value_answer,number,370000,,영업팀 매출은 120000 + 150000 + 100000 = 370000입니다.,
+SCN_SUMIF_002,SUMIF 수식 선택,SUMIF,2,"[CONTEXT]
+A열에는 부서명, B열에는 매출이 있습니다. 영업팀 매출만 합산하려고 합니다.
+[/CONTEXT]
+
+[TABLE]
+A열 | B열
+영업 | 120000
+관리 | 80000
+영업 | 150000
+개발 | 200000
+[/TABLE]
+
+[RULES]
+- 조건 범위는 A열입니다.
+- 합계 범위는 B열입니다.
+- 조건은 영업입니다.
+[/RULES]
+
+[QUESTION]
+올바른 수식은 무엇인가요?
+[/QUESTION]",choice_one,text,A,"A|=SUMIF(A1:A4,""영업"",B1:B4)
+B|=SUMIF(B1:B4,""영업"",A1:A4)
+C|=COUNTIF(A1:A4,""영업"",B1:B4)
+D|=SUM(A1:A4,""영업"",B1:B4)","SUMIF는 조건범위, 조건, 합계범위 순서입니다.",
+SCN_VLOOKUP_001,상품코드로 단가 찾기,VLOOKUP,2,"[CONTEXT]
+상품코드를 기준으로 상품표에서 단가를 찾아야 합니다.
+[/CONTEXT]
+
+[TABLE]
+상품코드 | 상품명 | 단가
+A001 | 키보드 | 30000
+A002 | 마우스 | 15000
+A003 | 모니터 | 180000
+
+찾을 상품코드: A002
+[/TABLE]
+
+[RULES]
+- 상품코드는 첫 번째 열에서 찾습니다.
+- 단가는 세 번째 열에 있습니다.
+- 정확히 일치하는 상품코드를 찾아야 합니다.
+[/RULES]
+
+[QUESTION]
+A002의 단가는 얼마인가요?
+[/QUESTION]",value_answer,number,15000,,A002는 마우스이고 단가는 15000입니다.,
+SCN_VLOOKUP_002,VLOOKUP 열 번호 선택,VLOOKUP,2,"[CONTEXT]
+상품코드를 기준으로 단가를 찾으려고 합니다.
+[/CONTEXT]
+
+[TABLE]
+1열: 상품코드
+2열: 상품명
+3열: 단가
+4열: 재고
+[/TABLE]
+
+[RULES]
+- 찾을 값은 상품코드입니다.
+- 반환할 값은 단가입니다.
+[/RULES]
+
+[QUESTION]
+VLOOKUP에서 열 번호는 몇 번으로 지정해야 하나요?
+[/QUESTION]",value_answer,number,3,,단가는 범위의 세 번째 열에 있으므로 열 번호는 3입니다.,VLOOKUP_COL_INDEX
+SCN_VLOOKUP_003,VLOOKUP 오류 찾기,VLOOKUP,3,"[CONTEXT]
+상품명을 기준으로 단가를 찾으려고 다음 수식을 작성했습니다.
+[/CONTEXT]
+
+[TABLE]
+A열 | B열 | C열
+상품코드 | 상품명 | 단가
+A001 | 키보드 | 30000
+A002 | 마우스 | 15000
+[/TABLE]
+
+[RULES]
+- VLOOKUP은 찾을 값이 범위의 첫 번째 열에 있어야 합니다.
+- 현재 찾으려는 값은 상품명입니다.
+[/RULES]
+
+[QUESTION]
+=VLOOKUP(""마우스"",A2:C3,3,FALSE)의 문제점은 무엇인가요?
+[/QUESTION]",error_detect,text,B,"A|FALSE를 쓰면 안 된다
+B|찾을 값인 상품명이 범위의 첫 번째 열에 있지 않다
+C|열 번호는 항상 1이어야 한다
+D|단가는 숫자라서 찾을 수 없다",VLOOKUP은 지정한 범위의 첫 번째 열에서 찾을 값을 검색합니다. 상품명은 두 번째 열이므로 이 수식은 구조가 잘못되었습니다.,VLOOKUP_FIRST_COL

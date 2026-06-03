@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>오답노트</title>
+</head>
+<body>
+
+<h1>오답 노트</h1>
+
+<form method="get" style="margin: 12px 0;">
+  <label>
+    보기:
+    <select name="mode">
+      <option value="open" {% if mode == "open" %}selected{% endif %}>미해결만</option>
+      <option value="all" {% if mode == "all" %}selected{% endif %}>전체(해결 포함)</option>
+    </select>
+  </label>
+
+  <label>
+    기간:
+    <select name="days">
+      <option value="all" {% if days == "all" %}selected{% endif %}>전체</option>
+      <option value="7" {% if days == "7" %}selected{% endif %}>최근 7일</option>
+      <option value="30" {% if days == "30" %}selected{% endif %}>최근 30일</option>
+    </select>
+  </label>
+
+  <label>
+    스킬:
+    <select name="skill">
+      <option value="">전체</option>
+      {% for s in skill_choices %}
+        <option value="{{ s }}" {% if s == skill %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </label>
+
+  <button type="submit">적용</button>
+</form>
+
+{% if since %}
+  <p>집계 시작: {{ since }}</p>
+{% endif %}
+
+<ul>
+  {% for item in wrong_items %}
+    <li>
+      <a href="{% url 'mission_detail' item.attempt.mission.id %}">
+        {{ item.attempt.mission.title }}
+      </a>
+      ({{ item.attempt.mission.skill }} / Lv {{ item.attempt.mission.level }})
+      <br>
+      최근 오답 시각: {{ item.attempt.created_at }}
+      <br>
+
+      오답 원인:
+      {% if item.reasons %}
+        {{ item.reasons|join:", " }}
+      {% else %}
+        (원인 미기록)
+      {% endif %}
+    </li>
+  {% empty %}
+    <li>아직 오답 기록이 없습니다.</li>
+  {% endfor %}
+</ul>
+
+<hr>
+
+<a href="{% url 'mission_list' %}">미션 목록</a> |
+<a href="{% url 'stats' %}">통계</a>
+
+</body>
+</html>

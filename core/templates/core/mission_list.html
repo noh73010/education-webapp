@@ -1,0 +1,311 @@
+{% extends 'core/base.html' %}
+{% load mission_tags %}
+
+{% block title %}
+컴활 2급 학습 홈
+{% endblock %}
+
+{% block content %}
+
+<h1>컴활 2급 학습 홈</h1>
+
+<section class="card">
+  <h2 class="section-title">오늘 무엇을 할까요?</h2>
+  <p class="info-box">
+    {{ today_guide_message }}
+  </p>
+
+  <p class="mt-small">
+    오늘 추천 문제 진행률:
+    <b>{{ daily_progress.done }} / {{ daily_progress.total }}</b>
+    ({{ daily_progress.pct }}%)
+  </p>
+
+  <p>
+    {% if today_guide_url_name == "pattern_training_start" %}
+      <a href="{% url 'pattern_training_start' today_guide_pattern_code %}"
+        class="main-button">
+        {{ today_guide_text }}
+      </a>
+    {% else %}
+      <a href="{% url 'problem_set_list' %}"
+        class="main-button">
+        {{ today_guide_text }}
+      </a>
+    {% endif %}
+  </p>
+
+  <p>
+    <a href="{% url 'stats' %}">내 약점 확인</a>
+    |
+    <a href="{% url 'exam_start' %}">실전 모의고사</a>
+  </p>
+</section>
+
+<!-- 1. 지금 해야 할 학습 -->
+<section class="card">
+  <h2 class="section-title">지금 해야 할 학습</h2>
+
+  {% if recent_avg_score %}
+    <p>
+      최근 평균 점수: <b>{{ recent_avg_score }}점</b> /
+      추천 난이도: <b>Lv {{ target_level }}</b>
+    </p>
+  {% else %}
+    <p>
+      아직 학습 기록이 부족합니다. 기본 난이도 <b>Lv {{ target_level }}</b>부터 시작합니다.
+    </p>
+  {% endif %}
+
+  {% if today_action == "continue" and today_action_obj %}
+    <p>진행 중인 세트가 있습니다. 먼저 끝내세요.</p>
+    <p>
+      <a href="{% url 'problem_set_start' today_action_obj.problem_set.id %}"
+        class="main-button">
+        {{ today_action_obj.problem_set.title }} 이어서 하기
+      </a>
+    </p>
+
+  {% elif today_action == "start" and today_action_obj %}
+    <p>오늘은 이 세트부터 시작하세요.</p>
+    <p>
+      <a href="{% url 'problem_set_start' today_action_obj.id %}"
+        class="main-button">
+        {{ today_action_obj.title }} 바로 시작
+      </a>
+    </p>
+
+  {% elif today_action == "review" %}
+    <p>오늘 기본 학습은 끝났습니다. 약점 복습으로 넘어가세요.</p>
+    <p>
+      <a href="{% url 'wrong_notes' %}"
+        class="main-button">
+        약점 복습하기
+      </a>
+    </p>
+
+  {% elif primary_set %}
+    <p>추천 세트가 있습니다. 이 세트부터 시작하세요.</p>
+    <p>
+      <a href="{% url 'problem_set_start' primary_set.id %}"
+        class="main-button">
+        {{ primary_set.title }} 바로 시작
+      </a>
+    </p>
+
+  {% else %}
+    <p>추천 세트를 준비 중입니다.</p>
+  {% endif %}
+</section>
+
+
+
+<!-- 3. 연속 학습 -->
+<section class="card">
+  <h2 class="section-title">연속 학습</h2>
+  <div class="streak-number">
+    🔥 {{ streak.current_streak }}일 연속 학습 중
+  </div>
+
+  <p class="mt-small">
+    최고 기록: {{ streak.best_streak }}일
+    {% if streak.last_solved_date %}
+      / 마지막 풀이일: {{ streak.last_solved_date|date:"Y년 n월 j일" }}
+    {% endif %}
+  </p>
+</section>
+
+
+<!-- 4. 최근 학습 기록 -->
+<section class="card">
+  <h2 class="section-title">최근 학습 기록</h2>
+
+  {% if recent_sessions %}
+    <ul class="clean-list">
+      {% for s in recent_sessions %}
+        <li>
+          {{ s.problem_set.title }} /
+          점수: <b>{{ s.score }}점</b> /
+          {{ s.started_at|date:"m-d H:i" }}
+          /
+          <a href="{% url 'problem_set_result' s.id %}">결과 보기</a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>아직 학습 기록이 없습니다.</p>
+  {% endif %}
+</section>
+
+<!-- 5. 오늘의 추천 문제 -->
+<section class="card">
+  <h2 class="section-title">오늘의 추천 5문제</h2>
+
+  <p>
+    <a href="?q={{ q|urlencode }}&skill={{ skill|urlencode }}&level={{ level|urlencode }}&sort={{ sort|urlencode }}&page={{ page_obj.number }}&reset_daily=1"
+       onclick="return confirm('오늘 추천을 다시 뽑을까요?');">
+      오늘 추천 다시 뽑기
+    </a>
+  </p>
+
+  
+  <ul class="clean-list">
+    {% for m in recommended %}
+      <li class="mb-small">
+        <a href="{% url 'mission_detail' m.id %}">
+          <b>{{ m.title }}</b>
+        </a>
+        ({{ m.skill }} / Lv {{ m.level }})
+        <br>
+        풀이 {{ m.my_total }}회 /
+        정답률 {{ m.my_accuracy }}% /
+        최근: {{ m.my_last }}
+
+        {% if m.today_done %}
+          <span style="color:green;">오늘 풀이함</span>
+        {% endif %}
+      </li>
+    {% empty %}
+      <li>추천할 문제가 없습니다.</li>
+    {% endfor %}
+  </ul>
+</section>
+
+<!-- 6. 약점 추천 세트 -->
+<section class="card">
+  <h2 class="section-title">약점 추천</h2>
+
+  {% if weak_skill_labels %}
+    <p>
+      현재 약점 후보:
+      {% for label in weak_skill_labels %}
+        <b>{{ label }}</b>{% if not forloop.last %}, {% endif %}
+      {% endfor %}
+    </p>
+  {% else %}
+    <p>아직 약점 판단을 위한 기록이 부족합니다.</p>
+  {% endif %}
+
+  {% if weak_sets %}
+    <ul class="clean-list">
+      {% for ps in weak_sets %}
+        <li>
+          <a href="{% url 'problem_set_detail' ps.id %}">
+            {{ ps.title }}
+          </a>
+          / Lv {{ ps.level }}
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</section>
+
+<!-- 반복 오답 패턴 추천 -->
+<section class="card">
+  <h2 class="section-title">반복 오답 패턴 추천</h2>
+
+  {% if weak_patterns %}
+    <p>최근 자주 틀린 패턴입니다.</p>
+
+    <ul class="clean-list">
+      {% for row in weak_patterns %}
+        <li style="margin-bottom:12px;">
+          <b>{{ row.wrong_pattern__name }}</b>
+          ({{ row.wrong_pattern__skill }} / {{ row.cnt }}회)
+
+          <p style="margin-top:6px;">
+            <a href="{% url 'pattern_training_start' row.wrong_pattern__code %}"
+              class="main-button">
+              집중 훈련 시작
+            </a>
+          </p>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>아직 반복 오답 패턴 데이터가 부족합니다.</p>
+  {% endif %}
+
+  <h3>이 패턴 때문에 추천하는 문제</h3>
+
+  <ul class="clean-list">
+    {% for mission in pattern_missions %}
+      <li style="margin-bottom:12px;">
+        <a href="{% url 'mission_detail' mission.id %}">
+          <b>{{ mission.title }}</b>
+        </a>
+        ({{ mission.skill }} / Lv {{ mission.level }})
+        <br>
+        질문: {{ mission.prompt|prompt_question|truncatechars:100 }}
+      </li>
+    {% empty %}
+      <li>추천할 패턴 기반 문제가 없습니다.</li>
+    {% endfor %}
+  </ul>
+</section>
+
+<!-- 7. 전체 문제 검색 -->
+<section class="card" id="search-section">
+  <h2 class="section-title">전체 문제 검색</h2>
+
+  <form method="get" class="mb-medium" action="#search-section">
+    <input type="text" name="q" placeholder="검색 (제목/지시문/스킬)" value="{{ q }}" />
+
+    <select name="skill">
+      <option value="">전체 스킬</option>
+      {% for s in skill_choices %}
+        <option value="{{ s }}" {% if s == skill %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="level">
+      <option value="">전체 레벨</option>
+      {% for lv in "12345" %}
+        <option value="{{ lv }}" {% if level == lv %}selected{% endif %}>Lv {{ lv }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="sort">
+      <option value="new" {% if sort == "new" %}selected{% endif %}>최신 등록순</option>
+      <option value="weak" {% if sort == "weak" %}selected{% endif %}>약점순</option>
+      <option value="untried" {% if sort == "untried" %}selected{% endif %}>미풀이 우선</option>
+    </select>
+
+    <button type="submit">적용</button>
+  </form>
+
+  <ul class="clean-list">
+    {% for mission in missions %}
+      <li class="mb-medium">
+        <a href="{% url 'mission_detail' mission.id %}">
+          <b>{{ mission.title }}</b>
+        </a>
+        ({{ mission.skill }} / Lv {{ mission.level }})
+        <br>
+        질문: {{ mission.prompt|prompt_question|truncatechars:120 }}
+
+        <div class="meta-text">
+          풀이 {{ mission.my_total }}회 /
+          정답률 {{ mission.my_accuracy }}% /
+          최근: {{ mission.my_last }}
+        </div>
+      </li>
+    {% empty %}
+      <li>조건에 맞는 미션이 없습니다.</li>
+    {% endfor %}
+  </ul>
+
+  <div class="mt-medium">
+    {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}&q={{ q|urlencode }}&skill={{ skill|urlencode }}&level={{ level|urlencode }}&sort={{ sort|urlencode }}#search-section">이전</a>
+    {% endif %}
+
+    <span> {{ page_obj.number }} / {{ page_obj.paginator.num_pages }} </span>
+
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}&q={{ q|urlencode }}&skill={{ skill|urlencode }}&level={{ level|urlencode }}&sort={{ sort|urlencode }}#search-section">다음</a>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}

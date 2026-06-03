@@ -1,0 +1,25 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>{% block title %}컴활 2급 학습 시스템{% endblock %}</title>
+
+    <link rel="stylesheet" href="{% static 'core/style.css' %}">
+</head>
+<body>
+
+<nav class="top-nav">
+    <a href="{% url 'mission_list' %}" class="sub-link">학습 홈</a>
+    <a href="{% url 'stats' %}" class="sub-link">통계</a>
+    <a href="{% url 'problem_set_list' %}" class="sub-link">문제 세트</a>
+    <a href="{% url 'exam_start' %}" class="sub-link">시험</a>
+</nav>
+
+{% block content %}
+{% endblock %}
+
+</body>
+</html>

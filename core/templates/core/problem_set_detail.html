@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{ problem_set.title }}</title>
+</head>
+<body>
+  <h1>{{ problem_set.title }}</h1>
+
+  <p>
+    유형: {{ problem_set.get_set_type_display }} /
+    스킬그룹: {{ problem_set.skill_group }} /
+    난이도: {{ problem_set.level }}
+  </p>
+
+  {% if problem_set.description %}
+    <p style="white-space: pre-line;">{{ problem_set.description }}</p>
+  {% endif %}
+
+  <p>
+    <a href="{% url 'problem_set_start' problem_set.id %}">세트 시작하기</a>
+  </p>
+
+  <hr>
+
+  <h2>세트 구성 문제</h2>
+  <ol>
+    {% for item in items %}
+      <li style="margin-bottom:10px;">
+        <b>{{ item.mission.title }}</b>
+        ({{ item.mission.skill }} / Lv {{ item.mission.level }} / 역할: {{ item.get_role_display }})
+      </li>
+    {% empty %}
+      <li>이 세트에는 아직 문제가 없습니다.</li>
+    {% endfor %}
+  </ol>
+
+  <hr>
+
+  <h2>최근 풀이 기록</h2>
+  <table border="1" cellpadding="6">
+    <tr>
+      <th>시작</th>
+      <th>상태</th>
+      <th>정답</th>
+      <th>오답</th>
+      <th>점수</th>
+      <th>결과</th>
+    </tr>
+    {% for s in recent_sessions %}
+    <tr>
+      <td>{{ s.started_at|date:"Y-m-d H:i" }}</td>
+      <td>{{ s.get_status_display }}</td>
+      <td>{{ s.correct_count }}</td>
+      <td>{{ s.wrong_count }}</td>
+      <td>{{ s.score }}점</td>
+      <td>
+        <a href="{% url 'problem_set_result' s.id %}">결과 보기</a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="6">아직 풀이 기록이 없습니다.</td>
+    </tr>
+    {% endfor %}
+  </table>
+
+  <hr>
+  <a href="{% url 'problem_set_list' %}">세트 목록</a> |
+  <a href="{% url 'mission_list' %}">미션 목록</a>
+</body>
+</html>
