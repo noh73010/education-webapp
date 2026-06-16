@@ -1,39 +1,68 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>프리미엄 안내</title>
-</head>
-<body>
-  <h1>프리미엄 안내</h1>
+{% extends 'core/base.html' %}
+
+{% block title %}프리미엄 안내{% endblock %}
+
+{% block content %}
+
+<section class="card">
+  <h1 class="section-title">프리미엄 안내</h1>
 
   {% if is_premium %}
-    <p style="padding:10px; border:1px solid #ddd;">
-      현재 프리미엄 회원입니다.
+    <div class="info-box">
+      <p><b>현재 상태:</b> 프리미엄 회원</p>
       {% if premium_ended_at %}
-        / 이용 종료 예정: {{ premium_ended_at }}
+        <p><b>이용 종료 예정:</b> {{ premium_ended_at }}</p>
       {% endif %}
-    </p>
+      <p>현재 모든 학습 기능을 제한 없이 사용할 수 있습니다.</p>
+    </div>
   {% else %}
-    <p style="padding:10px; border:1px solid #ddd;">
-      무료 회원은 실전 모의고사를 하루 1회만 이용할 수 있습니다.
-    </p>
-
-    <h3>프리미엄에서 가능한 것</h3>
-    <ul>
-      <li>실전 모의고사 무제한</li>
-      <li>시험 결과 약점 분석 전체 보기</li>
-      <li>우선 복습 스킬 확인</li>
-      <li>상세 피드백 기반 반복 학습</li>
-    </ul>
-
-    <p style="padding:10px; border:1px solid #ddd; background:#f9f9f9;">
-      지금은 테스트 단계라 관리자에서 수동으로 프리미엄 전환 중입니다.
-    </p>
+    <div class="info-box">
+      <p><b>현재 상태:</b> 무료 회원</p>
+      <p>
+        현재는 신청 후 운영자가 확인하여 프리미엄을 수동 활성화합니다.
+        프리미엄이 필요하면 아래 버튼으로 신청해 주세요.
+      </p>
+      <p><a href="{% url 'inquiry' %}" class="main-button">프리미엄 신청하기</a></p>
+    </div>
   {% endif %}
+</section>
 
-  <hr>
+<section class="card">
+  <h2 class="card-title">무료 회원</h2>
+  <ul class="clean-list">
+    <li>오늘 추천 문제와 기본 학습 이용</li>
+    <li>오답노트 최근 5개까지 확인</li>
+    <li>패턴 집중 훈련 하루 1회</li>
+    <li>실전 모의고사 하루 1회</li>
+    <li>시험 결과의 기본 점수와 일부 약점 정보 확인</li>
+  </ul>
+</section>
 
-  <a href="{% url 'exam_start' %}">실전 모의고사</a> |
-  <a href="{% url 'mission_list' %}">미션 목록</a>
-</body>
-</html>
+<section class="card">
+  <h2 class="card-title">프리미엄 회원</h2>
+  <ul class="clean-list">
+    <li>오답노트 전체 확인</li>
+    <li>패턴 집중 훈련 제한 완화</li>
+    <li>실전 모의고사 제한 완화</li>
+    <li>시험 결과 상세 약점 분석 확인</li>
+    <li>추천 복습과 반복 학습 흐름 전체 이용</li>
+  </ul>
+</section>
+
+{% if not is_premium %}
+  <section class="card">
+    <h2 class="card-title">신청 방법</h2>
+    <div class="info-box">
+      결제 버튼은 아직 제공하지 않습니다. 신청 내용을 운영자가 확인한 뒤 관리자 화면에서 프리미엄을 수동으로 활성화합니다.
+    </div>
+    <p><a href="{% url 'inquiry' %}" class="main-button">프리미엄 신청/문의하기</a></p>
+  </section>
+{% endif %}
+
+<section class="card">
+  <a href="{% url 'exam_start' %}" class="sub-link">실전 모의고사</a> |
+  <a href="{% url 'wrong_notes' %}" class="sub-link">오답노트</a> |
+  <a href="{% url 'mission_list' %}" class="sub-link">학습 홈</a>
+</section>
+
+{% endblock %}

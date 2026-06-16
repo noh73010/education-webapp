@@ -103,8 +103,7 @@ def format_question_block(question_text: str, answer_input_type: str) -> str:
     question = question.replace("계산하시오.", "계산하세요.")
     question = question.replace("판정하시오.", "판정하세요.")
 
-    if not question.startswith("👉"):
-        question = f"👉 {question}"
+    question = question.lstrip("👉").strip()
 
     return question
 
@@ -133,7 +132,7 @@ def rebuild_prompt(title: str, prompt: str, answer_input_type: str) -> str:
 
     parts = []
 
-    parts.append(f"📌 {title}".strip())
+    parts.append(f"{title}".strip())
     parts.append("")
     parts.append(format_context_block(context_text))
 

@@ -8,6 +8,7 @@ from django.db.models import Max
 from django.utils import timezone
 
 from core.models import Mission, Attempt, AttemptWrongReason
+from core.services.access import get_user_access
 
 
 @login_required
@@ -78,6 +79,12 @@ def wrong_notes(request):
             "attempt": a,
             "reasons": reasons_by_attempt_id.get(a.id, []),  # 정답이면 빈 리스트
         })
+    access = get_user_access(request.user)
+
+    is_limited = False
+    if not access.is_premium and len(wrong_items) > 5:
+        wrong_items = wrong_items[:5]
+        is_limited = True
 
     # 7) skill 드롭다운용 목록
     skill_choices = (
@@ -94,4 +101,6 @@ def wrong_notes(request):
         "since": since,
         "skill": skill,
         "skill_choices": skill_choices,
+        "is_premium": access.is_premium,
+        "is_limited": is_limited,
     })

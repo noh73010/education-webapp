@@ -164,12 +164,85 @@ button:hover {
     display: flex;
     gap: 16px;
     flex-wrap: wrap;
+    align-items: center;
     margin-bottom: 24px;
     padding: 14px 18px;
     background: white;
     border: 1px solid #ddd;
     border-radius: 14px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.inline-form {
+    display: inline;
+    margin: 0;
+}
+
+.link-button {
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    color: #444;
+    font: inherit;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.link-button:hover {
+    background: transparent;
+    color: #111;
+}
+
+.landing-hero {
+    padding: 34px 28px;
+}
+
+.landing-copy {
+    max-width: 760px;
+}
+
+.landing-lead {
+    max-width: 720px;
+    font-size: 18px;
+    color: #333;
+}
+
+.landing-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 18px;
+}
+
+.sub-button {
+    display: inline-block;
+    padding: 13px 20px;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    background: white;
+    color: #222;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.sub-button:hover {
+    background: #f3f4f6;
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+}
+
+.feature-grid .info-box {
+    margin-bottom: 0;
+}
+
+.feature-grid.two-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .mt-small {
     margin-top: 8px;
@@ -196,4 +269,202 @@ button:hover {
     margin-top: 6px;
     font-size: 14px;
     color: #444;
+}
+.text-success-inline {
+    color: #15803d;
+    font-weight: bold;
+}
+.table-scroll {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.table-scroll .data-table {
+    min-width: 620px;
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    .card {
+        padding: 16px;
+    }
+
+    .top-nav {
+        gap: 10px;
+        font-size: 15px;
+    }
+
+    .main-button {
+        width: 100%;
+        text-align: center;
+        margin-bottom: 8px;
+    }
+
+    .sub-button {
+        width: 100%;
+        text-align: center;
+    }
+
+    .feature-grid.two-columns {
+        grid-template-columns: 1fr;
+    }
+
+    input,
+    select,
+    textarea {
+        max-width: 100%;
+    }
+}
+.filter-links {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.filter-links a {
+    display: inline-block;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    text-decoration: none;
+    color: #333;
+    background: #fff;
+    font-weight: bold;
+}
+
+.filter-links a:hover {
+    background: #f3f4f6;
+}
+.filter-form {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: end;
+}
+
+.filter-form .mb-medium {
+    min-width: 140px;
+}
+
+@media (max-width: 480px) {
+    .filter-form {
+        display: block;
+    }
+
+    .filter-form .mb-medium {
+        min-width: 0;
+    }
+}
+/* 모바일 최종 보강 */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    .card {
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+
+    .section-title {
+        font-size: 26px;
+        line-height: 1.3;
+    }
+
+    .card-title {
+        font-size: 22px;
+        line-height: 1.3;
+    }
+
+    .info-box {
+        padding: 14px;
+    }
+
+    .main-button {
+        width: 100%;
+        text-align: center;
+        margin-bottom: 8px;
+    }
+
+    .sub-button {
+        width: 100%;
+        text-align: center;
+    }
+
+    .sub-link {
+        display: inline-block;
+        margin-bottom: 6px;
+    }
+
+    input,
+    select,
+    textarea {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .clean-list li {
+        padding: 10px 0;
+    }
+}
+@media (max-width: 768px) {
+
+    .data-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .data-table table {
+        min-width: 600px;
+    }
+
+}
+.roadmap-progress {
+    width: 100%;
+    height: 18px;
+
+    background: #d1d5db;
+
+    border-radius: 999px;
+
+    overflow: hidden;
+
+    margin-top: 10px;
+    margin-bottom: 10px;
+
+    border: 1px solid #9ca3af;
+}
+
+.roadmap-progress-fill {
+    height: 100%;
+
+    background: #2563eb;
+
+    border-radius: 999px;
+
+    transition: width 0.3s ease;
+}
+.roadmap-card-complete {
+    background: #dcfce7 !important;
+    border: 2px solid #16a34a !important;
+}
+
+.roadmap-card-review {
+    background: #fee2e2 !important;
+    border: 2px solid #dc2626 !important;
+}
+
+.roadmap-card-locked {
+    background: #e5e7eb !important;
+    border: 2px solid #6b7280 !important;
+}
+
+.roadmap-card-progress {
+    background: #dbeafe !important;
+    border: 2px solid #2563eb !important;
 }

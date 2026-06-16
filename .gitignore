@@ -4,6 +4,7 @@ venv/
 .env
 db.sqlite3
 media/
+staticfiles/
 .idea/
 .vscode/
 아이디 비번.txt

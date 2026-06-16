@@ -1,29 +1,29 @@
-{% extends 'core/base.html' %}
+﻿{% extends 'core/base.html' %}
 
 {% block title %}
-시험 결과
+?쒗뿕 寃곌낵
 {% endblock %}
 
 {% block content %}
   <section class="card">
-    <h1 class="section-title">시험 결과</h1>
+    <h1 class="section-title">?쒗뿕 寃곌낵</h1>
 
-    <p><b>시험명:</b> {{ exam.title }}</p>
-    <p><b>점수:</b> {{ exam.score }}점</p>
-    <p><b>정답:</b> {{ exam.correct_count }} / <b>오답:</b> {{ exam.wrong_count }}</p>
-    <p><b>상태:</b> {{ exam.get_status_display }}</p>
+    <p><b>?쒗뿕紐?</b> {{ exam.title }}</p>
+    <p><b>?먯닔:</b> {{ exam.score }}??/p>
+    <p><b>?뺣떟:</b> {{ exam.correct_count }} / <b>?ㅻ떟:</b> {{ exam.wrong_count }}</p>
+    <p><b>?곹깭:</b> {{ exam.get_status_display }}</p>
 
     <div class="info-box">
-      <p><b>합격 확률:</b> {{ analysis.pass_probability }}%</p>
-      <p><b>판정:</b> {{ analysis.pass_label }}</p>
-      <p><b>시험 기준:</b> 100점 기준 60점 이상 ({{ analysis.required_correct }}문제 이상 정답)</p>
-      <p><b>합격 현황:</b> {{ analysis.pass_gap_text }}</p>
-      <p><b>합격 전략:</b> {{ analysis.pass_strategy_text }}</p>
+      <p><b>?⑷꺽 ?뺣쪧:</b> {{ analysis.pass_probability }}%</p>
+      <p><b>?먯젙:</b> {{ analysis.pass_label }}</p>
+      <p><b>?쒗뿕 湲곗?:</b> 100??湲곗? 60???댁긽 ({{ analysis.required_correct }}臾몄젣 ?댁긽 ?뺣떟)</p>
+      <p><b>?⑷꺽 ?꾪솴:</b> {{ analysis.pass_gap_text }}</p>
+      <p><b>?⑷꺽 ?꾨왂:</b> {{ analysis.pass_strategy_text }}</p>
     </div>
   </section>
 
-  <section class="card">
-    <h2 class="card-title">약점 분석</h2>
+  <section class="card result-wrong">
+    <h2 class="card-title">?쎌젏 遺꾩꽍</h2>
 
     {% if is_premium %}
       {% if analysis %}
@@ -34,50 +34,50 @@
         </ul>
 
         {% if analysis.weak_skills %}
-          <h3>우선 복습 스킬</h3>
+          <h3>?곗꽑 蹂듭뒿 ?ㅽ궗</h3>
           <ul class="clean-list">
             {% for row in analysis.weak_skills %}
-              <li>{{ row.skill }} - 정답률 {{ row.accuracy }}% ({{ row.total }}문제)</li>
+              <li>{{ row.skill }} - ?뺣떟瑜?{{ row.accuracy }}% ({{ row.total }}臾몄젣)</li>
             {% endfor %}
           </ul>
         {% endif %}
 
         {% if analysis.strong_skills %}
-          <h3>상대적으로 안정적인 스킬</h3>
+          <h3>?곷??곸쑝濡??덉젙?곸씤 ?ㅽ궗</h3>
           <ul class="clean-list">
             {% for row in analysis.strong_skills %}
-              <li>{{ row.skill }} - 정답률 {{ row.accuracy }}% ({{ row.total }}문제)</li>
+              <li>{{ row.skill }} - ?뺣떟瑜?{{ row.accuracy }}% ({{ row.total }}臾몄젣)</li>
             {% endfor %}
           </ul>
         {% endif %}
       {% endif %}
     {% else %}
       <div class="info-box">
-        무료 회원은 점수와 문제별 결과만 확인할 수 있습니다.
-        전체 약점 분석, 우선 복습 스킬, 상세 피드백은 프리미엄에서 제공합니다.
+        臾대즺 ?뚯썝? ?먯닔? 臾몄젣蹂?寃곌낵留??뺤씤?????덉뒿?덈떎.
+        ?꾩껜 ?쎌젏 遺꾩꽍, ?곗꽑 蹂듭뒿 ?ㅽ궗, ?곸꽭 ?쇰뱶諛깆? ?꾨━誘몄뾼?먯꽌 ?쒓났?⑸땲??
       </div>
 
       <p>
         <a href="{% url 'premium_info' %}" class="main-button">
-          프리미엄 기능 보기
+          ?꾨━誘몄뾼 湲곕뒫 蹂닿린
         </a>
       </p>
     {% endif %}
   </section>
 
   <section class="card">
-    <h2 class="card-title">스킬별 결과</h2>
+    <h2 class="card-title">?ㅽ궗蹂?寃곌낵</h2>
     <table class="data-table">
     <tr>
-      <th>스킬</th>
-      <th>전체</th>
-      <th>정답</th>
-      <th>오답</th>
-      <th>정답률</th>
+      <th>?ㅽ궗</th>
+      <th>?꾩껜</th>
+      <th>?뺣떟</th>
+      <th>?ㅻ떟</th>
+      <th>?뺣떟瑜?/th>
     </tr>
     {% for row in skill_rows %}
     <tr>
-      <td>{{ row.mission__skill }}</td>
+      <td>{{ row.skill_label }}</td>
       <td>{{ row.total }}</td>
       <td>{{ row.correct }}</td>
       <td>{{ row.wrong }}</td>
@@ -85,45 +85,48 @@
     </tr>
     {% empty %}
     <tr>
-      <td colspan="5">결과가 없습니다.</td>
+      <td colspan="5">寃곌낵媛 ?놁뒿?덈떎.</td>
     </tr>
     {% endfor %}
     </table>
   </section>
 
   <section class="card">
-  <h2 class="card-title">틀린 문제</h2>
-  <ul class="clean-list">
-    {% for item in wrong_items %}
-      <li>
-        {{ item.order_no }}번 -
-        <a href="{% url 'mission_detail' item.mission.id %}">{{ item.mission.title }}</a>
-        ({{ item.mission.skill }} / Lv {{ item.mission.level }})
-      </li>
-    {% empty %}
-      <li>모든 문제를 맞혔습니다.</li>
-    {% endfor %}
+    <h2 class="card-title">?由?臾몄젣</h2>
+    <ul class="clean-list">
+      {% for item in wrong_items %}
+        <li>
+          {{ item.order_no }}踰?-
+          <a href="{% url 'mission_detail' item.mission.id %}">{{ item.mission.title }}</a>
+          ({{ item.mission.skill_label }} / Lv {{ item.mission.level }})
+        </li>
+      {% empty %}
+        <li>현재 추천 가능한 복습 문제가 없습니다.</li>
+      {% endfor %}
     </ul>
   </section>
 
-  <section class="card">
-    <h2 class="card-title">지금 해야 할 5문제</h2>
+  <section class="card result-wrong">
+    <h2 class="card-title">吏湲??댁빞 ??5臾몄젣</h2>
     <ul class="clean-list">
+      {% if recommend_missions and recommend_missions|length < 5 %}
+        <li>현재 추천 가능한 복습 문제가 {{ recommend_missions|length }}개뿐입니다. 가능한 문제만 먼저 표시합니다.</li>
+      {% endif %}
       {% for m in recommend_missions %}
         <li>
           <a href="{% url 'mission_detail' m.id %}">
-            {{ m.title }} ({{ m.skill }} / Lv {{ m.level }})
+            {{ m.title }} ({{ m.skill_label }} / Lv {{ m.level }})
           </a>
         </li>
       {% empty %}
-        <li>추천 문제가 없습니다.</li>
+        <li>현재 추천 가능한 복습 문제가 없습니다.</li>
       {% endfor %}
     </ul>
 
     {% if recommend_missions %}
       <p>
         <a href="{% url 'exam_recommend_start' exam.id %}" class="main-button">
-          추천 5문제 바로 풀기
+          異붿쿇 5臾몄젣 諛붾줈 ?湲?
         </a>
       </p>
     {% endif %}
@@ -131,9 +134,9 @@
   </section>
 
   <section class="card">
-    <a href="{% url 'exam_start' %}" class="sub-link">시험 다시 보기</a> |
-    <a href="{% url 'exam_history' %}" class="sub-link">시험 히스토리</a> |
-    <a href="{% url 'mission_list' %}" class="sub-link">미션 목록</a> |
-    <a href="{% url 'stats' %}" class="sub-link">통계</a>
+    <a href="{% url 'exam_start' %}" class="sub-link">?쒗뿕 ?ㅼ떆 蹂닿린</a> |
+    <a href="{% url 'exam_history' %}" class="sub-link">?쒗뿕 ?덉뒪?좊━</a> |
+    <a href="{% url 'mission_list' %}" class="sub-link">誘몄뀡 紐⑸줉</a> |
+    <a href="{% url 'stats' %}" class="sub-link">?듦퀎</a>
   </section>
 {% endblock %}

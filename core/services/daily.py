@@ -24,11 +24,15 @@ def get_or_create_daily_recommendations(user, annotated_qs, reset_daily=False):
 
     existing_ids = list(
         DailyMission.objects
-        .filter(user=user, date=today_date)
+        .filter(
+            user=user,
+            date=today_date,
+            mission__is_usable_for_set=True,
+        )
         .values_list("mission_id", flat=True)
     )
 
-    if existing_ids:
+    if len(existing_ids) >= 5:
         recommended_ids = existing_ids
         today_str = str(today_date)
     else:
@@ -60,7 +64,9 @@ def get_or_create_daily_recommendations(user, annotated_qs, reset_daily=False):
     )
 
     recommended = list(
-        annotated_qs.filter(id__in=recommended_ids).order_by(order_case)
+        annotated_qs
+        .filter(id__in=recommended_ids, is_usable_for_set=True)
+        .order_by(order_case)
     )
 
     return recommended, today_str, today_date
@@ -81,11 +87,19 @@ def get_daily_progress(user, today_date):
     """
     오늘 데일리 진행률 반환
     """
-    daily_total = DailyMission.objects.filter(user=user, date=today_date).count()
+    daily_total = DailyMission.objects.filter(
+        user=user,
+        date=today_date,
+        mission__is_usable_for_set=True,
+    ).count()
 
     daily_done = (
         Attempt.objects
-        .filter(user=user, daily_date=today_date)
+        .filter(
+            user=user,
+            daily_date=today_date,
+            mission__is_usable_for_set=True,
+        )
         .values("mission_id")
         .distinct()
         .count()

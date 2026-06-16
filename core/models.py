@@ -19,6 +19,12 @@ class Mission(models.Model):
         ("date", "날짜"),
     ]
 
+    QUALITY_LEVEL_CHOICES = [
+        ("basic", "basic"),
+        ("standard", "standard"),
+        ("practical", "practical"),
+    ]
+
     external_id = models.CharField(
         max_length=100,
         unique=True,
@@ -35,6 +41,19 @@ class Mission(models.Model):
         max_length=20,
         choices=QUESTION_TYPE_CHOICES,
         default="manual",
+    )
+    LEARNING_TYPE_CHOICES = [
+        ("result", "결과 예측형"),
+        ("feature", "기능 선택형"),
+        ("error", "오류 진단형"),
+        ("next_action", "다음 행동형"),
+        ("procedure", "절차 순서형"),
+    ]
+
+    learning_type = models.CharField(
+        max_length=20,
+        choices=LEARNING_TYPE_CHOICES,
+        default="result",
     )
     answer_input_type = models.CharField(
         max_length=20,
@@ -56,6 +75,11 @@ class Mission(models.Model):
     )
 
     is_quality_checked = models.BooleanField(default=False)
+    quality_level = models.CharField(
+        max_length=20,
+        choices=QUALITY_LEVEL_CHOICES,
+        default="basic",
+    )
     is_usable_for_set = models.BooleanField(default=True)
     quality_note = models.TextField(blank=True, default="")
 
@@ -188,6 +212,76 @@ class UserAccess(models.Model):
 
     def __str__(self):
         return f"{self.user} / premium={self.is_premium}"
+
+
+class UserEvent(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    event_type = models.CharField(max_length=50, db_index=True)
+    page = models.CharField(max_length=200, blank=True, default="")
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["event_type", "-created_at"]),
+            models.Index(fields=["user", "-created_at"]),
+        ]
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.event_type} / {self.user_id or 'anonymous'} / {self.created_at:%Y-%m-%d %H:%M}"
+
+
+class Inquiry(models.Model):
+    INQUIRY_TYPE_CHOICES = [
+        ("premium", "프리미엄 신청"),
+        ("bug", "오류 제보"),
+        ("question", "일반 문의"),
+        ("other", "기타 문의"),
+    ]
+
+    STATUS_CHOICES = [
+        ("new", "새 문의"),
+        ("in_progress", "처리 중"),
+        ("done", "완료"),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    name = models.CharField(max_length=100)
+    contact = models.CharField(max_length=200)
+    inquiry_type = models.CharField(
+        max_length=20,
+        choices=INQUIRY_TYPE_CHOICES,
+        default="question",
+    )
+    message = models.TextField()
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="new",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["inquiry_type", "status"]),
+            models.Index(fields=["-created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.get_inquiry_type_display()} / {self.name} / {self.status}"
 
 
 class ProblemSet(models.Model):

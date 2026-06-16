@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.http import require_POST
 from django.db.models import Count, Q
 from django.utils import timezone
 from datetime import timedelta
@@ -11,7 +12,9 @@ from core.services.exams import (
     submit_exam_answer,
     finish_exam_session,
 )
+from core.services.analytics import record_event
 from core.services.exam_analysis import build_exam_analysis
+from core.services.skill_labels import get_skill_label
 from core.services.grading import (
     parse_answer_schema,
     grade_answer,
@@ -52,12 +55,76 @@ def exam_create(request):
         ).count()
 
         if today_exam_count >= 1:
-            return render(request, "core/exam_start.html", {
-                "limit_error": "무료 회원은 실전 모의고사를 하루 1회만 볼 수 있습니다.",
-                "is_premium": access.is_premium,
-            })
+            return render(
+                request,
+                "core/premium_required.html",
+                {
+                    "title": "실전 모의고사 제한",
+                    "message": "무료 회원은 실전 모의고사를 하루 1회만 이용할 수 있습니다.",
+                },
+            )
+
+
+    existing_exam = (
+        ExamSession.objects
+        .filter(
+            user=request.user,
+            status="in_progress",
+        )
+        .order_by("-started_at")
+        .first()
+    )
+
+    if existing_exam:
+        answered_order_numbers = set(
+            existing_exam.items
+            .exclude(user_answer_correct__isnull=True)
+            .values_list("order_no", flat=True)
+        )
+
+        all_items = list(
+            existing_exam.items
+            .order_by("order_no")
+        )
+
+        first_unanswered_item = None
+
+        for item in all_items:
+            if item.order_no not in answered_order_numbers:
+                first_unanswered_item = item
+                break
+
+        if first_unanswered_item:
+            return redirect(
+                "exam_take",
+                exam_id=existing_exam.id,
+                order_no=first_unanswered_item.order_no,
+            )
+
+        finish_exam_session(existing_exam)
+        record_event(
+            request.user,
+            "finish_exam",
+            page="exam_create",
+            metadata={
+                "exam_id": existing_exam.id,
+                "score": existing_exam.score,
+                "total_questions": existing_exam.total_questions,
+            },
+        )
+        return redirect("exam_result", exam_id=existing_exam.id)
 
     exam = create_exam_session(user=request.user)
+    record_event(
+        request.user,
+        "start_exam",
+        page="exam_create",
+        metadata={
+            "exam_id": exam.id,
+            "total_questions": exam.total_questions,
+            "time_limit_min": exam.time_limit_min,
+        },
+    )
     first_item = exam.items.order_by("order_no").first()
 
     if not first_item:
@@ -71,6 +138,23 @@ def exam_take(request, exam_id, order_no):
     exam = get_object_or_404(ExamSession, id=exam_id, user=request.user)
 
     if exam.status != "in_progress":
+        return redirect("exam_result", exam_id=exam.id)
+
+    end_time = exam.started_at + timedelta(minutes=exam.time_limit_min)
+
+    if timezone.now() >= end_time:
+        finish_exam_session(exam)
+        record_event(
+            request.user,
+            "finish_exam",
+            page="exam_take",
+            metadata={
+                "exam_id": exam.id,
+                "score": exam.score,
+                "total_questions": exam.total_questions,
+                "reason": "time_limit",
+            },
+        )
         return redirect("exam_result", exam_id=exam.id)
 
     item = get_object_or_404(
@@ -127,9 +211,19 @@ def exam_take(request, exam_id, order_no):
                 return redirect("exam_take", exam_id=exam.id, order_no=next_order)
             else:
                 finish_exam_session(exam)
+                record_event(
+                    request.user,
+                    "finish_exam",
+                    page="exam_take",
+                    metadata={
+                        "exam_id": exam.id,
+                        "score": exam.score,
+                        "total_questions": exam.total_questions,
+                        "reason": "last_question",
+                    },
+                )
                 return redirect("exam_result", exam_id=exam.id)
 
-    end_time = exam.started_at + timedelta(minutes=exam.time_limit_min)
     remaining_seconds = int((end_time - timezone.now()).total_seconds())
 
     return render(request, "core/exam_take.html", {
@@ -144,13 +238,26 @@ def exam_take(request, exam_id, order_no):
 
 
 @login_required
+@require_POST
 def exam_submit(request, exam_id):
     exam = get_object_or_404(ExamSession, id=exam_id, user=request.user)
 
     if exam.status == "in_progress":
         finish_exam_session(exam)
+        record_event(
+            request.user,
+            "finish_exam",
+            page="exam_submit",
+            metadata={
+                "exam_id": exam.id,
+                "score": exam.score,
+                "total_questions": exam.total_questions,
+                "reason": "manual_submit",
+            },
+        )
 
     return redirect("exam_result", exam_id=exam.id)
+
 
 
 @login_required
@@ -177,8 +284,12 @@ def exam_result(request, exam_id):
         total = row["total"] or 0
         correct = row["correct"] or 0
         row["accuracy"] = round((correct / total) * 100, 1) if total else 0.0
+        row["skill_label"] = get_skill_label(row["mission__skill"])
 
     wrong_items = [item for item in items if item.user_answer_correct is not True]
+    
+    for item in wrong_items:
+        item.mission.skill_label = get_skill_label(item.mission.skill)
 
     analysis = build_exam_analysis(
         exam=exam,
@@ -192,12 +303,17 @@ def exam_result(request, exam_id):
         weak_skill_names = [row["skill"] for row in analysis["weak_skills"]]
 
         recommend_missions = (
-            Mission.objects.filter(skill__in=weak_skill_names)
+            Mission.objects.filter(
+                skill__in=weak_skill_names,
+                is_usable_for_set=True,
+            )
             .exclude(
                 id__in=[item.mission.id for item in items]
             )
             .order_by("?")[:5]
         )
+    for mission in recommend_missions:
+        mission.skill_label = get_skill_label(mission.skill)
 
     return render(request, "core/exam_result.html", {
         "exam": exam,
@@ -246,7 +362,10 @@ def exam_recommend_start(request, exam_id):
         weak_skill_names = [row["skill"] for row in analysis["weak_skills"]]
 
         recommend_missions = list(
-            Mission.objects.filter(skill__in=weak_skill_names)
+            Mission.objects.filter(
+                skill__in=weak_skill_names,
+                is_usable_for_set=True,
+            )
             .exclude(id__in=[item.mission.id for item in items])
             .order_by("?")[:5]
         )

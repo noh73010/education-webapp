@@ -1,0 +1,77 @@
+{% extends 'core/base.html' %}
+
+{% block title %}컴활 2급 실전형 학습 시스템{% endblock %}
+
+{% block content %}
+
+<section class="card landing-hero">
+  <div class="landing-copy">
+    <p class="meta-text">컴활 2급을 문제 풀이에서 복습까지 한 흐름으로</p>
+    <h1 class="section-title">컴활 2급 실전형 학습 시스템</h1>
+    <p class="landing-lead">
+      단순 암기보다 실전형 문제, 오답노트, 반복 오답 패턴 훈련으로 약점을 줄이는 학습 서비스입니다.
+    </p>
+    <div class="landing-actions">
+      {% if user.is_authenticated %}
+        <a href="{% url 'mission_list' %}" class="main-button">학습 홈으로 이동</a>
+      {% else %}
+        <a href="{% url 'signup' %}" class="main-button">무료로 시작하기</a>
+        <a href="{% url 'login' %}" class="sub-button">로그인</a>
+      {% endif %}
+      <a href="{% url 'inquiry' %}" class="sub-button">프리미엄 신청/문의</a>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2 class="card-title">무엇을 도와주나요?</h2>
+  <div class="feature-grid">
+    <div class="info-box"><b>오늘 추천 문제</b><br>지금 풀기 좋은 문제를 매일 추천합니다.</div>
+    <div class="info-box"><b>실전형 문제 풀이</b><br>엑셀 업무 상황 기반 문제로 연습합니다.</div>
+    <div class="info-box"><b>오답노트</b><br>틀린 문제를 다시 확인하고 복습합니다.</div>
+    <div class="info-box"><b>반복 오답 패턴 분석</b><br>자주 틀리는 유형을 찾아냅니다.</div>
+    <div class="info-box"><b>패턴 집중 훈련</b><br>약한 패턴만 모아 다시 훈련합니다.</div>
+    <div class="info-box"><b>실전 모의고사</b><br>시험 흐름에 맞춰 종합적으로 점검합니다.</div>
+    <div class="info-box"><b>학습 통계</b><br>정답률과 약점 변화를 확인합니다.</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2 class="card-title">무료와 프리미엄</h2>
+  <div class="feature-grid two-columns">
+    <div class="info-box">
+      <h3>무료</h3>
+      <ul class="clean-list">
+        <li>오늘 추천 문제와 기본 학습</li>
+        <li>오답노트 최근 5개</li>
+        <li>패턴 집중 훈련 하루 1회</li>
+        <li>실전 모의고사 하루 1회</li>
+      </ul>
+    </div>
+    <div class="info-box">
+      <h3>프리미엄</h3>
+      <ul class="clean-list">
+        <li>오답노트 전체 확인</li>
+        <li>패턴 집중 훈련 제한 완화</li>
+        <li>실전 모의고사 제한 완화</li>
+        <li>시험 결과 상세 약점 분석</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2 class="card-title">바로 시작하기</h2>
+  <div class="landing-actions">
+    {% if user.is_authenticated %}
+      <a href="{% url 'mission_list' %}" class="main-button">학습 홈으로 이동</a>
+    {% else %}
+      <a href="{% url 'signup' %}" class="main-button">무료로 시작하기</a>
+      <a href="{% url 'login' %}" class="sub-button">로그인</a>
+    {% endif %}
+    <a href="{% url 'premium_info' %}" class="sub-button">프리미엄 안내</a>
+    <a href="{% url 'inquiry' %}" class="sub-button">프리미엄 신청/문의</a>
+  </div>
+</section>
+
+{% endblock %}

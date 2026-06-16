@@ -1,4 +1,6 @@
-from django.contrib import admin
+﻿from django.contrib import admin
+from django.utils import timezone
+from datetime import timedelta
 from .models import (
     Mission,
     Attempt,
@@ -11,14 +13,40 @@ from .models import (
     ProblemSetSession,
     ProblemSetSessionItem,
     WrongPattern,
-    AttemptWrongPattern
+    AttemptWrongPattern,
+    ExamSession,
+    ExamSessionMission,
+    Inquiry,
+    PatternTrainingSession,
+    UserEvent,
 )
 
 
 @admin.register(Mission)
 class MissionAdmin(admin.ModelAdmin):
-    list_display = ("id", "title", "skill", "level", "question_type", "is_usable_for_set", "is_quality_checked", "created_at")
-    list_filter = ("skill", "level", "question_type", "answer_input_type", "is_usable_for_set", "is_quality_checked")
+    list_display = (
+        "id",
+        "title",
+        "skill",
+        "level",
+        "question_type",
+        "learning_type",
+        "quality_level",
+        "is_usable_for_set",
+        "is_quality_checked",
+        "created_at",
+    )
+
+    list_filter = (
+        "skill",
+        "level",
+        "question_type",
+        "learning_type",
+        "quality_level",
+        "answer_input_type",
+        "is_usable_for_set",
+        "is_quality_checked",
+    )
     search_fields = ("title", "prompt", "skill", "correct_answer", "explanation")
     ordering = ("-created_at",)
     list_per_page = 50
@@ -63,11 +91,76 @@ class DailyMissionAdmin(admin.ModelAdmin):
 @admin.register(UserAccess)
 class UserAccessAdmin(admin.ModelAdmin):
     list_display = ("id", "user", "is_premium", "premium_started_at", "premium_ended_at")
-    list_filter = ("is_premium",)
+    list_filter = ("is_premium", "premium_started_at", "premium_ended_at")
     search_fields = ("user__username",)
     list_select_related = ("user",)
     list_per_page = 50
+    actions = ("grant_30_days_premium", "revoke_premium")
+
+    @admin.action(description="선택 사용자 30일 프리미엄 부여")
+    def grant_30_days_premium(self, request, queryset):
+        now = timezone.now()
+        updated_count = 0
+
+        for access in queryset:
+            start_base = access.premium_ended_at if (
+                access.is_premium
+                and access.premium_ended_at
+                and access.premium_ended_at > now
+            ) else now
+
+            access.is_premium = True
+            access.premium_started_at = now
+            access.premium_ended_at = start_base + timedelta(days=30)
+            access.save(update_fields=[
+                "is_premium",
+                "premium_started_at",
+                "premium_ended_at",
+            ])
+            updated_count += 1
+
+        self.message_user(request, f"{updated_count}명에게 30일 프리미엄을 부여했습니다.")
+
+    @admin.action(description="선택 사용자 프리미엄 해제")
+    def revoke_premium(self, request, queryset):
+        now = timezone.now()
+        updated_count = queryset.update(
+            is_premium=False,
+            premium_ended_at=now,
+        )
+        self.message_user(request, f"{updated_count}명의 프리미엄을 해제했습니다.")
     
+
+@admin.register(UserEvent)
+class UserEventAdmin(admin.ModelAdmin):
+    list_display = ("id", "event_type", "user", "page", "created_at")
+    list_filter = ("event_type", "created_at")
+    search_fields = ("user__username", "event_type", "page")
+    ordering = ("-created_at",)
+    list_select_related = ("user",)
+    list_per_page = 50
+    date_hierarchy = "created_at"
+    readonly_fields = ("user", "event_type", "page", "metadata", "created_at")
+
+    def changelist_view(self, request, extra_context=None):
+        today = timezone.localdate()
+        today_count = UserEvent.objects.filter(created_at__date=today).count()
+        extra_context = extra_context or {}
+        extra_context["title"] = f"User events - today {today_count}"
+        return super().changelist_view(request, extra_context=extra_context)
+
+
+@admin.register(Inquiry)
+class InquiryAdmin(admin.ModelAdmin):
+    list_display = ("id", "inquiry_type", "status", "name", "contact", "user", "created_at")
+    list_filter = ("inquiry_type", "status", "created_at")
+    search_fields = ("name", "contact", "message", "user__username")
+    readonly_fields = ("created_at", "updated_at")
+    list_select_related = ("user",)
+    ordering = ("-created_at",)
+    list_per_page = 50
+
+
 @admin.register(ProblemSet)
 class ProblemSetAdmin(admin.ModelAdmin):
     list_display = ("id", "title", "skill_group", "level", "set_type", "is_active", "created_at")
@@ -149,3 +242,61 @@ class AttemptWrongPatternAdmin(admin.ModelAdmin):
     list_filter = (
         "wrong_pattern",
     )
+@admin.register(ExamSession)
+class ExamSessionAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "user",
+        "title",
+        "status",
+        "score",
+        "correct_count",
+        "wrong_count",
+        "started_at",
+        "ended_at",
+    )
+    list_filter = ("status", "started_at")
+    search_fields = ("user__username", "title")
+    ordering = ("-started_at",)
+    list_select_related = ("user",)
+    list_per_page = 50
+
+
+@admin.register(ExamSessionMission)
+class ExamSessionMissionAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "exam_session",
+        "order_no",
+        "mission",
+        "user_answer_correct",
+        "submitted_at",
+    )
+    list_filter = ("user_answer_correct",)
+    search_fields = (
+        "exam_session__user__username",
+        "mission__title",
+        "mission__skill",
+    )
+    ordering = ("exam_session", "order_no")
+    list_select_related = ("exam_session", "mission")
+    list_per_page = 100
+
+
+@admin.register(PatternTrainingSession)
+class PatternTrainingSessionAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "user",
+        "wrong_pattern",
+        "score",
+        "correct",
+        "wrong",
+        "total",
+        "created_at",
+    )
+    list_filter = ("wrong_pattern", "created_at")
+    search_fields = ("user__username", "wrong_pattern__name", "wrong_pattern__code")
+    ordering = ("-created_at",)
+    list_select_related = ("user", "wrong_pattern")
+    list_per_page = 50

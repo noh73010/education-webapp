@@ -6,6 +6,8 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q, OuterRef, Subquery
 from django.utils import timezone
+from core.services.skill_labels import get_skill_label
+from core.services.skill_categories import get_skill_category
 
 from core.models import (
     Mission,
@@ -14,52 +16,6 @@ from core.models import (
     AttemptWrongPattern,
     PatternTrainingSession,
 )
-SKILL_LABELS = {
-    "COUNT": "COUNT 함수",
-    "IF": "IF 함수",
-    "VLOOKUP": "VLOOKUP 함수",
-    "scenario": "시나리오 적용",
-    "chart_axis": "차트 축 설정",
-    "chart_border": "차트 테두리",
-    "chart_color": "차트 색상 변경",
-    "chart_format": "차트 서식",
-    "chart_label": "차트 데이터 레이블",
-    "advanced_filter_or": "고급필터 OR조건",
-    "averageif": "AVERAGEIF 함수",
-    "averageif_roundup": "AVERAGEIF + ROUNDUP",
-    "basic_input": "기본 입력",
-    "basic_sum": "SUM 기본 합계",
-    "max": "MAX 함수",
-}
-SKILL_CATEGORY = {
-    "COUNT": "함수",
-    "IF": "함수",
-    "VLOOKUP": "함수",
-    "MAX": "함수",
-    "MIN": "함수",
-    "AVERAGE": "함수",
-    "SUMIF": "함수",
-    "SUMIFS": "함수",
-    "COUNTIFS": "함수",
-    "AVERAGEIF": "함수",
-
-    "chart_axis": "차트",
-    "chart_style": "차트",
-    "chart_type": "차트",
-    "chart_color": "차트",
-    "chart_label": "차트",
-
-    "pivot_basic": "피벗테이블",
-    "pivot_average": "피벗테이블",
-
-    "macro_basic": "매크로",
-    "macro_sum": "매크로",
-
-    "scenario": "시나리오",
-
-    "advanced_filter_or": "고급필터",
-    "advanced_filter_eval": "고급필터",
-}
 
 @login_required
 def stats(request):
@@ -105,14 +61,8 @@ def stats(request):
 
         raw_skill = r["mission__skill"]
 
-        r["skill_label"] = SKILL_LABELS.get(
-            raw_skill,
-            raw_skill,
-        )
-        r["category"] = SKILL_CATEGORY.get(
-            raw_skill,
-            "기타",
-        )
+        r["skill_label"] = get_skill_label(raw_skill)
+        r["category"] = get_skill_category(raw_skill)
 
     
 
@@ -135,6 +85,13 @@ def stats(request):
         .annotate(cnt=Count("id"))
         .order_by("-cnt")[:10]
     )
+    wrong_pattern_rows = list(wrong_pattern_rows)
+
+    for row in wrong_pattern_rows:
+        row["wrong_pattern_skill_label"] = get_skill_label(
+            row["wrong_pattern__skill"]
+        )
+        
     top_wrong_pattern = wrong_pattern_rows[0] if wrong_pattern_rows else None
     pattern_training_rows = (
     PatternTrainingSession.objects
@@ -210,11 +167,69 @@ def stats(request):
         r["solve_rate"] = round((s / a) * 100, 1) if a else 0.0
 
         raw_skill = r["skill"]
+        r["skill_label"] = get_skill_label(raw_skill)
+        r["category"] = get_skill_category(raw_skill)
 
-        r["skill_label"] = SKILL_LABELS.get(
-            raw_skill,
-            raw_skill,
+    learning_type_rows = (
+        missions_with_last
+        .values("skill", "learning_type")
+        .annotate(
+            total=Count("id"),
+            attempted=Count("id", filter=Q(last_time__isnull=False)),
+            solved=Count("id", filter=Q(last_is_correct=True)),
+            open=Count("id", filter=Q(last_is_correct=False)),
         )
+        .filter(total__gte=3)
+        .order_by("skill", "learning_type")
+    )
+
+    learning_type_rows = list(learning_type_rows)
+
+    for row in learning_type_rows:
+        total = row["total"] or 0
+        solved = row["solved"] or 0
+        attempted = row["attempted"] or 0
+
+        row["skill_label"] = get_skill_label(row["skill"])
+        row["solve_rate"] = round((solved / total) * 100, 1) if total else 0.0
+        row["attempt_rate"] = round((attempted / total) * 100, 1) if total else 0.0
+
+        if row["learning_type"] == "feature":
+            row["learning_type_label"] = "기능 선택형"
+        elif row["learning_type"] == "result":
+            row["learning_type_label"] = "결과 예측형"
+        elif row["learning_type"] == "error":
+            row["learning_type_label"] = "오류 진단형"
+        elif row["learning_type"] == "next_action":
+            row["learning_type_label"] = "다음 행동형"
+        elif row["learning_type"] == "procedure":
+            row["learning_type_label"] = "절차 순서형"
+        else:
+            row["learning_type_label"] = row["learning_type"]
+
+    weak_learning_type = None
+
+    weak_candidates = [
+        row for row in learning_type_rows
+        if row["attempted"] >= 1
+    ]
+
+    if weak_candidates:
+        weak_learning_type = sorted(
+            weak_candidates,
+            key=lambda row: (
+                row["solve_rate"],
+                -row["attempted"],
+                row["skill_label"],
+            )
+        )[0]
+
+        weak_learning_type["recommend_message"] = (
+            f"{weak_learning_type['skill_label']}의 "
+            f"{weak_learning_type['learning_type_label']} 단계가 약합니다. "
+            "이 유형부터 다시 풀어보세요."
+        )
+            
 
     return render(request, "core/stats.html", {
         "period": period,
@@ -228,4 +243,6 @@ def stats(request):
         "recent_attempts": recent_attempts,
         "current_summary": current_summary,
         "skill_current_rows": skill_current_rows,
+        "learning_type_rows": learning_type_rows,
+        "weak_learning_type": weak_learning_type,
     })

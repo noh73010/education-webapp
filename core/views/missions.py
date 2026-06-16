@@ -2,6 +2,7 @@ from datetime import date
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.db.models import Count, Q, OuterRef, Subquery
 from django.core.paginator import Paginator
 
@@ -23,6 +24,8 @@ from core.services.problem_sets import (
     finish_problem_set_session,
 )
 from core.services.problem_set_recommendations import get_problem_set_recommendations
+from core.services.skill_labels import get_skill_label
+from core.services.analytics import record_event
 
 
 def get_today_action(user):
@@ -56,6 +59,287 @@ def get_today_action(user):
         return "start", ps
 
     return "review", None
+
+
+def get_weak_learning_type(user):
+    latest_attempt_qs = (
+        Attempt.objects
+        .filter(user=user, mission=OuterRef("pk"))
+        .order_by("-created_at")
+    )
+
+    rows = (
+        Mission.objects
+        .filter(is_usable_for_set=True)
+        .annotate(
+            last_time=Subquery(latest_attempt_qs.values("created_at")[:1]),
+            last_is_correct=Subquery(latest_attempt_qs.values("is_correct")[:1]),
+        )
+        .values("skill", "learning_type")
+        .annotate(
+            total=Count("id"),
+            attempted=Count("id", filter=Q(last_time__isnull=False)),
+            solved=Count("id", filter=Q(last_is_correct=True)),
+            open=Count("id", filter=Q(last_is_correct=False)),
+        )
+        .filter(total__gte=3)
+        .order_by("skill", "learning_type")
+    )
+
+    rows = list(rows)
+
+    for row in rows:
+        total = row["total"] or 0
+        solved = row["solved"] or 0
+
+        row["skill_label"] = get_skill_label(row["skill"])
+        row["solve_rate"] = round((solved / total) * 100, 1) if total else 0.0
+
+        if row["learning_type"] == "feature":
+            row["learning_type_label"] = "기능 선택형"
+        elif row["learning_type"] == "result":
+            row["learning_type_label"] = "결과 예측형"
+        elif row["learning_type"] == "error":
+            row["learning_type_label"] = "오류 진단형"
+        elif row["learning_type"] == "next_action":
+            row["learning_type_label"] = "다음 행동형"
+        elif row["learning_type"] == "procedure":
+            row["learning_type_label"] = "절차 순서형"
+        else:
+            row["learning_type_label"] = row["learning_type"]
+
+    if not rows:
+        return None
+
+    return sorted(
+        rows,
+        key=lambda row: (
+            row["solve_rate"],
+            -row["attempted"],
+            row["skill_label"],
+        )
+    )[0]
+
+def get_learning_roadmap(user):
+    latest_attempt_qs = (
+        Attempt.objects
+        .filter(user=user, mission=OuterRef("pk"))
+        .order_by("-created_at")
+    )
+
+    rows = (
+        Mission.objects
+        .filter(is_usable_for_set=True)
+        .annotate(
+            last_time=Subquery(latest_attempt_qs.values("created_at")[:1]),
+            last_is_correct=Subquery(latest_attempt_qs.values("is_correct")[:1]),
+        )
+        .values("skill", "learning_type")
+        .annotate(
+            total=Count("id"),
+            attempted=Count("id", filter=Q(last_time__isnull=False)),
+            solved=Count("id", filter=Q(last_is_correct=True)),
+            open=Count("id", filter=Q(last_is_correct=False)),
+        )
+        .filter(total__gte=3)
+        .order_by("skill", "learning_type")
+    )
+
+    grouped = {}
+
+    for row in rows:
+        skill = row["skill"]
+        learning_type = row["learning_type"]
+        total = row["total"] or 0
+        attempted = row["attempted"] or 0
+        solved = row["solved"] or 0
+        solve_rate = round((solved / total) * 100, 1) if total else 0.0
+        attempt_accuracy = round((solved / attempted) * 100, 1) if attempted else 0.0
+
+        if skill not in grouped:
+            grouped[skill] = {
+                "skill": skill,
+                "skill_label": get_skill_label(skill),
+                "steps": [],
+            }
+
+        if learning_type == "feature":
+            label = "기능 선택형"
+            order = 1
+        elif learning_type == "result":
+            label = "결과 예측형"
+            order = 2
+        elif learning_type == "error":
+            label = "오류 진단형"
+            order = 3
+        else:
+            label = learning_type
+            order = 99
+
+        if attempted == 0:
+            status = "미시작"
+        elif attempt_accuracy >= 80 and attempted >= 5:
+            status = "완료"
+        elif attempt_accuracy >= 50:
+            status = "학습중"
+        else:
+            status = "복습필요"
+
+        grouped[skill]["steps"].append({
+            "learning_type": learning_type,
+            "label": label,
+            "order": order,
+            "total": total,
+            "attempted": attempted,
+            "solved": solved,
+            "solve_rate": solve_rate,
+            "attempt_accuracy": attempt_accuracy,
+            "status": status,
+        })
+
+    roadmap = list(grouped.values())
+
+    for item in roadmap:
+        item["steps"] = sorted(item["steps"], key=lambda step: step["order"])
+
+        previous_completed = True
+
+        for step in item["steps"]:
+            step["is_locked"] = not previous_completed
+
+            if step["attempt_accuracy"] >= 80 and step["attempted"] >= 5:
+                step["is_completed"] = True
+            else:
+                step["is_completed"] = False
+
+            previous_completed = step["is_completed"]
+
+        completed_count = sum(1 for step in item["steps"] if step["is_completed"])
+        locked_count = sum(1 for step in item["steps"] if step["is_locked"])
+        review_count = sum(
+            1
+            for step in item["steps"]
+            if (not step["is_locked"]) and step["status"] == "복습필요"
+        )
+
+        if completed_count == len(item["steps"]):
+            item["roadmap_class"] = "roadmap-card-complete"
+            item["roadmap_status_label"] = "스킬 완료"
+        elif review_count > 0:
+            item["roadmap_class"] = "roadmap-card-review"
+            item["roadmap_status_label"] = "복습 필요"
+        elif locked_count > 0:
+            item["roadmap_class"] = "roadmap-card-locked"
+            item["roadmap_status_label"] = "단계 잠금 있음"
+        else:
+            item["roadmap_class"] = "roadmap-card-progress"
+            item["roadmap_status_label"] = "학습 진행중"
+
+    return roadmap[:5]
+
+def get_next_learning_step(learning_roadmap):
+    for item in learning_roadmap:
+        for step in item["steps"]:
+            if not step.get("is_locked") and not step.get("is_completed"):
+                return {
+                    "skill": item["skill"],
+                    "skill_label": item["skill_label"],
+                    "learning_type": step["learning_type"],
+                    "learning_type_label": step["label"],
+                    "status": step["status"],
+                    "solve_rate": step["solve_rate"],
+                }
+
+    return None
+
+@login_required
+def learning_type_training_start(request, skill, learning_type):
+    request.session.pop("learning_type_training_skill", None)
+    request.session.pop("learning_type_training_learning_type", None)
+    request.session.pop("learning_type_training_mission_ids", None)
+    request.session.pop("learning_type_training_index", None)
+    request.session.pop("learning_type_training_results", None)
+
+    latest_attempt_qs = (
+        Attempt.objects
+        .filter(user=request.user, mission=OuterRef("pk"))
+        .order_by("-created_at")
+    )
+
+    candidate_missions = list(
+        Mission.objects
+        .filter(
+            skill=skill,
+            learning_type=learning_type,
+            is_usable_for_set=True,
+        )
+        .annotate(
+            last_time=Subquery(latest_attempt_qs.values("created_at")[:1]),
+            last_is_correct=Subquery(latest_attempt_qs.values("is_correct")[:1]),
+        )
+        .order_by(
+            "last_is_correct",
+            "last_time",
+            "level",
+            "id",
+        )[:50]
+    )
+
+    missions = [mission.id for mission in candidate_missions[:5]]
+
+    if not missions:
+        messages.warning(
+            request,
+            "이 학습 단계에는 현재 훈련 가능한 문제가 없습니다. 관리자에게 문의하거나 문제를 추가하세요.",
+        )
+        return redirect("mission_list")
+
+    request.session["learning_type_training_skill"] = skill
+    request.session["learning_type_training_learning_type"] = learning_type
+    request.session["learning_type_training_mission_ids"] = missions
+    request.session["learning_type_training_index"] = 0
+    request.session["learning_type_training_results"] = []
+    request.session.modified = True
+
+    return redirect("mission_detail", mission_id=missions[0])
+
+@login_required
+def learning_type_training_result(request, skill, learning_type):
+    results = request.session.get("learning_type_training_results", [])
+
+    total = len(results)
+    correct = sum(1 for row in results if row.get("is_correct") is True)
+    wrong = total - correct
+    score = round((correct / total) * 100) if total else 0
+
+    if learning_type == "feature":
+        learning_type_label = "기능 선택형"
+    elif learning_type == "result":
+        learning_type_label = "결과 예측형"
+    elif learning_type == "error":
+        learning_type_label = "오류 진단형"
+    elif learning_type == "next_action":
+        learning_type_label = "다음 행동형"
+    elif learning_type == "procedure":
+        learning_type_label = "절차 순서형"
+    else:
+        learning_type_label = learning_type
+
+    request.session.pop("learning_type_training_skill", None)
+    request.session.pop("learning_type_training_learning_type", None)
+    request.session.pop("learning_type_training_results", None)
+
+    return render(request, "core/learning_type_training_result.html", {
+        "skill": skill,
+        "skill_label": get_skill_label(skill),
+        "learning_type": learning_type,
+        "learning_type_label": learning_type_label,
+        "results": results,
+        "total": total,
+        "correct": correct,
+        "wrong": wrong,
+        "score": score,
+    })
 
 @login_required
 def mission_list(request):
@@ -100,6 +384,8 @@ def mission_list(request):
     else:
         qs = qs.order_by("-created_at")
 
+    recommendation_qs = qs.filter(is_usable_for_set=True)
+
     paginator = Paginator(qs, 10)
     page_number = request.GET.get("page", "1")
     page_obj = paginator.get_page(page_number)
@@ -122,7 +408,7 @@ def mission_list(request):
 
     recommended, today_str, today_date = get_or_create_daily_recommendations(
         user=request.user,
-        annotated_qs=qs,
+        annotated_qs=recommendation_qs,
         reset_daily=reset_daily,
     )
 
@@ -163,20 +449,8 @@ def mission_list(request):
         primary_set_for_auto = recommendation_data["today_sets"][0]
         return redirect("problem_set_start", set_id=primary_set_for_auto.id)
 
-    skill_name_map = {
-        "chart_axis": "차트 축 설정",
-        "advanced_filter_or": "고급 필터 조건",
-        "averageif": "조건 평균 계산",
-        "averageif_roundup": "조건 평균 + 반올림",
-        "basic_sum": "기본 합계",
-        "max": "최대값 계산",
-        "scenario": "시나리오 적용",
-        "if": "조건 판단",
-        "mixed": "실전 감각",
-    }
-
     weak_skill_labels = [
-        skill_name_map.get(skill, skill)
+        get_skill_label(skill)
         for skill in recommendation_data["weak_skills"]
     ]
 
@@ -191,13 +465,35 @@ def mission_list(request):
         .filter(user=request.user, status="completed")
         .order_by("-started_at")[:3]
     )
-
     today_action, today_action_obj = get_today_action(request.user)
-    today_guide_message = "오늘은 기본 학습 세트부터 시작하세요."
-    today_guide_url_name = "problem_set_list"
-    today_guide_text = "오늘 학습 시작"
+    weak_learning_type = get_weak_learning_type(request.user)
+    learning_roadmap = get_learning_roadmap(request.user)
+    next_learning_step = get_next_learning_step(learning_roadmap)
 
-    if recommendation_data["weak_patterns"]:
+    if next_learning_step:
+        today_guide_message = (
+            f"{next_learning_step['skill_label']} "
+            f"{next_learning_step['learning_type_label']} 단계가 "
+            f"{next_learning_step['status']} 상태입니다. "
+            "이 단계부터 먼저 학습하세요."
+        )
+        today_guide_url_name = "learning_type_training_start"
+        today_guide_skill = next_learning_step["skill"]
+        today_guide_learning_type = next_learning_step["learning_type"]
+        today_guide_text = (
+            f"{next_learning_step['skill_label']} "
+            f"{next_learning_step['learning_type_label']} 훈련 시작"
+        )
+    else:
+        today_guide_message = "오늘은 기본 학습 세트부터 시작하세요."
+        today_guide_url_name = "problem_set_list"
+        today_guide_skill = ""
+        today_guide_learning_type = ""
+        today_guide_text = "오늘 학습 시작"
+
+    today_guide_pattern_code = ""
+
+    if not next_learning_step and recommendation_data["weak_patterns"]:
         top_pattern = recommendation_data["weak_patterns"][0]
 
         today_guide_message = (
@@ -207,8 +503,6 @@ def mission_list(request):
         today_guide_url_name = "pattern_training_start"
         today_guide_pattern_code = top_pattern["wrong_pattern__code"]
         today_guide_text = "약점 집중 훈련 시작"
-    else:
-        today_guide_pattern_code = ""
 
     return render(request, "core/mission_list.html", {
         "missions": page_obj,
@@ -237,7 +531,11 @@ def mission_list(request):
         "today_guide_message": today_guide_message,
         "today_guide_url_name": today_guide_url_name,
         "today_guide_pattern_code": today_guide_pattern_code,
+        "today_guide_skill": today_guide_skill,
+        "today_guide_learning_type": today_guide_learning_type,
         "today_guide_text": today_guide_text,
+        "weak_learning_type": weak_learning_type,
+        "learning_roadmap": learning_roadmap,
     })
 
 
@@ -253,6 +551,19 @@ def mission_detail(request, mission_id):
     next_daily_mission = None
     schema_items = parse_answer_schema(mission.answer_schema)
     choice_items = parse_choice_schema(mission.answer_schema)
+    mission_event_metadata = {
+        "mission_id": mission.id,
+        "skill": mission.skill,
+        "question_type": mission.question_type,
+    }
+
+    if request.method == "GET":
+        record_event(
+            request.user,
+            "start_mission",
+            page="mission_detail",
+            metadata=mission_event_metadata,
+        )
 
     def handle_problem_set_progress(is_correct: bool):
         problem_set_ids = request.session.get("problem_set_mission_ids", [])
@@ -299,6 +610,17 @@ def mission_detail(request, mission_id):
 
         if problem_set_session:
             finish_problem_set_session(problem_set_session)
+            record_event(
+                request.user,
+                "finish_problem_set",
+                page="problem_set",
+                metadata={
+                    "problem_set_id": problem_set_session.problem_set_id,
+                    "session_id": problem_set_session.id,
+                    "score": problem_set_session.score,
+                    "total_count": problem_set_session.total_count,
+                },
+            )
 
         request.session.pop("problem_set_mission_ids", None)
         request.session.pop("problem_set_current_index", None)
@@ -367,10 +689,53 @@ def mission_detail(request, mission_id):
 
         for next_mission_id in daily_mission_ids:
             if next_mission_id != mission.id and next_mission_id not in done_ids:
-                return Mission.objects.filter(id=next_mission_id).first()
+                return Mission.objects.filter(
+                    id=next_mission_id,
+                    is_usable_for_set=True,
+                ).first()
 
         return None
 
+    def handle_learning_type_training_progress(is_correct: bool):
+        mission_ids = request.session.get("learning_type_training_mission_ids", [])
+        index = request.session.get("learning_type_training_index", 0)
+        skill = request.session.get("learning_type_training_skill")
+        learning_type = request.session.get("learning_type_training_learning_type")
+
+        if not mission_ids:
+            return None
+
+        if mission.id not in mission_ids:
+            return None
+
+        results = request.session.get("learning_type_training_results", [])
+        results = list(results)
+
+        results.append({
+            "mission_id": mission.id,
+            "mission_title": mission.title,
+            "is_correct": is_correct,
+        })
+
+        request.session["learning_type_training_results"] = results
+
+        next_index = index + 1
+        request.session["learning_type_training_index"] = next_index
+        request.session.modified = True
+
+        if next_index >= len(mission_ids):
+            request.session.pop("learning_type_training_mission_ids", None)
+            request.session.pop("learning_type_training_index", None)
+
+            return redirect(
+                "learning_type_training_result",
+                skill=skill,
+                learning_type=learning_type,
+            )
+
+        next_mission_id = mission_ids[next_index]
+        return redirect("mission_detail", mission_id=next_mission_id)
+    
     def handle_pattern_training_progress(is_correct: bool):
         pattern_code = request.session.get("pattern_training_pattern_code")
         mission_ids = request.session.get("pattern_training_mission_ids", [])
@@ -423,6 +788,10 @@ def mission_detail(request, mission_id):
         - 틀린 문제 다시 풀기: 틀려도 다음 문제로 이동
         단, 결과 페이지에서 다시 틀린 문제를 확인하게 한다.
         """
+        learning_type_training_redirect = handle_learning_type_training_progress(is_correct=is_correct)
+        if learning_type_training_redirect:
+            return learning_type_training_redirect
+
         pattern_training_redirect = handle_pattern_training_progress(is_correct=is_correct)
         if pattern_training_redirect:
             return pattern_training_redirect
@@ -466,6 +835,15 @@ def mission_detail(request, mission_id):
                         attempt.save(update_fields=["submitted_answer"])
 
                         saved = True
+                        record_event(
+                            request.user,
+                            "finish_mission",
+                            page="mission_detail",
+                            metadata={
+                                **mission_event_metadata,
+                                "is_correct": saved_is_correct,
+                            },
+                        )
 
                         after_save_redirect = handle_after_save_redirect(
                             is_correct=saved_is_correct
@@ -501,6 +879,15 @@ def mission_detail(request, mission_id):
                         attempt.save(update_fields=["submitted_answer"])
 
                         saved = True
+                        record_event(
+                            request.user,
+                            "finish_mission",
+                            page="mission_detail",
+                            metadata={
+                                **mission_event_metadata,
+                                "is_correct": saved_is_correct,
+                            },
+                        )
 
                         after_save_redirect = handle_after_save_redirect(
                             is_correct=saved_is_correct
@@ -543,6 +930,15 @@ def mission_detail(request, mission_id):
                         )
 
                         saved = True
+                        record_event(
+                            request.user,
+                            "finish_mission",
+                            page="mission_detail",
+                            metadata={
+                                **mission_event_metadata,
+                                "is_correct": saved_is_correct,
+                            },
+                        )
 
                         after_save_redirect = handle_after_save_redirect(
                             is_correct=saved_is_correct

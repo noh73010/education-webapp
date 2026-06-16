@@ -1,0 +1,28 @@
+{% extends 'core/base.html' %}
+
+{% block title %}
+프리미엄 안내
+{% endblock %}
+
+{% block content %}
+
+<section class="card result-wrong">
+  <h1 class="section-title">{{ title }}</h1>
+
+  <div class="info-box">
+    <p>{{ message }}</p>
+    <p>계속 이용하려면 프리미엄 활성화가 필요합니다.</p>
+  </div>
+
+  <p class="mt-medium">
+    <a href="{% url 'premium_info' %}" class="main-button">
+      프리미엄 안내 보기
+    </a>
+  </p>
+</section>
+
+<section class="card">
+  <a href="{% url 'mission_list' %}" class="sub-link">학습 홈으로 돌아가기</a>
+</section>
+
+{% endblock %}

@@ -3,7 +3,6 @@ from django.utils import timezone
 
 from core.models import ProblemSet, ProblemSetSession, ProblemSetSessionItem
 
-
 @transaction.atomic
 def create_problem_set_session(*, user, problem_set: ProblemSet) -> ProblemSetSession:
     items = list(

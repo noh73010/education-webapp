@@ -1,0 +1,15 @@
+{% extends "core/base.html" %}
+
+{% block title %}
+서버 오류
+{% endblock %}
+
+{% block content %}
+<section class="card">
+  <h1 class="section-title">일시적인 오류가 발생했습니다</h1>
+  <p>잠시 후 다시 시도해 주세요. 문제가 계속되면 관리자에게 문의하세요.</p>
+  <p>
+    <a href="{% url 'mission_list' %}" class="main-button">학습 홈으로 돌아가기</a>
+  </p>
+</section>
+{% endblock %}

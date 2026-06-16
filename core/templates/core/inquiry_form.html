@@ -1,0 +1,44 @@
+{% extends 'core/base.html' %}
+
+{% block title %}프리미엄 신청/문의{% endblock %}
+
+{% block content %}
+
+<section class="card">
+  <h1 class="section-title">프리미엄 신청/문의</h1>
+  <p>
+    현재는 신청 후 운영자가 확인하여 프리미엄을 수동 활성화합니다.
+    오류 제보나 일반 문의도 이곳에 남길 수 있습니다.
+  </p>
+  <div class="info-box">
+    연락처는 답변을 받을 수 있는 이메일, 전화번호, 카카오톡 ID 등 필요한 정보만 입력해 주세요.
+  </div>
+</section>
+
+<section class="card">
+  <form method="post">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="info-box text-danger">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    {% for field in form %}
+      <div class="form-field">
+        <label for="{{ field.id_for_label }}"><b>{{ field.label }}</b></label>
+        {{ field }}
+        {% if field.help_text %}
+          <div class="meta-text">{{ field.help_text }}</div>
+        {% endif %}
+        {% for error in field.errors %}
+          <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+
+    <button type="submit">문의 보내기</button>
+    <a href="{% url 'premium_info' %}" class="sub-button">프리미엄 안내 보기</a>
+  </form>
+</section>
+
+{% endblock %}

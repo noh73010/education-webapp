@@ -1,33 +1,42 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>시험 히스토리</title>
-</head>
-<body>
-  <h1>시험 히스토리</h1>
+{% extends 'core/base.html' %}
 
-  <p><b>최근 5회 평균 점수:</b> {{ avg_score }}점</p>
-  <p><b>최근 5회 합격률:</b> {{ pass_rate }}% ({{ passed_count }} / {{ total_count }})</p>
-  <p><b>최근 5회 점수 흐름:</b>
-    {% for score in recent_scores %}
-      {{ score }}{% if not forloop.last %} / {% endif %}
-    {% empty %}
-      기록 없음
-    {% endfor %}
-  </p>
-  <p><b>추이:</b> {{ trend_label }}</p>
-  <p><b>최고 점수:</b> {{ best_score }}점</p>
-  <p><b>직전 대비:</b>
-    {% if score_change > 0 %}
-      +{{ score_change }}점
-    {% else %}
-      {{ score_change }}점
-    {% endif %}
-  </p>
+{% block title %}
+시험 히스토리
+{% endblock %}
 
-  <hr>
+{% block content %}
 
-  <table border="1" cellpadding="6">
+<section class="card">
+  <h1 class="section-title">시험 히스토리</h1>
+
+  <div class="info-box">
+    <p><b>최근 5회 평균 점수:</b> {{ avg_score }}점</p>
+    <p><b>최근 5회 합격률:</b> {{ pass_rate }}% ({{ passed_count }} / {{ total_count }})</p>
+    <p>
+      <b>최근 5회 점수 흐름:</b>
+      {% for score in recent_scores %}
+        {{ score }}{% if not forloop.last %} / {% endif %}
+      {% empty %}
+        기록 없음
+      {% endfor %}
+    </p>
+    <p><b>추이:</b> {{ trend_label }}</p>
+    <p><b>최고 점수:</b> {{ best_score }}점</p>
+    <p>
+      <b>직전 대비:</b>
+      {% if score_change > 0 %}
+        +{{ score_change }}점
+      {% else %}
+        {{ score_change }}점
+      {% endif %}
+    </p>
+  </div>
+</section>
+
+<section class="card">
+  <h2 class="card-title">시험 기록</h2>
+
+  <table class="data-table">
     <tr>
       <th>응시일시</th>
       <th>시험명</th>
@@ -37,35 +46,39 @@
       <th>판정</th>
       <th>상세</th>
     </tr>
+
     {% for exam in exams %}
-    <tr>
-      <td>{{ exam.started_at|date:"Y-m-d H:i" }}</td>
-      <td>{{ exam.title }}</td>
-      <td>{{ exam.score }}점</td>
-      <td>{{ exam.correct_count }}</td>
-      <td>{{ exam.wrong_count }}</td>
-      <td>
-        {% if exam.score >= 60 %}
-          합격권
-        {% else %}
-          미달
-        {% endif %}
-      </td>
-      <td>
-        <a href="{% url 'exam_result' exam.id %}">결과 보기</a>
-      </td>
-    </tr>
+      <tr>
+        <td>{{ exam.started_at|date:"Y-m-d H:i" }}</td>
+        <td>{{ exam.title }}</td>
+        <td>{{ exam.score }}점</td>
+        <td>{{ exam.correct_count }}</td>
+        <td>{{ exam.wrong_count }}</td>
+        <td>
+          {% if exam.score >= 60 %}
+            <span class="text-success">합격권</span>
+          {% else %}
+            <span class="text-danger">미달</span>
+          {% endif %}
+        </td>
+        <td>
+          <a href="{% url 'exam_result' exam.id %}" class="sub-link">
+            결과 보기
+          </a>
+        </td>
+      </tr>
     {% empty %}
-    <tr>
-      <td colspan="7">아직 시험 기록이 없습니다.</td>
-    </tr>
+      <tr>
+        <td colspan="7">아직 시험 기록이 없습니다.</td>
+      </tr>
     {% endfor %}
   </table>
+</section>
 
-  <hr>
+<section class="card">
+  <a href="{% url 'exam_start' %}" class="sub-link">실전 모의고사</a> |
+  <a href="{% url 'mission_list' %}" class="sub-link">학습 홈</a> |
+  <a href="{% url 'stats' %}" class="sub-link">통계</a>
+</section>
 
-  <a href="{% url 'exam_start' %}">실전 모의고사</a> |
-  <a href="{% url 'mission_list' %}">미션 목록</a> |
-  <a href="{% url 'stats' %}">통계</a>
-</body>
-</html>
+{% endblock %}

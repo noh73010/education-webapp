@@ -1,0 +1,24 @@
+{% extends 'core/base.html' %}
+
+{% block title %}문의 접수 완료{% endblock %}
+
+{% block content %}
+
+<section class="card">
+  <h1 class="section-title">문의가 접수되었습니다</h1>
+  <p>남겨주신 내용을 운영자가 확인한 뒤 입력하신 연락처로 안내드릴 예정입니다.</p>
+  <div class="info-box">
+    프리미엄 신청은 운영자 확인 후 수동으로 활성화됩니다.
+  </div>
+  <p>
+    <a href="{% url 'landing' %}" class="sub-button">서비스 소개</a>
+    <a href="{% url 'premium_info' %}" class="sub-button">프리미엄 안내</a>
+    {% if user.is_authenticated %}
+      <a href="{% url 'mission_list' %}" class="main-button">학습 홈으로 이동</a>
+    {% else %}
+      <a href="{% url 'login' %}" class="main-button">로그인</a>
+    {% endif %}
+  </p>
+</section>
+
+{% endblock %}

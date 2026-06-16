@@ -1,9 +1,13 @@
 from django.contrib import admin
 from django.urls import path
-from django.shortcuts import redirect
 from django.contrib.auth import views as auth_views
 
 from core.views import (
+    AnalyticsLoginView,
+    admin_dashboard,
+    inquiry,
+    inquiry_done,
+    landing,
     mission_list,
     mission_detail,
     stats,
@@ -26,16 +30,24 @@ from core.views import (
     problem_set_result,
     problem_set_wrong_retry,
     problem_set_wrong_retry_result,
+    signup,
+)
+from core.views.missions import (
+    learning_type_training_start,
+    learning_type_training_result,
 )
 
 urlpatterns = [
-    path("", lambda request: redirect("mission_list")),
+    path("", landing, name="landing"),
+    path("inquiry/", inquiry, name="inquiry"),
+    path("inquiry/done/", inquiry_done, name="inquiry_done"),
 
     path("admin/", admin.site.urls),
+    path("admin-dashboard/", admin_dashboard, name="admin_dashboard"),
 
     path(
         "login/",
-        auth_views.LoginView.as_view(
+        AnalyticsLoginView.as_view(
             template_name="registration/login.html"
         ),
         name="login",
@@ -47,8 +59,22 @@ urlpatterns = [
         name="logout",
     ),
 
+    path("signup/", signup, name="signup"),
+
     # missions
     path("missions/", mission_list, name="mission_list"),
+    
+    path(
+        "missions/learning-type/<str:skill>/<str:learning_type>/start/",
+        learning_type_training_start,
+        name="learning_type_training_start",
+    ),
+    
+    path(
+        "missions/learning-type/<str:skill>/<str:learning_type>/result/",
+        learning_type_training_result,
+        name="learning_type_training_result",
+    ),
 
     path(
         "missions/<int:mission_id>/",

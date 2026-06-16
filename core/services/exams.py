@@ -6,7 +6,6 @@ from django.utils import timezone
 from core.models import Mission, ExamSession, ExamSessionMission, Attempt
 from core.services.streaks import update_user_streak
 
-
 @transaction.atomic
 def create_exam_session(user, title="실전 모의고사 1회", time_limit_min=40, total_questions=40):
     """

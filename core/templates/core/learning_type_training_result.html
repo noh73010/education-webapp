@@ -1,0 +1,60 @@
+{% extends 'core/base.html' %}
+
+{% block title %}
+학습 단계 훈련 결과
+{% endblock %}
+
+{% block content %}
+
+<section class="card">
+  <h1 class="section-title">학습 단계 훈련 결과</h1>
+
+  <p>
+    <b>{{ skill_label }}</b> /
+    <b>{{ learning_type_label }}</b>
+  </p>
+
+  <div class="info-box">
+    총 {{ total }}문제 /
+    정답 {{ correct }}개 /
+    오답 {{ wrong }}개 /
+    점수 {{ score }}점
+  </div>
+</section>
+
+<section class="card">
+  <h2 class="card-title">문제별 결과</h2>
+
+  <ul class="clean-list">
+    {% for row in results %}
+      <li>
+        {{ row.mission_title }}
+        -
+        {% if row.is_correct %}
+          <span class="text-success">정답</span>
+        {% else %}
+          <span class="text-danger">오답</span>
+        {% endif %}
+      </li>
+    {% empty %}
+      <li>결과가 없습니다.</li>
+    {% endfor %}
+  </ul>
+</section>
+
+<section class="card">
+  <p>
+    <a href="{% url 'learning_type_training_start' skill learning_type %}"
+       class="main-button">
+      다시 훈련하기
+    </a>
+  </p>
+
+  <p>
+    <a href="{% url 'mission_list' %}" class="sub-link">
+      학습 홈으로 돌아가기
+    </a>
+  </p>
+</section>
+
+{% endblock %}

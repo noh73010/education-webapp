@@ -1,28 +1,39 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>시험 시작</title>
-</head>
-<body>
-  <h1>실전 모의고사</h1>
+{% extends 'core/base.html' %}
 
-  <p>총 40문제 / 제한시간 40분</p>
-  <p>문제를 순서대로 풀고 마지막에 결과를 확인합니다.</p>
+{% block title %}
+실전 모의고사
+{% endblock %}
+
+{% block content %}
+
+<section class="card">
+  <h1 class="section-title">실전 모의고사</h1>
+
+  <div class="info-box">
+    <p><b>문제 수:</b> 총 40문제</p>
+    <p><b>제한 시간:</b> 40분</p>
+    <p>문제를 순서대로 풀고 마지막에 결과를 확인합니다.</p>
+  </div>
 
   {% if limit_error %}
-    <p style="padding:10px; border:1px solid #f99; background:#fee; color:#900;">
+    <div class="info-box result-wrong">
       {{ limit_error }}
-    </p>
+    </div>
   {% endif %}
+</section>
+
+<section class="card">
+  <h2 class="card-title">회원 상태</h2>
 
   {% if is_premium %}
-    <p style="padding:8px; border:1px solid #ddd;">
-      현재 회원 상태: 프리미엄
-    </p>
+    <div class="info-box">
+      현재 회원 상태: <b>프리미엄</b>
+    </div>
   {% else %}
-    <p style="padding:8px; border:1px solid #ddd;">
-      현재 회원 상태: 무료 / 실전 모의고사 하루 1회
-    </p>
+    <div class="info-box">
+      현재 회원 상태: <b>무료</b><br>
+      실전 모의고사는 하루 1회 이용할 수 있습니다.
+    </div>
   {% endif %}
 
   <form method="post" action="{% url 'exam_create' %}">
@@ -31,13 +42,17 @@
   </form>
 
   {% if not is_premium %}
-    <p style="margin-top:12px;">
-      <a href="{% url 'premium_info' %}">프리미엄 보기</a>
+    <p class="mt-medium">
+      <a href="{% url 'premium_info' %}" class="main-button">
+        프리미엄 기능 보기
+      </a>
     </p>
   {% endif %}
+</section>
 
-  <hr>
-  <a href="{% url 'exam_history' %}">시험 히스토리</a> |
-  <a href="{% url 'mission_list' %}">미션 목록으로 돌아가기</a>
-</body>
-</html>
+<section class="card">
+  <a href="{% url 'exam_history' %}" class="sub-link">시험 히스토리</a> |
+  <a href="{% url 'mission_list' %}" class="sub-link">학습 홈으로 돌아가기</a>
+</section>
+
+{% endblock %}

@@ -1,9 +1,13 @@
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 
 from core.models import ProblemSet, ProblemSetSession
+from core.services.analytics import record_event
 from core.services.problem_sets import create_problem_set_session
 from core.services.problem_set_recommendations import get_problem_set_recommendations
+from core.services.skill_labels import get_skill_label
 
 
 @login_required
@@ -11,10 +15,33 @@ def problem_set_list(request):
     problem_sets = (
         ProblemSet.objects
         .filter(is_active=True)
-        .order_by("-created_at")
+        .annotate(
+            usable_item_count=Count(
+                "items",
+                filter=Q(items__mission__is_usable_for_set=True),
+            ),
+            unusable_item_count=Count(
+                "items",
+                filter=Q(items__mission__is_usable_for_set=False),
+            ),
+        )
+        .filter(usable_item_count__gt=0, unusable_item_count=0)
+        .order_by("-created_at")[:10]
     )
 
     recommendation_data = get_problem_set_recommendations(request.user)
+    
+    for ps in problem_sets:
+        ps.skill_label = get_skill_label(ps.skill_group)
+
+    for ps in recommendation_data["today_sets"]:
+        ps.skill_label = get_skill_label(ps.skill_group)
+
+    for ps in recommendation_data["review_sets"]:
+        ps.skill_label = get_skill_label(ps.skill_group)
+
+    for ps in recommendation_data["weak_sets"]:
+        ps.skill_label = get_skill_label(ps.skill_group)
 
     return render(request, "core/problem_set_list.html", {
         "problem_sets": problem_sets,
@@ -24,7 +51,6 @@ def problem_set_list(request):
         "weak_skills": recommendation_data["weak_skills"],
     })
 
-
 @login_required
 def problem_set_detail(request, set_id):
     problem_set = get_object_or_404(
@@ -33,7 +59,12 @@ def problem_set_detail(request, set_id):
         is_active=True,
     )
 
-    items = problem_set.items.all()
+    items = problem_set.items.filter(mission__is_usable_for_set=True)
+
+    problem_set.skill_label = get_skill_label(problem_set.skill_group)
+
+    for item in items:
+        item.mission.skill_label = get_skill_label(item.mission.skill)
 
     recent_sessions = (
         ProblemSetSession.objects
@@ -56,24 +87,84 @@ def problem_set_start(request, set_id):
         is_active=True,
     )
 
-    items = list(problem_set.items.all())
+    items = list(problem_set.items.filter(mission__is_usable_for_set=True))
 
     if not items:
+        messages.warning(
+            request,
+            "이 문제 세트에는 현재 훈련 가능한 문제가 없습니다. 관리자에게 문의하거나 문제를 추가하세요.",
+        )
         return redirect("problem_set_detail", set_id=problem_set.id)
 
-    session = create_problem_set_session(
-        user=request.user,
-        problem_set=problem_set,
+    existing_session = (
+        ProblemSetSession.objects
+        .filter(
+            user=request.user,
+            problem_set=problem_set,
+            status="in_progress",
+        )
+        .order_by("-started_at")
+        .first()
     )
 
-    mission_ids = [item.mission_id for item in items]
+    if existing_session:
+        session = existing_session
+        session_items = list(
+            session.items
+            .select_related("mission")
+            .filter(mission__is_usable_for_set=True)
+            .order_by("order_no")
+        )
+
+        mission_ids = [item.mission_id for item in session_items]
+
+        if not mission_ids:
+            messages.warning(
+                request,
+                "진행 중인 세트에 현재 훈련 가능한 문제가 없습니다. 관리자에게 문의하거나 문제를 추가하세요.",
+            )
+            return redirect("problem_set_detail", set_id=problem_set.id)
+
+        first_unanswered_item = None
+
+        for item in session_items:
+            if item.is_correct is None:
+                first_unanswered_item = item
+                break
+
+        if first_unanswered_item:
+            current_index = mission_ids.index(first_unanswered_item.mission_id)
+            next_mission_id = first_unanswered_item.mission_id
+        else:
+            current_index = 0
+            next_mission_id = mission_ids[0]
+
+    else:
+        session = create_problem_set_session(
+            user=request.user,
+            problem_set=problem_set,
+        )
+
+        mission_ids = [item.mission_id for item in items]
+        current_index = 0
+        next_mission_id = mission_ids[0]
 
     request.session["problem_set_mission_ids"] = mission_ids
-    request.session["problem_set_current_index"] = 0
+    request.session["problem_set_current_index"] = current_index
     request.session["problem_set_id"] = problem_set.id
     request.session["problem_set_session_id"] = session.id
+    record_event(
+        request.user,
+        "start_problem_set",
+        page="problem_set_start",
+        metadata={
+            "problem_set_id": problem_set.id,
+            "session_id": session.id,
+            "mission_count": len(mission_ids),
+        },
+    )
 
-    return redirect("mission_detail", mission_id=mission_ids[0])
+    return redirect("mission_detail", mission_id=next_mission_id)
 
 
 @login_required

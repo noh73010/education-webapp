@@ -1,0 +1,88 @@
+{% extends 'core/base.html' %}
+
+{% block title %}운영 대시보드{% endblock %}
+
+{% block content %}
+
+<section class="card">
+  <h1 class="section-title">운영 대시보드</h1>
+  <p class="meta-text">개인정보를 제외한 서비스 이용 흐름만 표시합니다.</p>
+</section>
+
+<section class="card">
+  <h2 class="card-title">오늘 요약</h2>
+  <div class="feature-grid">
+    <div class="info-box"><b>전체 회원 수</b><br>{{ summary.total_users }}</div>
+    <div class="info-box"><b>오늘 가입자 수</b><br>{{ summary.today_users }}</div>
+    <div class="info-box"><b>오늘 문제 풀이 완료 수</b><br>{{ summary.today_mission_finish_count }}</div>
+    <div class="info-box"><b>오늘 모의고사 시작/완료 수</b><br>{{ summary.today_exam_start_count }} / {{ summary.today_exam_finish_count }}</div>
+    <div class="info-box"><b>오늘 패턴훈련 시작/완료 수</b><br>{{ summary.today_pattern_start_count }} / {{ summary.today_pattern_finish_count }}</div>
+    <div class="info-box"><b>오늘 프리미엄 안내 방문 수</b><br>{{ summary.today_premium_page_view_count }}</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2 class="card-title">최근 7일 이벤트 TOP 5</h2>
+  {% if summary.popular_events %}
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>순위</th>
+            <th>event_type</th>
+            <th>횟수</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in summary.popular_events %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td>{{ row.event_type }}</td>
+              <td>{{ row.count }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="info-box">최근 7일 이벤트가 없습니다.</div>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2 class="card-title">최근 이벤트 20개</h2>
+  {% if summary.recent_events %}
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>event_type</th>
+            <th>page</th>
+            <th>사용자</th>
+            <th>시간</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for event in summary.recent_events %}
+            <tr>
+              <td>{{ event.event_type }}</td>
+              <td>{{ event.page|default:"-" }}</td>
+              <td>
+                {% if event.user %}
+                  {{ event.user.username }}
+                {% else %}
+                  비회원/삭제됨
+                {% endif %}
+              </td>
+              <td>{{ event.created_at|date:"Y-m-d H:i" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="info-box">최근 이벤트가 없습니다.</div>
+  {% endif %}
+</section>
+
+{% endblock %}

@@ -78,6 +78,8 @@ def get_recommended_missions(
     - 미풀이3 + 약점2
     - extra_seed가 있으면 같은 날에도 다른 추천 생성 가능
     """
+    annotated_qs = annotated_qs.filter(is_usable_for_set=True)
+
     today = date.today().isoformat()
     seed = f"{user.id}:{today}:{extra_seed}"
 

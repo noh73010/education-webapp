@@ -113,7 +113,17 @@ def get_pattern_recommend_missions(user, weak_patterns, limit=5):
 
 
 def get_problem_set_recommendations(user, limit_today=3, limit_review=3, limit_weak=3):
-    active_sets = ProblemSet.objects.filter(is_active=True)
+    active_sets = (
+        ProblemSet.objects
+        .filter(is_active=True)
+        .annotate(
+            unusable_item_count=Count(
+                "items",
+                filter=Q(items__mission__is_usable_for_set=False),
+            )
+        )
+        .filter(unusable_item_count=0)
+    )
 
     target_level = get_target_level(user)
 

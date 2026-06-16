@@ -5,7 +5,7 @@ django-admin: 장고 메뉴들 보여줌
 django-admin startproject myproject (프로젝트): 프로젝트 폴더에 myproject로 시작함
 
 
-python manage.py runserver (8888): 런서버만듬 (8888번 포트)
+py manage.py runserver (8888): 런서버만듬 (8888번 포트)
 
 django-admin startapp myapp : 앱만들기 
 

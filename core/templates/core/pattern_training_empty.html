@@ -1,17 +1,27 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>패턴 훈련 없음</title>
-</head>
-<body>
-  <h1>훈련할 문제가 없습니다</h1>
+{% extends 'core/base.html' %}
+
+{% block title %}훈련 가능한 문제가 없습니다{% endblock %}
+
+{% block content %}
+
+<section class="card">
+  <h1 class="section-title">훈련 가능한 문제가 없습니다</h1>
+
+  <div class="info-box">
+    <p>
+      <b>{{ wrong_pattern.name }}</b> 패턴에는 현재 훈련 가능한 문제가 없습니다.
+    </p>
+  </div>
 
   <p>
-    <b>{{ wrong_pattern.name }}</b> 패턴에 연결된 문제가 아직 없습니다.
+    저품질 문제를 제외한 뒤 사용할 수 있는 문제가 부족한 상태입니다.
+    다른 학습을 먼저 진행하거나, 관리자에게 문제 추가를 요청해 주세요.
   </p>
+</section>
 
-  <p>
-    <a href="{% url 'mission_list' %}">학습 홈으로 돌아가기</a>
-  </p>
-</body>
-</html>
+<section class="card">
+  <a href="{% url 'mission_list' %}" class="main-button">학습 홈으로 돌아가기</a>
+  <a href="{% url 'problem_set_list' %}" class="sub-button">문제 세트 보기</a>
+</section>
+
+{% endblock %}
