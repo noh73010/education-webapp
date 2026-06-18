@@ -26,6 +26,7 @@ from core.services.problem_sets import (
 from core.services.problem_set_recommendations import get_problem_set_recommendations
 from core.services.skill_labels import get_skill_label
 from core.services.analytics import record_event
+from core.services.learning_dashboard import build_learning_dashboard
 
 
 def get_today_action(user):
@@ -172,6 +173,9 @@ def get_learning_roadmap(user):
         elif learning_type == "error":
             label = "오류 진단형"
             order = 3
+        elif learning_type in {"practical", "practice"}:
+            label = "실전형"
+            order = 4
         else:
             label = learning_type
             order = 99
@@ -440,6 +444,7 @@ def mission_list(request):
 
     daily_progress = get_daily_progress(request.user, today_date)
     streak, _ = UserStreak.objects.get_or_create(user=request.user)
+    dashboard = build_learning_dashboard(request.user, streak=streak)
 
     recommendation_data = get_problem_set_recommendations(request.user)
 
@@ -536,6 +541,7 @@ def mission_list(request):
         "today_guide_text": today_guide_text,
         "weak_learning_type": weak_learning_type,
         "learning_roadmap": learning_roadmap,
+        "dashboard": dashboard,
     })
 
 

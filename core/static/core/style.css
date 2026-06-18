@@ -497,6 +497,139 @@ button:hover {
     display: none;
 }
 
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.dashboard-card {
+    margin-bottom: 16px;
+}
+
+.readiness-score {
+    font-size: 42px;
+    line-height: 1;
+    font-weight: 900;
+    color: #1d4ed8;
+}
+
+.readiness-score::after {
+    content: "점";
+    margin-left: 2px;
+    font-size: 18px;
+    color: #334155;
+}
+
+.readiness-meter {
+    width: 100%;
+    height: 14px;
+    margin: 12px 0;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #e5e7eb;
+}
+
+.readiness-meter-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: #2563eb;
+}
+
+.level-badge {
+    display: inline-flex;
+    min-height: 38px;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: #111827;
+    color: white;
+    font-weight: 900;
+}
+
+.coach-card {
+    border-color: #fde68a;
+    background: #fffbeb;
+}
+
+.weakness-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.weakness-item {
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+
+.weakness-item span {
+    display: block;
+    margin-top: 4px;
+    color: #b45309;
+    font-weight: 700;
+}
+
+.roadmap-stage-guide {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin: 14px 0 18px;
+}
+
+.roadmap-stage-guide span {
+    display: flex;
+    min-height: 38px;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #334155;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.roadmap-skill-card {
+    padding: 14px;
+    margin-bottom: 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+.roadmap-step-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 10px;
+}
+
+.roadmap-step-card {
+    min-height: 160px;
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.82);
+}
+
+.roadmap-step-card.is-complete {
+    border-color: #16a34a;
+    background: #f0fdf4;
+}
+
+.roadmap-step-card.is-locked {
+    opacity: 0.76;
+}
+
+.disabled-card {
+    border-style: dashed;
+    background: #f9fafb;
+    color: #475569;
+}
+
 .daily-focus-card {
     border-color: #bfdbfe;
     background: linear-gradient(180deg, #ffffff 0%, #eff6ff 100%);
@@ -719,5 +852,44 @@ button:hover {
         font-size: 13px;
         font-weight: 800;
         text-decoration: none;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .dashboard-card {
+        margin-bottom: 12px;
+    }
+
+    .readiness-score {
+        font-size: 36px;
+    }
+
+    .weakness-list {
+        grid-template-columns: 1fr;
+    }
+
+    .roadmap-stage-guide {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 7px;
+    }
+
+    .roadmap-stage-guide span {
+        min-height: 34px;
+        font-size: 13px;
+    }
+
+    .roadmap-skill-card {
+        padding: 12px;
+    }
+
+    .roadmap-step-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .roadmap-step-card {
+        min-height: 0;
     }
 }

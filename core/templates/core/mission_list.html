@@ -41,9 +41,61 @@
   </div>
 </section>
 
-<section class="card intro-card">
-  <h2 class="section-title">컴활 2급 학습 홈</h2>
-  <p>추천 문제, 오답 복습, 문제 세트, 모의고사를 이어서 학습할 수 있습니다.</p>
+<section class="dashboard-grid">
+  <article class="card dashboard-card">
+    <h2 class="section-title">합격 준비도</h2>
+    <div class="readiness-score">{{ dashboard.pass_readiness.score }}</div>
+    <div class="readiness-meter" aria-label="합격 준비도">
+      <div class="readiness-meter-fill" style="width: {{ dashboard.pass_readiness.score }}%;"></div>
+    </div>
+    <p>{{ dashboard.pass_readiness.message }}</p>
+    <p class="meta-text">
+      최근 정답률 {{ dashboard.pass_readiness.recent_accuracy }}% /
+      최근 풀이 {{ dashboard.pass_readiness.recent_total }}개
+      {% if dashboard.pass_readiness.exam_average %}
+        / 최근 모의고사 평균 {{ dashboard.pass_readiness.exam_average }}점
+      {% endif %}
+    </p>
+  </article>
+
+  <article class="card dashboard-card">
+    <h2 class="section-title">현재 레벨</h2>
+    <div class="level-badge">{{ dashboard.level.label }}</div>
+    <p>최근 풀이 기준 정답률 {{ dashboard.level.recent_accuracy }}%입니다.</p>
+    <p class="meta-text">다음 레벨 조건: {{ dashboard.level.next_condition }}</p>
+  </article>
+
+  <article class="card dashboard-card">
+    <h2 class="section-title">연속 학습</h2>
+    <div class="streak-number">{{ streak.current_streak }}일</div>
+    <p>최고 기록: <b>{{ streak.best_streak }}일</b></p>
+    <p class="meta-text">{{ dashboard.streak_message }}</p>
+  </article>
+
+  <article class="card dashboard-card coach-card">
+    <h2 class="section-title">오늘의 학습 코치</h2>
+    <p><b>{{ dashboard.coach.title }}</b></p>
+    <p>{{ dashboard.coach.message }}</p>
+  </article>
+</section>
+
+<section class="card">
+  <h2 class="section-title">나의 약점 TOP3</h2>
+  {% if dashboard.weakness_top3 %}
+    <div class="weakness-list">
+      {% for item in dashboard.weakness_top3 %}
+        <div class="weakness-item">
+          <b>{{ forloop.counter }}. {{ item.skill_label }}</b>
+          <span>{{ item.reason }}</span>
+          <div class="meta-text">
+            풀이 {{ item.total }}개 / 오답 {{ item.wrong }}개 / 정답률 {{ item.accuracy }}%
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>문제를 더 풀면 약점이 분석됩니다.</p>
+  {% endif %}
 </section>
 
 <section class="card result-wrong">
@@ -75,30 +127,37 @@
 
 <section class="card">
   <h2 class="section-title">학습 로드맵</h2>
-  <p>함수별로 기능 선택, 결과 예측, 오류 진단 단계를 차례로 확인합니다.</p>
+  <p>함수별로 기능 선택, 결과 예측, 오류 진단, 실전형 단계를 차례로 확인합니다.</p>
+  <div class="roadmap-stage-guide">
+    <span>기능 선택형</span>
+    <span>결과 예측형</span>
+    <span>오류 진단형</span>
+    <span>실전형</span>
+  </div>
 
   {% for item in learning_roadmap %}
-    <div class="info-box {{ item.roadmap_class }}">
+    <div class="roadmap-skill-card {{ item.roadmap_class }}">
       <h3>
         {{ item.skill_label }}
         <span class="meta-text">/ {{ item.roadmap_status_label }}</span>
       </h3>
 
-      <ul class="clean-list">
+      <div class="roadmap-step-grid">
         {% for step in item.steps %}
-          <li>
+          <div class="roadmap-step-card {% if step.is_locked %}is-locked{% elif step.is_completed %}is-complete{% endif %}">
             <b>{{ step.label }}</b>
-            -
-            {% if step.is_locked %}
-              <span class="text-danger">잠금</span>
-            {% elif step.is_completed %}
-              <span class="text-success">완료</span>
-            {% elif step.status %}
-              <span class="text-warning">{{ step.status }}</span>
-            {% else %}
-              <span class="text-danger">미시도</span>
-            {% endif %}
-            / 시도 {{ step.attempted }} / {{ step.total }}
+            <div class="meta-text">
+              {% if step.is_locked %}
+                <span class="text-danger">잠금</span>
+              {% elif step.is_completed %}
+                <span class="text-success">완료</span>
+              {% elif step.status %}
+                <span class="text-warning">{{ step.status }}</span>
+              {% else %}
+                <span class="text-danger">미시도</span>
+              {% endif %}
+              / 시도 {{ step.attempted }} / {{ step.total }}
+            </div>
 
             <div class="roadmap-progress">
               <div class="roadmap-progress-fill" style="width: {{ step.solve_rate }}%;"></div>
@@ -124,9 +183,9 @@
                 </a>
               </p>
             {% endif %}
-          </li>
+          </div>
         {% endfor %}
-      </ul>
+      </div>
     </div>
   {% empty %}
     <p>아직 로드맵을 만들 만큼 문제가 없습니다. 관리자가 문제를 추가하면 자동으로 표시됩니다.</p>
@@ -175,18 +234,6 @@
 </section>
 
 <section class="card">
-  <h2 class="section-title">연속 학습</h2>
-  <div class="streak-number">{{ streak.current_streak }}일 연속 학습 중</div>
-
-  <p class="mt-small">
-    최고 기록: {{ streak.best_streak }}일
-    {% if streak.last_solved_date %}
-      / 마지막 풀이일: {{ streak.last_solved_date|date:"Y-m-d" }}
-    {% endif %}
-  </p>
-</section>
-
-<section class="card">
   <h2 class="section-title">최근 학습 기록</h2>
 
   {% if recent_sessions %}
@@ -204,6 +251,11 @@
   {% else %}
     <p>아직 학습 기록이 없습니다. 오늘 학습부터 시작해 보세요.</p>
   {% endif %}
+</section>
+
+<section class="card disabled-card">
+  <h2 class="section-title">{{ dashboard.ranking_placeholder.title }}</h2>
+  <p>{{ dashboard.ranking_placeholder.message }}</p>
 </section>
 
 <section class="card">
