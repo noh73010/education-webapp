@@ -468,3 +468,256 @@ button:hover {
     background: #dbeafe !important;
     border: 2px solid #2563eb !important;
 }
+
+/* Mobile app-like navigation and mission home polish */
+.nav-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.nav-brand {
+    color: #111827;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.nav-links {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.mobile-menu-toggle {
+    display: none;
+}
+
+.bottom-mobile-nav {
+    display: none;
+}
+
+.daily-focus-card {
+    border-color: #bfdbfe;
+    background: linear-gradient(180deg, #ffffff 0%, #eff6ff 100%);
+}
+
+.eyebrow {
+    margin: 0 0 6px;
+    color: #1d4ed8;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.daily-guide-box {
+    background: #dbeafe;
+    border: 1px solid #bfdbfe;
+}
+
+.daily-progress-summary {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    margin-top: 14px;
+}
+
+.daily-progress-bar {
+    height: 16px;
+}
+
+.main-button-large {
+    display: block;
+    width: 100%;
+    max-width: 420px;
+    margin-top: 14px;
+    padding: 16px 22px;
+    text-align: center;
+    font-size: 18px;
+}
+
+.quick-action-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.quick-action-row .sub-button {
+    flex: 1 1 140px;
+    text-align: center;
+}
+
+@media (min-width: 769px) {
+    .top-nav {
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        max-width: 100%;
+        padding: 10px 10px 86px;
+        line-height: 1.72;
+        background: #f8fafc;
+    }
+
+    .top-nav {
+        display: block;
+        margin-bottom: 12px;
+        padding: 10px 12px;
+        border-radius: 12px;
+    }
+
+    .nav-head {
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    .mobile-menu-toggle {
+        display: inline-flex;
+        min-height: 40px;
+        align-items: center;
+        justify-content: center;
+        padding: 9px 12px;
+        border-radius: 10px;
+        font-size: 15px;
+    }
+
+    .nav-links {
+        display: none;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .nav-links.is-open {
+        display: flex;
+    }
+
+    .nav-links .sub-link,
+    .nav-links .link-button {
+        display: block;
+        width: 100%;
+        min-height: 42px;
+        padding: 10px 4px;
+        text-align: left;
+    }
+
+    .inline-form {
+        display: block;
+    }
+
+    .card {
+        padding: 15px;
+        margin-bottom: 14px;
+        border-radius: 12px;
+    }
+
+    .intro-card {
+        display: none;
+    }
+
+    .section-title {
+        font-size: 21px;
+        line-height: 1.35;
+        margin-bottom: 12px;
+    }
+
+    h3 {
+        font-size: 17px;
+        line-height: 1.4;
+    }
+
+    p {
+        margin-top: 8px;
+        margin-bottom: 12px;
+    }
+
+    .daily-focus-card {
+        padding: 18px 16px;
+        margin-bottom: 16px;
+    }
+
+    .daily-focus-card .section-title {
+        font-size: 24px;
+        margin-bottom: 14px;
+    }
+
+    .daily-progress-summary {
+        font-size: 15px;
+    }
+
+    .main-button,
+    .sub-button,
+    button {
+        min-height: 46px;
+        border-radius: 11px;
+    }
+
+    .main-button-large {
+        max-width: none;
+        min-height: 54px;
+        padding: 16px 18px;
+        font-size: 17px;
+    }
+
+    .quick-action-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .quick-action-row .sub-button {
+        width: 100%;
+    }
+
+    .info-box {
+        padding: 12px;
+        border-radius: 10px;
+    }
+
+    .clean-list li {
+        padding: 12px 0;
+    }
+
+    .filter-form {
+        display: grid;
+        gap: 9px;
+    }
+
+    .filter-form input,
+    .filter-form select,
+    .filter-form button {
+        width: 100%;
+    }
+
+    .bottom-mobile-nav {
+        position: fixed;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 50;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 0;
+        padding: 7px 8px calc(7px + env(safe-area-inset-bottom));
+        border-top: 1px solid #d1d5db;
+        background: rgba(255, 255, 255, 0.96);
+        box-shadow: 0 -3px 14px rgba(15, 23, 42, 0.12);
+    }
+
+    .bottom-mobile-nav a {
+        display: flex;
+        min-height: 44px;
+        align-items: center;
+        justify-content: center;
+        color: #1f2937;
+        font-size: 13px;
+        font-weight: 800;
+        text-decoration: none;
+    }
+}

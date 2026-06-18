@@ -5,38 +5,45 @@
 
 {% block content %}
 
-<section class="card">
-  <h1 class="section-title">컴활 2급 학습 홈</h1>
-  <p>오늘 할 일을 확인하고 문제 풀이, 복습, 모의고사로 이어가세요.</p>
-</section>
+<section class="card daily-focus-card">
+  <p class="eyebrow">오늘 학습</p>
+  <h1 class="section-title">오늘 가장 먼저 할 일</h1>
 
-<section class="card">
-  <h2 class="section-title">오늘 가장 먼저 할 일</h2>
-  <div class="info-box">
+  <div class="info-box daily-guide-box">
     <b>{{ today_guide_message }}</b>
   </div>
 
-  <p class="mt-small">
-    오늘 추천 문제 진행률:
+  <div class="daily-progress-summary">
+    <span>오늘 추천 문제 진행률</span>
     <b>{{ daily_progress.done }} / {{ daily_progress.total }}</b>
-    ({{ daily_progress.pct }}%)
-  </p>
+  </div>
 
-  <p>
+  <div class="roadmap-progress daily-progress-bar" aria-label="오늘 학습 진행률">
+    <div class="roadmap-progress-fill" style="width: {{ daily_progress.pct }}%;"></div>
+  </div>
+
+  <p class="meta-text">{{ daily_progress.pct }}% 완료</p>
+
+  <p class="primary-action-wrap">
     {% if today_guide_url_name == "pattern_training_start" %}
-      <a href="{% url 'pattern_training_start' today_guide_pattern_code %}" class="main-button">{{ today_guide_text }}</a>
+      <a href="{% url 'pattern_training_start' today_guide_pattern_code %}" class="main-button main-button-large">오늘 학습 시작</a>
     {% elif today_guide_url_name == "learning_type_training_start" %}
-      <a href="{% url 'learning_type_training_start' today_guide_skill today_guide_learning_type %}" class="main-button">{{ today_guide_text }}</a>
+      <a href="{% url 'learning_type_training_start' today_guide_skill today_guide_learning_type %}" class="main-button main-button-large">오늘 학습 시작</a>
     {% else %}
-      <a href="{% url 'problem_set_list' %}" class="main-button">{{ today_guide_text }}</a>
+      <a href="{% url 'problem_set_list' %}" class="main-button main-button-large">오늘 학습 시작</a>
     {% endif %}
   </p>
 
-  <p>
-    <a href="{% url 'stats' %}" class="sub-button">약점 확인</a>
-    <a href="{% url 'exam_start' %}" class="sub-button">실전 모의고사</a>
-    <a href="{% url 'wrong_notes' %}" class="sub-button">오답노트</a>
-  </p>
+  <div class="quick-action-row">
+    <a href="{% url 'wrong_notes' %}" class="sub-button">오답 복습</a>
+    <a href="{% url 'exam_start' %}" class="sub-button">모의고사</a>
+    <a href="{% url 'stats' %}" class="sub-button">통계 보기</a>
+  </div>
+</section>
+
+<section class="card intro-card">
+  <h2 class="section-title">컴활 2급 학습 홈</h2>
+  <p>추천 문제, 오답 복습, 문제 세트, 모의고사를 이어서 학습할 수 있습니다.</p>
 </section>
 
 <section class="card result-wrong">
@@ -62,13 +69,13 @@
       </a>
     </p>
   {% else %}
-    <p>아직 약한 단계를 판단할 만큼의 풀이 기록이 없습니다. 오늘 추천 문제부터 풀어 보세요.</p>
+    <p>아직 약한 단계를 판단할 만큼 학습 기록이 없습니다. 오늘 학습부터 시작해 보세요.</p>
   {% endif %}
 </section>
 
 <section class="card">
   <h2 class="section-title">학습 로드맵</h2>
-  <p>함수별로 기능 선택형, 결과 예측형, 오류 진단형을 차례대로 확인합니다.</p>
+  <p>함수별로 기능 선택, 결과 예측, 오류 진단 단계를 차례로 확인합니다.</p>
 
   {% for item in learning_roadmap %}
     <div class="info-box {{ item.roadmap_class }}">
@@ -89,7 +96,7 @@
             {% elif step.status %}
               <span class="text-warning">{{ step.status }}</span>
             {% else %}
-              <span class="text-danger">미시작</span>
+              <span class="text-danger">미시도</span>
             {% endif %}
             / 시도 {{ step.attempted }} / {{ step.total }}
 
@@ -122,12 +129,12 @@
       </ul>
     </div>
   {% empty %}
-    <p>아직 로드맵을 만들 만큼의 문제가 없습니다. 관리자가 문제를 추가하면 자동으로 표시됩니다.</p>
+    <p>아직 로드맵을 만들 만큼 문제가 없습니다. 관리자가 문제를 추가하면 자동으로 표시됩니다.</p>
   {% endfor %}
 </section>
 
 <section class="card">
-  <h2 class="section-title">지금 해야 할 학습</h2>
+  <h2 class="section-title">지금 이어서 할 학습</h2>
 
   {% if recent_avg_score %}
     <p>
@@ -146,7 +153,7 @@
       </a>
     </p>
   {% elif today_action == "start" and today_action_obj %}
-    <p>오늘은 이 세트부터 시작하세요.</p>
+    <p>오늘은 이 세트부터 시작해 보세요.</p>
     <p>
       <a href="{% url 'problem_set_start' today_action_obj.id %}" class="main-button">
         {{ today_action_obj.title }} 바로 시작
@@ -156,7 +163,7 @@
     <p>오늘 기본 학습은 끝났습니다. 오답 복습으로 이어가세요.</p>
     <p><a href="{% url 'wrong_notes' %}" class="main-button">오답 복습하기</a></p>
   {% elif primary_set %}
-    <p>추천 세트가 있습니다. 이 세트부터 시작하세요.</p>
+    <p>추천 세트가 있습니다. 이 세트부터 시작해 보세요.</p>
     <p>
       <a href="{% url 'problem_set_start' primary_set.id %}" class="main-button">
         {{ primary_set.title }} 바로 시작
@@ -195,21 +202,21 @@
       {% endfor %}
     </ul>
   {% else %}
-    <p>아직 학습 기록이 없습니다. 오늘 추천 문제부터 시작해 보세요.</p>
+    <p>아직 학습 기록이 없습니다. 오늘 학습부터 시작해 보세요.</p>
   {% endif %}
 </section>
 
 <section class="card">
-  <h2 class="section-title">오늘의 추천 5문제</h2>
+  <h2 class="section-title">오늘 추천 5문제</h2>
   <div class="info-box">
-    오늘 진행률:
+    오늘 진행률
     <b>{{ daily_progress.done }} / {{ daily_progress.total }}</b>
     ({{ daily_progress.pct }}%)
   </div>
 
   <p>
     <a href="?q={{ q|urlencode }}&skill={{ skill|urlencode }}&level={{ level|urlencode }}&sort={{ sort|urlencode }}&page={{ page_obj.number }}&reset_daily=1"
-       onclick="return confirm('오늘 추천을 다시 뽑을까요?');">
+       onclick="return confirm('오늘 추천 문제를 다시 뽑을까요?');">
       오늘 추천 다시 뽑기
     </a>
   </p>
@@ -218,7 +225,7 @@
     {% if daily_progress.total == 0 %}
       <li>현재 추천 가능한 문제가 부족합니다. 전체 문제 검색을 이용하거나 관리자에게 문의해 주세요.</li>
     {% elif daily_progress.total < 5 %}
-      <li>추천 가능한 문제가 {{ daily_progress.total }}개뿐입니다. 준비된 문제만 먼저 풀 수 있습니다.</li>
+      <li>추천 가능한 문제가 {{ daily_progress.total }}개뿐입니다. 준비된 문제부터 먼저 풀 수 있습니다.</li>
     {% endif %}
 
     {% for m in recommended %}
@@ -231,7 +238,7 @@
         최근: {{ m.my_last }}
 
         {% if m.today_done %}
-          <span class="text-success-inline">오늘 풀이 완료</span>
+          <span class="text-success-inline">오늘 완료</span>
         {% endif %}
       </li>
     {% empty %}
@@ -251,7 +258,7 @@
       {% endfor %}
     </p>
   {% else %}
-    <p>아직 약점을 판단할 만큼의 기록이 부족합니다. 문제를 몇 개 더 풀면 추천이 정확해집니다.</p>
+    <p>아직 약점을 판단할 만큼 기록이 부족합니다. 문제를 몇 개 더 풀면 추천이 정확해집니다.</p>
   {% endif %}
 
   {% if weak_sets %}
@@ -308,11 +315,11 @@
 <section class="card" id="search-section">
   <h2 class="section-title">전체 문제 검색</h2>
 
-  <form method="get" class="mb-medium" action="#search-section">
-    <input type="text" name="q" placeholder="검색어(제목/지문/스킬)" value="{{ q }}" />
+  <form method="get" class="mb-medium filter-form" action="#search-section">
+    <input type="text" name="q" placeholder="검색어(제목/지문/함수)" value="{{ q }}" />
 
     <select name="skill">
-      <option value="">전체 스킬</option>
+      <option value="">전체 함수</option>
       {% for s in skill_choices %}
         <option value="{{ s }}" {% if s == skill %}selected{% endif %}>{{ s }}</option>
       {% endfor %}
@@ -328,7 +335,7 @@
     <select name="sort">
       <option value="new" {% if sort == "new" %}selected{% endif %}>최신 등록순</option>
       <option value="weak" {% if sort == "weak" %}selected{% endif %}>약점순</option>
-      <option value="untried" {% if sort == "untried" %}selected{% endif %}>미풀이 우선</option>
+      <option value="untried" {% if sort == "untried" %}selected{% endif %}>미시도 우선</option>
     </select>
 
     <button type="submit">적용</button>
