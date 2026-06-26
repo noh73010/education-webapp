@@ -241,6 +241,34 @@ button:hover {
     margin-bottom: 0;
 }
 
+.subject-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+}
+
+.subject-card {
+    display: flex;
+    min-height: 190px;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid #dbe4f0;
+    border-radius: 12px;
+    background: #f8fafc;
+}
+
+.subject-card h3 {
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+
+.subject-card .main-button {
+    width: 100%;
+    text-align: center;
+}
+
 .feature-grid.two-columns {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -640,6 +668,19 @@ button:hover {
     color: #1d4ed8;
     font-size: 14px;
     font-weight: 800;
+}
+
+.subject-label {
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    margin: 0 0 12px;
+    padding: 6px 10px;
+    border: 1px solid #bfdbfe;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #334155;
+    font-size: 14px;
 }
 
 .daily-guide-box {

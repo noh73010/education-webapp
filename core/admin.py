@@ -2,6 +2,7 @@
 from django.utils import timezone
 from datetime import timedelta
 from .models import (
+    Subject,
     Mission,
     Attempt,
     WrongReason,
@@ -22,10 +23,20 @@ from .models import (
 )
 
 
+@admin.register(Subject)
+class SubjectAdmin(admin.ModelAdmin):
+    list_display = ("id", "code", "name", "is_active", "created_at")
+    list_filter = ("is_active", "created_at")
+    search_fields = ("code", "name", "description")
+    ordering = ("name",)
+    list_per_page = 50
+
+
 @admin.register(Mission)
 class MissionAdmin(admin.ModelAdmin):
     list_display = (
         "id",
+        "subject",
         "title",
         "skill",
         "level",
@@ -38,6 +49,7 @@ class MissionAdmin(admin.ModelAdmin):
     )
 
     list_filter = (
+        "subject",
         "skill",
         "level",
         "question_type",
@@ -47,8 +59,9 @@ class MissionAdmin(admin.ModelAdmin):
         "is_usable_for_set",
         "is_quality_checked",
     )
-    search_fields = ("title", "prompt", "skill", "correct_answer", "explanation")
+    search_fields = ("title", "prompt", "skill", "correct_answer", "explanation", "subject__name", "subject__code")
     ordering = ("-created_at",)
+    list_select_related = ("subject",)
     list_per_page = 50
 
 
@@ -163,11 +176,21 @@ class InquiryAdmin(admin.ModelAdmin):
 
 @admin.register(ProblemSet)
 class ProblemSetAdmin(admin.ModelAdmin):
-    list_display = ("id", "title", "skill_group", "level", "set_type", "is_active", "created_at")
-    list_filter = ("set_type", "is_active", "level", "skill_group")
+    list_display = ("id", "title", "subject_names", "skill_group", "level", "set_type", "is_active", "created_at")
+    list_filter = ("set_type", "is_active", "level", "skill_group", "items__mission__subject")
     search_fields = ("title", "skill_group", "description")
     ordering = ("-created_at",)
     list_per_page = 50
+
+    @admin.display(description="subjects")
+    def subject_names(self, obj):
+        names = (
+            obj.items
+            .select_related("mission__subject")
+            .values_list("mission__subject__name", flat=True)
+            .distinct()
+        )
+        return ", ".join(name for name in names if name) or "-"
 
 
 @admin.register(ProblemSetItem)

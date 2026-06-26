@@ -7,7 +7,7 @@ from core.models import DailyMission, Attempt
 from core.services.recommendations import get_recommendations_from_annotated_qs
 
 
-def get_or_create_daily_recommendations(user, annotated_qs, reset_daily=False):
+def get_or_create_daily_recommendations(user, annotated_qs, reset_daily=False, subject=None):
     """
     오늘의 데일리 추천 5문제를 반환한다.
     - reset_daily=True 이면 기존 추천 삭제 후 재생성
@@ -22,15 +22,15 @@ def get_or_create_daily_recommendations(user, annotated_qs, reset_daily=False):
     if reset_daily:
         DailyMission.objects.filter(user=user, date=today_date).delete()
 
-    existing_ids = list(
-        DailyMission.objects
-        .filter(
-            user=user,
-            date=today_date,
-            mission__is_usable_for_set=True,
-        )
-        .values_list("mission_id", flat=True)
+    existing_qs = DailyMission.objects.filter(
+        user=user,
+        date=today_date,
+        mission__is_usable_for_set=True,
     )
+    if subject is not None:
+        existing_qs = existing_qs.filter(mission__subject=subject)
+
+    existing_ids = list(existing_qs.values_list("mission_id", flat=True))
 
     if len(existing_ids) >= 5:
         recommended_ids = existing_ids
@@ -72,38 +72,37 @@ def get_or_create_daily_recommendations(user, annotated_qs, reset_daily=False):
     return recommended, today_str, today_date
 
 
-def get_daily_done_ids(user, today_date):
+def get_daily_done_ids(user, today_date, subject=None):
     """
     오늘 데일리 미션 중 이미 푼 mission id 집합 반환
     """
-    return set(
-        Attempt.objects
-        .filter(user=user, daily_date=today_date)
-        .values_list("mission_id", flat=True)
-    )
+    qs = Attempt.objects.filter(user=user, daily_date=today_date)
+    if subject is not None:
+        qs = qs.filter(mission__subject=subject)
+    return set(qs.values_list("mission_id", flat=True))
 
 
-def get_daily_progress(user, today_date):
+def get_daily_progress(user, today_date, subject=None):
     """
     오늘 데일리 진행률 반환
     """
-    daily_total = DailyMission.objects.filter(
+    daily_qs = DailyMission.objects.filter(
         user=user,
         date=today_date,
         mission__is_usable_for_set=True,
-    ).count()
-
-    daily_done = (
-        Attempt.objects
-        .filter(
-            user=user,
-            daily_date=today_date,
-            mission__is_usable_for_set=True,
-        )
-        .values("mission_id")
-        .distinct()
-        .count()
     )
+    if subject is not None:
+        daily_qs = daily_qs.filter(mission__subject=subject)
+    daily_total = daily_qs.count()
+
+    done_qs = Attempt.objects.filter(
+        user=user,
+        daily_date=today_date,
+        mission__is_usable_for_set=True,
+    )
+    if subject is not None:
+        done_qs = done_qs.filter(mission__subject=subject)
+    daily_done = done_qs.values("mission_id").distinct().count()
 
     return {
         "date": today_date,

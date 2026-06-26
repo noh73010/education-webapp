@@ -27,6 +27,7 @@ from core.services.problem_set_recommendations import get_problem_set_recommenda
 from core.services.skill_labels import get_skill_label
 from core.services.analytics import record_event
 from core.services.learning_dashboard import build_learning_dashboard
+from core.services.subjects import get_current_subject, get_default_subject
 
 
 def get_today_action(user):
@@ -62,7 +63,8 @@ def get_today_action(user):
     return "review", None
 
 
-def get_weak_learning_type(user):
+def get_weak_learning_type(user, subject=None):
+    subject = subject or get_default_subject()
     latest_attempt_qs = (
         Attempt.objects
         .filter(user=user, mission=OuterRef("pk"))
@@ -71,7 +73,7 @@ def get_weak_learning_type(user):
 
     rows = (
         Mission.objects
-        .filter(is_usable_for_set=True)
+        .filter(is_usable_for_set=True, subject=subject)
         .annotate(
             last_time=Subquery(latest_attempt_qs.values("created_at")[:1]),
             last_is_correct=Subquery(latest_attempt_qs.values("is_correct")[:1]),
@@ -121,7 +123,8 @@ def get_weak_learning_type(user):
         )
     )[0]
 
-def get_learning_roadmap(user):
+def get_learning_roadmap(user, subject=None):
+    subject = subject or get_default_subject()
     latest_attempt_qs = (
         Attempt.objects
         .filter(user=user, mission=OuterRef("pk"))
@@ -130,7 +133,7 @@ def get_learning_roadmap(user):
 
     rows = (
         Mission.objects
-        .filter(is_usable_for_set=True)
+        .filter(is_usable_for_set=True, subject=subject)
         .annotate(
             last_time=Subquery(latest_attempt_qs.values("created_at")[:1]),
             last_is_correct=Subquery(latest_attempt_qs.values("is_correct")[:1]),
@@ -270,12 +273,14 @@ def learning_type_training_start(request, skill, learning_type):
         .order_by("-created_at")
     )
 
+    current_subject, _ = get_current_subject(request)
     candidate_missions = list(
         Mission.objects
         .filter(
             skill=skill,
             learning_type=learning_type,
             is_usable_for_set=True,
+            subject=current_subject,
         )
         .annotate(
             last_time=Subquery(latest_attempt_qs.values("created_at")[:1]),
@@ -352,7 +357,9 @@ def mission_list(request):
     level = request.GET.get("level", "").strip()
     sort = request.GET.get("sort", "new").strip()
 
-    qs = Mission.objects.all()
+    current_subject, subject_needs_selection = get_current_subject(request)
+    subject_mission_count = Mission.objects.filter(subject=current_subject).count()
+    qs = Mission.objects.filter(subject=current_subject)
 
     if q:
         qs = qs.filter(
@@ -414,6 +421,7 @@ def mission_list(request):
         user=request.user,
         annotated_qs=recommendation_qs,
         reset_daily=reset_daily,
+        subject=current_subject,
     )
 
     for m in recommended:
@@ -430,19 +438,20 @@ def mission_list(request):
         else:
             m.my_last = "미풀이"
 
-    done_ids = get_daily_done_ids(request.user, today_date)
+    done_ids = get_daily_done_ids(request.user, today_date, subject=current_subject)
 
     for m in recommended:
         m.today_done = (m.id in done_ids)
 
     skill_choices = (
         Mission.objects
+        .filter(subject=current_subject)
         .values_list("skill", flat=True)
         .distinct()
         .order_by("skill")
     )
 
-    daily_progress = get_daily_progress(request.user, today_date)
+    daily_progress = get_daily_progress(request.user, today_date, subject=current_subject)
     streak, _ = UserStreak.objects.get_or_create(user=request.user)
     dashboard = build_learning_dashboard(request.user, streak=streak)
 
@@ -471,8 +480,8 @@ def mission_list(request):
         .order_by("-started_at")[:3]
     )
     today_action, today_action_obj = get_today_action(request.user)
-    weak_learning_type = get_weak_learning_type(request.user)
-    learning_roadmap = get_learning_roadmap(request.user)
+    weak_learning_type = get_weak_learning_type(request.user, subject=current_subject)
+    learning_roadmap = get_learning_roadmap(request.user, subject=current_subject)
     next_learning_step = get_next_learning_step(learning_roadmap)
 
     if next_learning_step:
@@ -542,6 +551,9 @@ def mission_list(request):
         "weak_learning_type": weak_learning_type,
         "learning_roadmap": learning_roadmap,
         "dashboard": dashboard,
+        "current_subject": current_subject,
+        "subject_needs_selection": subject_needs_selection,
+        "subject_mission_count": subject_mission_count,
     })
 
 

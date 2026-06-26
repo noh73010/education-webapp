@@ -8,31 +8,46 @@
 <section class="card daily-focus-card">
   <p class="eyebrow">오늘 학습</p>
   <h1 class="section-title">오늘 가장 먼저 할 일</h1>
+  <p class="subject-label">현재 과목: <b>{{ current_subject.name }}</b></p>
+  {% if subject_needs_selection %}
+    <p class="meta-text">
+      과목을 아직 선택하지 않아 기본 과목으로 시작합니다.
+      <a href="{% url 'landing' %}">과목 선택하기</a>
+    </p>
+  {% endif %}
 
-  <div class="info-box daily-guide-box">
-    <b>{{ today_guide_message }}</b>
-  </div>
+  {% if subject_mission_count == 0 %}
+    <div class="info-box daily-guide-box">
+      <b>현재 선택한 과목에는 아직 준비된 문제가 없습니다.</b>
+      <p class="mt-small">다른 과목을 선택하거나, 관리자가 문제를 추가한 뒤 다시 학습을 시작해 주세요.</p>
+      <a href="{% url 'landing' %}" class="sub-button">과목 선택으로 돌아가기</a>
+    </div>
+  {% else %}
+    <div class="info-box daily-guide-box">
+      <b>{{ today_guide_message }}</b>
+    </div>
 
-  <div class="daily-progress-summary">
-    <span>오늘 추천 문제 진행률</span>
-    <b>{{ daily_progress.done }} / {{ daily_progress.total }}</b>
-  </div>
+    <div class="daily-progress-summary">
+      <span>오늘 추천 문제 진행률</span>
+      <b>{{ daily_progress.done }} / {{ daily_progress.total }}</b>
+    </div>
 
-  <div class="roadmap-progress daily-progress-bar" aria-label="오늘 학습 진행률">
-    <div class="roadmap-progress-fill" style="width: {{ daily_progress.pct }}%;"></div>
-  </div>
+    <div class="roadmap-progress daily-progress-bar" aria-label="오늘 학습 진행률">
+      <div class="roadmap-progress-fill" style="width: {{ daily_progress.pct }}%;"></div>
+    </div>
 
-  <p class="meta-text">{{ daily_progress.pct }}% 완료</p>
+    <p class="meta-text">{{ daily_progress.pct }}% 완료</p>
 
-  <p class="primary-action-wrap">
-    {% if today_guide_url_name == "pattern_training_start" %}
-      <a href="{% url 'pattern_training_start' today_guide_pattern_code %}" class="main-button main-button-large">오늘 학습 시작</a>
-    {% elif today_guide_url_name == "learning_type_training_start" %}
-      <a href="{% url 'learning_type_training_start' today_guide_skill today_guide_learning_type %}" class="main-button main-button-large">오늘 학습 시작</a>
-    {% else %}
-      <a href="{% url 'problem_set_list' %}" class="main-button main-button-large">오늘 학습 시작</a>
-    {% endif %}
-  </p>
+    <p class="primary-action-wrap">
+      {% if today_guide_url_name == "pattern_training_start" %}
+        <a href="{% url 'pattern_training_start' today_guide_pattern_code %}" class="main-button main-button-large">오늘 학습 시작</a>
+      {% elif today_guide_url_name == "learning_type_training_start" %}
+        <a href="{% url 'learning_type_training_start' today_guide_skill today_guide_learning_type %}" class="main-button main-button-large">오늘 학습 시작</a>
+      {% else %}
+        <a href="{% url 'problem_set_list' %}" class="main-button main-button-large">오늘 학습 시작</a>
+      {% endif %}
+    </p>
+  {% endif %}
 
   <div class="quick-action-row">
     <a href="{% url 'wrong_notes' %}" class="sub-button">오답 복습</a>

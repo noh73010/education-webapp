@@ -2,6 +2,7 @@ import re
 from collections import Counter, defaultdict
 
 from core.models import Mission
+from core.services.subjects import resolve_subject
 
 
 REQUIRED_SECTIONS = ("[CONTEXT]", "[QUESTION]")
@@ -22,8 +23,11 @@ CONTEXTLESS_PATTERNS = (
 )
 
 
-def usable_missions():
-    return Mission.objects.filter(is_usable_for_set=True)
+def usable_missions(subject=None):
+    qs = Mission.objects.filter(is_usable_for_set=True)
+    if subject is not False:
+        qs = qs.filter(subject=resolve_subject(subject))
+    return qs
 
 
 def normalize_numbers(text):

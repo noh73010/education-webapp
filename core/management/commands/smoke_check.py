@@ -9,7 +9,8 @@ from django.db.migrations.recorder import MigrationRecorder
 from django.template.loader import get_template
 from django.urls import NoReverseMatch, reverse
 
-from core.models import Mission, ProblemSet, UserEvent
+from core.models import Mission, ProblemSet, Subject, UserEvent
+from core.services.subjects import DEFAULT_SUBJECT_CODE
 
 
 class Command(BaseCommand):
@@ -97,6 +98,13 @@ class Command(BaseCommand):
         else:
             self.ok("UserEvent table is accessible")
 
+        try:
+            Subject.objects.exists()
+        except DatabaseError as exc:
+            self.fail(f"Subject table is not accessible: {exc.__class__.__name__}")
+        else:
+            self.ok("Subject table is accessible")
+
         self.stdout.write("")
 
     def check_migration_state(self):
@@ -115,6 +123,11 @@ class Command(BaseCommand):
             self.ok("UserEvent migration is applied: core.0028_userevent")
         else:
             self.fail("UserEvent migration is not applied: run manage.py migrate")
+
+        if ("core", "0030_subject_mission_subject") in applied_migrations:
+            self.ok("Subject migration is applied: core.0030_subject_mission_subject")
+        else:
+            self.fail("Subject migration is not applied: run manage.py migrate")
 
         migration_dir = Path(__file__).resolve().parents[2] / "migrations"
         inquiry_migration_files = [
@@ -233,6 +246,26 @@ class Command(BaseCommand):
             )
         else:
             self.ok(f"Unchecked Mission count: {unchecked_count}/{mission_count}")
+
+        default_subject = Subject.objects.filter(code=DEFAULT_SUBJECT_CODE).first()
+        if default_subject:
+            self.ok(f"Default subject exists: {default_subject.name}")
+            default_usable_count = Mission.objects.filter(
+                subject=default_subject,
+                is_usable_for_set=True,
+            ).count()
+            if default_usable_count:
+                self.ok(f"Default subject usable Mission count: {default_usable_count}")
+            else:
+                self.fail("Default subject has no usable missions")
+        else:
+            self.fail(f"Default subject is missing: {DEFAULT_SUBJECT_CODE}")
+
+        null_subject_count = Mission.objects.filter(subject__isnull=True).count()
+        if null_subject_count:
+            self.fail(f"Missions without subject: {null_subject_count}")
+        else:
+            self.ok("No missions without subject")
 
         self.stdout.write("")
 
