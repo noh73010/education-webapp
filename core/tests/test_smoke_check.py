@@ -33,3 +33,4 @@ class SmokeCheckCommandTests(TestCase):
         self.assertIn("SMOKE CHECK PASSED", output)
         self.assertIn("URL reverse", output)
         self.assertIn("Template loading", output)
+        self.assertIn("core.0034_mission_learning_feedback", output)

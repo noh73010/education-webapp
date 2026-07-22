@@ -4,6 +4,7 @@ from datetime import timedelta
 from .models import (
     Subject,
     Mission,
+    MissionImage,
     Attempt,
     WrongReason,
     AttemptWrongReason,
@@ -23,6 +24,12 @@ from .models import (
 )
 
 
+class MissionImageInline(admin.StackedInline):
+    model = MissionImage
+    extra = 0
+    max_num = 1
+
+
 @admin.register(Subject)
 class SubjectAdmin(admin.ModelAdmin):
     list_display = ("id", "code", "name", "is_active", "created_at")
@@ -34,6 +41,7 @@ class SubjectAdmin(admin.ModelAdmin):
 
 @admin.register(Mission)
 class MissionAdmin(admin.ModelAdmin):
+    inlines = (MissionImageInline,)
     list_display = (
         "id",
         "subject",
@@ -59,10 +67,28 @@ class MissionAdmin(admin.ModelAdmin):
         "is_usable_for_set",
         "is_quality_checked",
     )
-    search_fields = ("title", "prompt", "skill", "correct_answer", "explanation", "subject__name", "subject__code")
+    search_fields = (
+        "title",
+        "prompt",
+        "skill",
+        "correct_answer",
+        "explanation",
+        "concept_summary",
+        "exam_tip",
+        "subject__name",
+        "subject__code",
+    )
     ordering = ("-created_at",)
     list_select_related = ("subject",)
     list_per_page = 50
+
+
+@admin.register(MissionImage)
+class MissionImageAdmin(admin.ModelAdmin):
+    list_display = ("id", "mission", "static_path", "source", "updated_at")
+    search_fields = ("mission__external_id", "mission__title", "static_path")
+    list_select_related = ("mission",)
+    ordering = ("mission_id",)
 
 
 @admin.register(WrongReason)
@@ -225,11 +251,14 @@ class ProblemSetSessionAdmin(admin.ModelAdmin):
 
 @admin.register(ProblemSetSessionItem)
 class ProblemSetSessionItemAdmin(admin.ModelAdmin):
-    list_display = ("id", "problem_set_session", "order_no", "mission", "is_correct", "submitted_at")
-    list_filter = ("is_correct",)
+    list_display = (
+        "id", "problem_set_session", "order_no", "mission", "is_correct",
+        "review_attempt_count", "review_is_correct", "submitted_at", "reviewed_at",
+    )
+    list_filter = ("is_correct", "review_is_correct")
     search_fields = ("problem_set_session__problem_set__title", "mission__title")
     ordering = ("problem_set_session", "order_no")
-    list_select_related = ("problem_set_session", "mission")
+    list_select_related = ("problem_set_session", "mission", "attempt")
     list_per_page = 100
     
 @admin.register(WrongPattern)

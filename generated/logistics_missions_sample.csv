@@ -1,0 +1,2 @@
+external_id,subject_code,course,chapter_code,chapter_name,difficulty,title,prompt,answer_schema,correct_answer,explanation,learning_type,question_type,answer_input_type,wrong_pattern_code,variation_group
+LOG-LM01-0001,logistics,물류관리론,LM01,물류관리 일반,하,물류관리 기본 확인,[QUESTION] 물류관리의 기본 목적은 무엇인가?[/QUESTION],1|비용 최소화,1,물류관리의 기본 개념을 확인하는 예시 문제입니다.,result,choice_one,none,LOGISTICS_BASIC,LOG-LM01

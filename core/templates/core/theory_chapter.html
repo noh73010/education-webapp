@@ -1,0 +1,107 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ chapter.chapter_name }} 핵심 이론{% endblock %}
+
+{% block content %}
+<main class="theory-page">
+  <nav class="theory-breadcrumb" aria-label="현재 위치">
+    <a href="{% url 'mission_list' %}#learning-roadmap">학습 로드맵</a>
+    <span aria-hidden="true">›</span>
+    <span>{{ chapter.course }}</span>
+  </nav>
+
+  <header class="card theory-hero">
+    <p class="eyebrow">{{ current_subject.name }} · {{ chapter.course }}</p>
+    {% if focused_concept %}
+      <h1>오답 개념 복습</h1>
+      <p>방금 틀린 문제에 필요한 내용만 짧게 확인하고 바로 다시 풀어보세요.</p>
+    {% else %}
+      <h1>{{ chapter.chapter_name }}</h1>
+      <p>핵심 개념을 먼저 읽고, 이 챕터에 연결된 기출문제로 이해도를 확인하세요.</p>
+    {% endif %}
+    <div class="theory-progress-summary">
+      <span>기출 {{ chapter.total_count }}문제</span>
+      <span>풀이 {{ chapter.attempted_count }}문제</span>
+      <span>정답 경험 {{ chapter.solved_count }}문제</span>
+    </div>
+  </header>
+
+  <article class="card theory-content">
+    {% if focused_concept %}
+      <section class="theory-focus-card" id="related-concept" tabindex="-1">
+        <p class="eyebrow">방금 틀린 문제의 관련 개념</p>
+        <h2>{{ focused_concept.title }}</h2>
+        <p>{{ focused_concept.summary }}</p>
+        {% if focused_concept.formula %}<p class="theory-focus-formula">{{ focused_concept.formula }}</p>{% endif %}
+        <ul>{% for point in focused_concept.points %}<li>{{ point }}</li>{% endfor %}</ul>
+        <a href="{% url 'mission_detail' focused_mission.id %}" class="sub-button">이 문제 다시 풀기</a>
+      </section>
+
+      <details class="theory-full-details">
+        <summary>
+          <span>더 공부하고 싶다면</span>
+          <b>{{ chapter.chapter_name }} 전체 이론 펼쳐보기</b>
+        </summary>
+        <div class="theory-full-details-body">
+          {{ theory_html }}
+          {% if representative_mission %}
+            <section class="theory-reference">
+              <h2>대표 자료</h2>
+              <p>기출문제에 포함된 자료입니다. 세부 내용은 연습문제에서 확인할 수 있습니다.</p>
+              <img src="{% static representative_mission.question_image.static_path %}"
+                   alt="{{ representative_mission.question_image.alt_text|default:chapter.chapter_name }} 대표 자료">
+            </section>
+          {% endif %}
+          <a href="{% url 'chapter_practice_start' chapter.slug %}" class="sub-button">10문제 이어서 풀기</a>
+        </div>
+      </details>
+    {% else %}
+      {{ theory_html }}
+      {% if representative_mission %}
+        <section class="theory-reference">
+          <h2>대표 자료</h2>
+          <p>기출문제에 포함된 자료입니다. 세부 내용은 연습문제에서 확인할 수 있습니다.</p>
+          <img src="{% static representative_mission.question_image.static_path %}"
+               alt="{{ representative_mission.question_image.alt_text|default:chapter.chapter_name }} 대표 자료">
+        </section>
+      {% endif %}
+    {% endif %}
+  </article>
+
+  {% if not focused_concept %}
+  <section class="card theory-practice-cta">
+    <div>
+      <p class="eyebrow">개념을 확인했다면</p>
+      <h2>{% if practice_plan.attempted_count %}다음 10문제를 이어서 풀어보세요{% else %}기출 10문제로 이해도를 확인해보세요{% endif %}</h2>
+      <p>
+        전체 {{ practice_plan.total_count }}문제 중 {{ practice_plan.attempted_count }}문제를 풀었습니다.
+        {% if practice_plan.remaining_count %}미학습 {{ practice_plan.remaining_count }}문제가 남아 있습니다.{% endif %}
+      </p>
+    </div>
+    <div class="theory-practice-actions">
+      <a href="{% url 'chapter_practice_start' chapter.slug %}" class="main-button main-button-large">
+        {% if practice_plan.attempted_count %}10문제 이어서 풀기{% else %}10문제 시작하기{% endif %}
+      </a>
+      {% if practice_plan.review_count %}
+        <a href="{% url 'chapter_practice_start' chapter.slug %}?mode=wrong" class="sub-button">오답 {{ practice_plan.review_count }}문제 복습</a>
+      {% endif %}
+      <a href="{% url 'chapter_practice_start' chapter.slug %}?mode=all" class="sub-link">전체 {{ practice_plan.total_count }}문제 풀기</a>
+    </div>
+  </section>
+
+  <nav class="theory-chapter-nav" aria-label="챕터 이동">
+    {% if previous_chapter and previous_chapter.has_theory %}
+      <a href="{% url 'theory_chapter' previous_chapter.slug %}" class="sub-button">
+        ← {{ previous_chapter.chapter_name }}
+      </a>
+    {% else %}<span></span>{% endif %}
+    {% if next_chapter and next_chapter.has_theory %}
+      <a href="{% url 'theory_chapter' next_chapter.slug %}" class="sub-button">
+        {{ next_chapter.chapter_name }} →
+      </a>
+    {% endif %}
+  </nav>
+  {% endif %}
+</main>
+{% endblock %}

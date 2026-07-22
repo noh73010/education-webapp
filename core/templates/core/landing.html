@@ -1,29 +1,34 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
-{% block title %}학습 과목 선택{% endblock %}
+{% block title %}자격증 학습 플랫폼{% endblock %}
+{% block body_class %}landing-page{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'core/landing.css' %}">{% endblock %}
 
 {% block content %}
 
-<section class="card landing-hero">
+<main class="landing-main">
+<section class="landing-hero" aria-labelledby="landing-title">
   <div class="landing-copy">
-    <p class="meta-text">여러 자격증을 하나의 학습 흐름으로</p>
-    <h1 class="section-title">학습할 과목을 선택하세요</h1>
-    <p class="landing-lead">
-      과목을 선택하면 오늘 추천 문제, 오답 복습, 로드맵, 통계가 해당 과목 기준으로 이어집니다.
-    </p>
+    <p class="landing-eyebrow">자격증 학습 플랫폼</p>
+    <h1 id="landing-title">원하는 자격증을 선택하여<br>학습을 시작하세요.</h1>
+    <p class="landing-lead">과목을 고르면 나에게 맞는 학습 화면으로 바로 이동합니다.</p>
   </div>
 </section>
 
-<section class="card">
-  <h2 class="card-title">과목 선택</h2>
+<section class="subject-selection" aria-labelledby="subject-selection-title">
+  <div class="subject-section-heading">
+    <h2 id="subject-selection-title">과목 선택</h2>
+    <p>시작할 자격증을 선택해 주세요.</p>
+  </div>
 
   {% if subjects %}
     <div class="subject-grid">
       {% for subject in subjects %}
-        <form method="post" class="subject-card">
+        <form method="post" action="{% url 'select_subject' subject.code %}" class="subject-card">
           {% csrf_token %}
-          <input type="hidden" name="subject_code" value="{{ subject.code }}">
-          <div>
+          <div class="subject-card-copy">
+            <span class="subject-card-label">자격시험</span>
             <h3>{{ subject.name }}</h3>
             {% if subject.description %}
               <p>{{ subject.description }}</p>
@@ -31,31 +36,26 @@
               <p>이 과목의 학습 홈으로 이동합니다.</p>
             {% endif %}
             {% if selected_subject_code == subject.code %}
-              <p class="meta-text">현재 선택된 과목입니다.</p>
+              <p class="selected-subject-label">현재 선택한 과목</p>
             {% endif %}
           </div>
-          <button type="submit" class="main-button">이 과목으로 학습하기</button>
+          <button type="submit" class="subject-start-button">
+            <span>학습 시작</span>
+            <span aria-hidden="true">→</span>
+          </button>
         </form>
       {% endfor %}
     </div>
   {% else %}
-    <p>현재 선택 가능한 과목이 없습니다. 기본 과목을 준비 중입니다.</p>
+    <div class="landing-empty-state">현재 선택 가능한 과목이 없습니다. 기본 과목을 준비 중입니다.</div>
   {% endif %}
 </section>
 
-<section class="card">
-  <h2 class="card-title">처음이라면</h2>
-  <p>회원가입 또는 로그인 후 과목별 학습 기록을 이어갈 수 있습니다.</p>
-  <div class="landing-actions">
-    {% if user.is_authenticated %}
-      <a href="{% url 'mission_list' %}" class="sub-button">학습 홈으로 이동</a>
-    {% else %}
-      <a href="{% url 'signup' %}" class="main-button">무료로 시작하기</a>
-      <a href="{% url 'login' %}" class="sub-button">로그인</a>
-    {% endif %}
-    <a href="{% url 'premium_info' %}" class="sub-button">프리미엄 안내</a>
-    <a href="{% url 'inquiry' %}" class="sub-button">프리미엄 신청/문의</a>
-  </div>
-</section>
+<footer class="landing-footer" aria-label="서비스 안내">
+  <a href="{% url 'service_info' %}">서비스 소개</a>
+  <a href="{% url 'premium_info' %}">프리미엄 안내</a>
+  <a href="{% url 'inquiry' %}">문의하기</a>
+</footer>
+</main>
 
 {% endblock %}

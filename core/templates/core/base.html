@@ -7,9 +7,11 @@
 
     <title>{% block title %}자격증 시험 학습 플랫폼{% endblock %}</title>
 
-    <link rel="stylesheet" href="{% static 'core/style.css' %}">
+    <link rel="stylesheet" href="{% static 'core/style.css' %}?v=20260719-1">
+    <link rel="stylesheet" href="{% static 'core/theory.css' %}?v=20260719-1">
+    {% block extra_css %}{% endblock %}
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
 
 <nav class="top-nav" aria-label="주요 메뉴">
     <div class="nav-head">
@@ -20,25 +22,43 @@
     </div>
 
     <div class="nav-links" id="primary-nav">
-        <a href="{% url 'landing' %}" class="sub-link">서비스 소개</a>
-        {% if user.is_authenticated %}
-            <a href="{% url 'mission_list' %}" class="sub-link">학습 홈</a>
-            <a href="{% url 'problem_set_list' %}" class="sub-link">문제 세트</a>
-            <a href="{% url 'wrong_notes' %}" class="sub-link">오답노트</a>
-            <a href="{% url 'stats' %}" class="sub-link">통계</a>
-            <a href="{% url 'exam_start' %}" class="sub-link">시험</a>
+        {% if request.resolver_match.url_name == 'landing' or request.resolver_match.url_name == 'service_info' %}
+            <a href="{% url 'service_info' %}" class="sub-link">서비스 소개</a>
+            <a href="{% url 'premium_info' %}" class="sub-link">프리미엄</a>
             <a href="{% url 'inquiry' %}" class="sub-link">문의</a>
             {% if user.is_staff %}
                 <a href="{% url 'admin_dashboard' %}" class="sub-link">운영 대시보드</a>
             {% endif %}
-            <form method="post" action="{% url 'logout' %}" class="inline-form">
-                {% csrf_token %}
-                <button type="submit" class="link-button">로그아웃</button>
-            </form>
+            {% if user.is_authenticated %}
+                <form method="post" action="{% url 'logout' %}" class="inline-form nav-auth-start">
+                    {% csrf_token %}
+                    <button type="submit" class="nav-auth-button nav-auth-button-primary">로그아웃</button>
+                </form>
+            {% else %}
+                <a href="{% url 'signup' %}" class="nav-auth-button nav-auth-start">회원가입</a>
+                <a href="{% url 'login' %}" class="nav-auth-button nav-auth-button-primary">로그인</a>
+            {% endif %}
         {% else %}
-            <a href="{% url 'signup' %}" class="sub-link">회원가입</a>
-            <a href="{% url 'login' %}" class="sub-link">로그인</a>
-            <a href="{% url 'inquiry' %}" class="sub-link">문의</a>
+            <a href="{% url 'service_info' %}" class="sub-link">서비스 소개</a>
+            {% if user.is_authenticated %}
+                <a href="{% url 'mission_list' %}" class="sub-link">학습 홈</a>
+                <a href="{% url 'problem_set_list' %}" class="sub-link">문제 세트</a>
+                <a href="{% url 'wrong_notes' %}" class="sub-link">오답노트</a>
+                <a href="{% url 'stats' %}" class="sub-link">통계</a>
+                <a href="{% url 'exam_start' %}" class="sub-link">시험</a>
+                <a href="{% url 'inquiry' %}" class="sub-link">문의</a>
+                {% if user.is_staff %}
+                    <a href="{% url 'admin_dashboard' %}" class="sub-link">운영 대시보드</a>
+                {% endif %}
+                <form method="post" action="{% url 'logout' %}" class="inline-form">
+                    {% csrf_token %}
+                    <button type="submit" class="link-button">로그아웃</button>
+                </form>
+            {% else %}
+                <a href="{% url 'signup' %}" class="sub-link">회원가입</a>
+                <a href="{% url 'login' %}" class="sub-link">로그인</a>
+                <a href="{% url 'inquiry' %}" class="sub-link">문의</a>
+            {% endif %}
         {% endif %}
     </div>
 </nav>
@@ -54,7 +74,7 @@
 {% block content %}
 {% endblock %}
 
-{% if user.is_authenticated %}
+{% if user.is_authenticated and request.resolver_match.url_name != 'landing' and request.resolver_match.url_name != 'service_info' %}
 <nav class="bottom-mobile-nav" aria-label="모바일 빠른 메뉴">
     <a href="{% url 'mission_list' %}">홈</a>
     <a href="{% url 'problem_set_list' %}">문제</a>

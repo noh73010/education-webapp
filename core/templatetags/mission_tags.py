@@ -1,5 +1,6 @@
 import re
 from django import template
+from django.utils.html import strip_tags
 
 register = template.Library()
 
@@ -57,10 +58,33 @@ def prompt_question(prompt):
     """
     prompt = prompt or ""
 
-    pattern = r"\[QUESTION\](.*?)\[/QUESTION\]"
+    pattern = r"\[QUESTION\](.*?)(?:\[/QUESTION\]|$)"
     match = re.search(pattern, prompt, flags=re.DOTALL | re.IGNORECASE)
 
     if match:
         return match.group(1).strip()
 
     return prompt.strip()
+
+
+@register.filter
+def question_excerpt(prompt, limit=60):
+    """Return a compact learner-facing question title from a Mission prompt."""
+    try:
+        limit = max(20, int(limit))
+    except (TypeError, ValueError):
+        limit = 60
+
+    question = strip_tags(prompt_question(prompt))
+    question = re.sub(
+        r"\[/?(?:CONTEXT|TABLE|DATA|RULES|TEXT|QUESTION)\]",
+        " ",
+        question,
+        flags=re.IGNORECASE,
+    )
+    question = re.sub(r"\s+", " ", question).strip()
+
+    if len(question) <= limit:
+        return question
+
+    return f"{question[:limit].rstrip()}..."

@@ -5,6 +5,7 @@ from django.utils import timezone
 from core.models import Mission, WrongPattern, PatternTrainingSession
 from core.services.access import get_user_access
 from core.services.analytics import record_event
+from core.services.subjects import get_current_subject
 
 
 @login_required
@@ -14,6 +15,7 @@ def pattern_training_start(request, pattern_code):
     예: VLOOKUP_FIRST_COL
     """
     wrong_pattern = get_object_or_404(WrongPattern, code=pattern_code)
+    current_subject, _ = get_current_subject(request)
     
     access = get_user_access(request.user)
 
@@ -36,6 +38,7 @@ def pattern_training_start(request, pattern_code):
         .filter(
             variation_group=pattern_code,
             is_usable_for_set=True,
+            subject=current_subject,
         )
         .order_by("level", "id")
         .values_list("id", flat=True)

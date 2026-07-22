@@ -5,14 +5,140 @@ from typing import List
 from django.db.models import Count, Q
 
 from core.models import Attempt, Mission
+from core.services.logistics_curriculum import LOGISTICS_CURRICULUM
+from core.services.review_schedule import decorate_missions_with_review_state
 
 
-def get_user_level(user):
-    attempts = list(
-        Attempt.objects
-        .filter(user=user)
-        .order_by("-created_at")[:20]
+def _chapter_progression_recommendations(
+    candidates: list[Mission],
+    level: int,
+    stable_key,
+    subject=None,
+) -> list[Mission] | None:
+    """Build a textbook-like daily flow when chapter metadata is available.
+
+    The first chapter with an unattempted question is the current chapter.
+    New questions in that chapter come first, followed by another question from
+    the same chapter, then one previously missed/weak question for review.
+    """
+    all_candidates = candidates
+    level_candidates = [mission for mission in candidates if mission.level == level]
+    if level_candidates:
+        candidates = level_candidates
+
+    chapter_candidates = [mission for mission in candidates if (mission.chapter_code or "").strip()]
+    if not chapter_candidates:
+        return None
+
+    available_codes = {mission.chapter_code for mission in chapter_candidates}
+    curriculum_codes = [
+        code
+        for course in LOGISTICS_CURRICULUM
+        for code, _chapter_name in course["chapters"]
+    ]
+    ordered_codes = [code for code in curriculum_codes if code in available_codes]
+    ordered_codes.extend(sorted(available_codes - set(ordered_codes)))
+
+    missions_by_chapter = {
+        code: [mission for mission in chapter_candidates if mission.chapter_code == code]
+        for code in ordered_codes
+    }
+    current_code = next(
+        (
+            code
+            for code in ordered_codes
+            if any((mission.my_total or 0) == 0 for mission in missions_by_chapter[code])
+        ),
+        None,
     )
+
+    def study_rank(mission: Mission, prefix: str):
+        return (
+            0 if (mission.my_total or 0) == 0 else 1,
+            0 if mission.level == level else 1,
+            abs((mission.level or level) - level),
+            stable_key(prefix, mission.id),
+        )
+
+    selected: list[Mission] = []
+    selected_ids: set[int] = set()
+
+    def add(missions, limit: int):
+        for mission in missions:
+            if len(selected) >= limit:
+                break
+            if mission.id not in selected_ids:
+                selected.append(mission)
+                selected_ids.add(mission.id)
+
+    if current_code is not None:
+        current_missions = missions_by_chapter[current_code]
+        current_untried = sorted(
+            [mission for mission in current_missions if (mission.my_total or 0) == 0],
+            key=lambda mission: study_rank(mission, "current-new"),
+        )
+        add(current_untried, 3)
+
+        current_remaining = sorted(
+            [mission for mission in current_missions if mission.id not in selected_ids],
+            key=lambda mission: study_rank(mission, "current-fill"),
+        )
+        add(current_remaining, 4)
+
+    chapter_position = {code: index for index, code in enumerate(ordered_codes)}
+    current_position = chapter_position.get(current_code, 0)
+    untried_fill = [
+        mission
+        for mission in candidates
+        if mission.id not in selected_ids and (mission.my_total or 0) == 0
+    ]
+    untried_fill.sort(
+        key=lambda mission: (
+            (chapter_position.get(mission.chapter_code, len(ordered_codes)) - current_position)
+            % max(len(ordered_codes), 1),
+            stable_key("untried-chapter-fill", mission.id),
+        )
+    )
+    add(untried_fill, 4)
+
+    weak_pool = [
+        mission
+        for mission in all_candidates
+        if mission.id not in selected_ids
+        and (mission.my_total or 0) > 0
+        and (mission.my_last_is_correct is False or mission.my_accuracy < 70)
+    ]
+    weak_pool.sort(
+        key=lambda mission: (
+            0 if getattr(mission, "my_review_is_due", False) else 1,
+            0 if mission.my_last_is_correct is False else 1,
+            mission.my_accuracy,
+            -(mission.my_total or 0),
+            stable_key("weak-review", mission.id),
+        )
+    )
+    if weak_pool:
+        add(weak_pool, len(selected) + 1)
+
+    remaining = [mission for mission in candidates if mission.id not in selected_ids]
+    remaining.sort(
+        key=lambda mission: (
+            0 if (mission.my_total or 0) == 0 else 1,
+            (chapter_position.get(mission.chapter_code, len(ordered_codes)) - current_position)
+            % max(len(ordered_codes), 1),
+            0 if mission.level == level else 1,
+            stable_key("chapter-fill", mission.id),
+        )
+    )
+    add(remaining, 5)
+    return selected[:5]
+
+
+def get_user_level(user, subject=None):
+    attempt_qs = Attempt.objects.filter(user=user)
+    if subject is not None:
+        attempt_qs = attempt_qs.filter(mission__subject=subject)
+    attempts = list(attempt_qs.order_by("-created_at")[:20])
 
     if not attempts:
         return 1
@@ -28,10 +154,12 @@ def get_user_level(user):
         return 2
 
 
-def get_weak_skills(user, limit=3):
+def get_weak_skills(user, limit=3, subject=None):
+    attempt_qs = Attempt.objects.filter(user=user)
+    if subject is not None:
+        attempt_qs = attempt_qs.filter(mission__subject=subject)
     rows = (
-        Attempt.objects
-        .filter(user=user)
+        attempt_qs
         .values("mission__skill")
         .annotate(
             total=Count("id"),
@@ -70,6 +198,7 @@ def get_recommended_missions(
     annotated_qs,
     candidate_limit: int = 300,
     extra_seed: str = "",
+    subject=None,
 ) -> tuple[list[Mission], str]:
     """
     annotate된 qs를 받아서
@@ -87,8 +216,20 @@ def get_recommended_missions(
         s = f"{seed}:{prefix}:{mission_id}"
         return hashlib.sha256(s.encode("utf-8")).hexdigest()
 
-    level = get_user_level(user)
-    weak_skills = get_weak_skills(user)
+    level = get_user_level(user, subject=subject)
+    weak_skills = get_weak_skills(user, subject=subject)
+
+    chapter_candidates = list(annotated_qs[:candidate_limit])
+    decorate_missions_for_display(chapter_candidates)
+    decorate_missions_with_review_state(user, chapter_candidates)
+    chapter_selection = _chapter_progression_recommendations(
+        chapter_candidates,
+        level,
+        stable_key,
+        subject=subject,
+    )
+    if chapter_selection is not None:
+        return chapter_selection, today
 
     base_qs = annotated_qs.filter(level=level)
 
@@ -104,11 +245,14 @@ def get_recommended_missions(
     if not candidates:
         candidates = list(annotated_qs[:candidate_limit])
     decorate_missions_for_display(candidates)
+    decorate_missions_with_review_state(user, candidates)
 
     # -------- 약점 스킬 계산 --------
+    skill_attempt_qs = Attempt.objects.filter(user=user)
+    if subject is not None:
+        skill_attempt_qs = skill_attempt_qs.filter(mission__subject=subject)
     skill_rows = (
-        Attempt.objects
-        .filter(user=user)
+        skill_attempt_qs
         .values("mission__skill")
         .annotate(
             total=Count("id"),
@@ -142,22 +286,29 @@ def get_recommended_missions(
     weak_pool = [m for m in candidates if (m.my_total or 0) > 0 and m not in untried_pick]
 
     def weak_rank(m):
+        review_due_flag = 0 if getattr(m, "my_review_is_due", False) else 1
         weak_skill_flag = 0 if m.skill in weak_skills else 1
         recent_wrong_flag = 0 if m.my_last == "오답" else 1
         acc = m.my_accuracy
         total = m.my_total or 0
-        return (weak_skill_flag, recent_wrong_flag, acc, total, stable_key("weak", m.id))
+        return (review_due_flag, weak_skill_flag, recent_wrong_flag, acc, total, stable_key("weak", m.id))
 
     weak_pool.sort(key=weak_rank)
     weak_pick = weak_pool[:2]
 
-    return untried_pick + weak_pick, today
+    selected = untried_pick + weak_pick
+    selected_ids = {mission.id for mission in selected}
+    remaining = [mission for mission in candidates if mission.id not in selected_ids]
+    remaining.sort(key=lambda mission: stable_key("fill", mission.id))
+
+    return (selected + remaining)[:5], today
 
 def get_recommendations_from_annotated_qs(
     user,
     annotated_qs,
     candidate_limit: int = 300,
     extra_seed: str = "",
+    subject=None,
 ):
     """
     views.py / service가 기대하는 wrapper.
@@ -167,4 +318,5 @@ def get_recommendations_from_annotated_qs(
         annotated_qs,
         candidate_limit=candidate_limit,
         extra_seed=extra_seed,
+        subject=subject,
     )

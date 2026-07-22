@@ -38,6 +38,11 @@ class Mission(models.Model):
         ("standard", "standard"),
         ("practical", "practical"),
     ]
+    DIFFICULTY_CHOICES = [
+        ("하", "하"),
+        ("중", "중"),
+        ("상", "상"),
+    ]
 
     external_id = models.CharField(
         max_length=100,
@@ -52,6 +57,15 @@ class Mission(models.Model):
         null=True,
         blank=True,
         related_name="missions",
+    )
+    course = models.CharField(max_length=100, blank=True, default="")
+    chapter_code = models.CharField(max_length=20, blank=True, default="")
+    chapter_name = models.CharField(max_length=200, blank=True, default="")
+    difficulty = models.CharField(
+        max_length=1,
+        choices=DIFFICULTY_CHOICES,
+        blank=True,
+        default="",
     )
     skill = models.CharField(max_length=100)
     level = models.PositiveSmallIntegerField(default=1)
@@ -83,6 +97,9 @@ class Mission(models.Model):
     )
     correct_answer = models.TextField(blank=True, default="")
     explanation = models.TextField(blank=True, default="")
+    choice_explanations = models.JSONField(default=dict, blank=True)
+    concept_summary = models.TextField(blank=True, default="")
+    exam_tip = models.TextField(blank=True, default="")
     answer_schema = models.TextField(blank=True, default="")
     wrong_pattern_code = models.CharField(
         max_length=100,
@@ -108,10 +125,30 @@ class Mission(models.Model):
     class Meta:
         indexes = [
             models.Index(fields=["skill", "level"]),
+            models.Index(fields=["subject", "course", "chapter_code"]),
         ]
 
     def __str__(self):
         return f"[{self.skill}] {self.title}"
+
+
+class MissionImage(models.Model):
+    mission = models.OneToOneField(
+        Mission,
+        on_delete=models.CASCADE,
+        related_name="question_image",
+    )
+    static_path = models.CharField(max_length=500)
+    alt_text = models.CharField(max_length=300, blank=True, default="")
+    source = models.CharField(max_length=30, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["mission_id"]
+
+    def __str__(self):
+        return f"{self.mission.external_id} / {self.static_path}"
 
 
 class WrongReason(models.Model):
@@ -417,7 +454,18 @@ class ProblemSetSessionItem(models.Model):
     mission = models.ForeignKey(Mission, on_delete=models.PROTECT)
     order_no = models.PositiveIntegerField()
     is_correct = models.BooleanField(null=True, blank=True)
+    submitted_answer = models.TextField(blank=True, default="")
+    attempt = models.ForeignKey(
+        Attempt,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="problem_set_session_items",
+    )
     submitted_at = models.DateTimeField(null=True, blank=True)
+    review_attempt_count = models.PositiveIntegerField(default=0)
+    review_is_correct = models.BooleanField(null=True, blank=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         unique_together = ("problem_set_session", "order_no")

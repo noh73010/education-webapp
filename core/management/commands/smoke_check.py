@@ -129,6 +129,11 @@ class Command(BaseCommand):
         else:
             self.fail("Subject migration is not applied: run manage.py migrate")
 
+        if ("core", "0034_mission_learning_feedback") in applied_migrations:
+            self.ok("Learning feedback migration is applied: core.0034_mission_learning_feedback")
+        else:
+            self.fail("Learning feedback migration is not applied: run manage.py migrate")
+
         migration_dir = Path(__file__).resolve().parents[2] / "migrations"
         inquiry_migration_files = [
             path.stem for path in migration_dir.glob("*.py")

@@ -1,15 +1,15 @@
 from django.db.models import Count, Q
 
 from core.models import ProblemSet, ProblemSetSession, Attempt, AttemptWrongPattern, Mission
+from core.services.theory import THEORY_SET_PREFIX
 
 
-def get_recent_average_score(user, limit=5):
-    recent_sessions = (
-        ProblemSetSession.objects
-        .filter(user=user, status="completed")
-        .order_by("-started_at")[:limit]
-    )
+def get_recent_average_score(user, limit=5, subject=None):
+    recent_sessions = ProblemSetSession.objects.filter(user=user, status="completed")
+    if subject is not None:
+        recent_sessions = recent_sessions.filter(items__mission__subject=subject).distinct()
 
+    recent_sessions = recent_sessions.order_by("-started_at")[:limit]
     scores = [session.score for session in recent_sessions]
 
     if not scores:
@@ -18,8 +18,8 @@ def get_recent_average_score(user, limit=5):
     return round(sum(scores) / len(scores), 1)
 
 
-def get_target_level(user):
-    recent_avg = get_recent_average_score(user)
+def get_target_level(user, subject=None):
+    recent_avg = get_recent_average_score(user, subject=subject)
 
     if recent_avg is None:
         return 1
@@ -32,10 +32,14 @@ def get_target_level(user):
 
     return 1
 
-def get_weak_patterns(user, limit=3):
+
+def get_weak_patterns(user, limit=3, subject=None):
+    qs = AttemptWrongPattern.objects.filter(attempt__user=user)
+    if subject is not None:
+        qs = qs.filter(attempt__mission__subject=subject)
+
     rows = (
-        AttemptWrongPattern.objects
-        .filter(attempt__user=user)
+        qs
         .values(
             "wrong_pattern__code",
             "wrong_pattern__name",
@@ -48,15 +52,7 @@ def get_weak_patterns(user, limit=3):
     return list(rows)
 
 
-def get_pattern_recommend_missions(user, weak_patterns, limit=5):
-    """
-    반복 오답 패턴을 기준으로 유사 문제를 추천한다.
-
-    기준:
-    - weak_patterns의 code를 variation_group으로 사용
-    - 이미 정답 처리한 문제는 제외
-    - 최근 틀린 문제 자체는 뒤로 밀고, 같은 그룹의 다른 문제를 우선 추천
-    """
+def get_pattern_recommend_missions(user, weak_patterns, limit=5, subject=None):
     pattern_codes = [
         row["wrong_pattern__code"]
         for row in weak_patterns
@@ -66,19 +62,20 @@ def get_pattern_recommend_missions(user, weak_patterns, limit=5):
     if not pattern_codes:
         return []
 
-    attempted_correct_ids = set(
-        Attempt.objects
-        .filter(user=user, is_correct=True)
-        .values_list("mission_id", flat=True)
-    )
+    attempted_correct_qs = Attempt.objects.filter(user=user, is_correct=True)
+    if subject is not None:
+        attempted_correct_qs = attempted_correct_qs.filter(mission__subject=subject)
+    attempted_correct_ids = set(attempted_correct_qs.values_list("mission_id", flat=True))
 
+    recent_wrong_qs = Attempt.objects.filter(
+        user=user,
+        is_correct=False,
+        mission__variation_group__in=pattern_codes,
+    )
+    if subject is not None:
+        recent_wrong_qs = recent_wrong_qs.filter(mission__subject=subject)
     recent_wrong_ids = set(
-        Attempt.objects
-        .filter(
-            user=user,
-            is_correct=False,
-            mission__variation_group__in=pattern_codes,
-        )
+        recent_wrong_qs
         .order_by("-created_at")
         .values_list("mission_id", flat=True)[:20]
     )
@@ -91,6 +88,8 @@ def get_pattern_recommend_missions(user, weak_patterns, limit=5):
         )
         .exclude(id__in=attempted_correct_ids)
     )
+    if subject is not None:
+        base_qs = base_qs.filter(subject=subject)
 
     other_missions = list(
         base_qs
@@ -102,7 +101,6 @@ def get_pattern_recommend_missions(user, weak_patterns, limit=5):
         return other_missions
 
     needed = limit - len(other_missions)
-
     retry_missions = list(
         base_qs
         .filter(id__in=recent_wrong_ids)
@@ -112,10 +110,11 @@ def get_pattern_recommend_missions(user, weak_patterns, limit=5):
     return other_missions + retry_missions
 
 
-def get_problem_set_recommendations(user, limit_today=3, limit_review=3, limit_weak=3):
+def get_problem_set_recommendations(user, limit_today=3, limit_review=3, limit_weak=3, subject=None):
     active_sets = (
         ProblemSet.objects
         .filter(is_active=True)
+        .exclude(title__startswith=THEORY_SET_PREFIX)
         .annotate(
             unusable_item_count=Count(
                 "items",
@@ -124,17 +123,20 @@ def get_problem_set_recommendations(user, limit_today=3, limit_review=3, limit_w
         )
         .filter(unusable_item_count=0)
     )
+    if subject is not None:
+        active_sets = active_sets.filter(items__mission__subject=subject).distinct()
 
-    target_level = get_target_level(user)
+    target_level = get_target_level(user, subject=subject)
 
+    attempted_sessions = ProblemSetSession.objects.filter(user=user)
+    if subject is not None:
+        attempted_sessions = attempted_sessions.filter(items__mission__subject=subject).distinct()
     attempted_set_ids = set(
-        ProblemSetSession.objects
-        .filter(user=user)
+        attempted_sessions
         .values_list("problem_set_id", flat=True)
         .distinct()
     )
 
-    # 1) 오늘 할 세트: 목표 난이도 + 아직 안 푼 세트 우선
     today_sets = list(
         active_sets
         .filter(level=target_level)
@@ -142,7 +144,6 @@ def get_problem_set_recommendations(user, limit_today=3, limit_review=3, limit_w
         .order_by("-created_at")[:limit_today]
     )
 
-    # 부족하면 같은 난이도에서 이미 푼 세트도 보충
     if len(today_sets) < limit_today:
         needed = limit_today - len(today_sets)
         extra_sets = list(
@@ -153,11 +154,9 @@ def get_problem_set_recommendations(user, limit_today=3, limit_review=3, limit_w
         )
         today_sets.extend(extra_sets)
 
-    # 그래도 부족하면 전체 활성 세트에서 보충
     if len(today_sets) < limit_today:
         needed = limit_today - len(today_sets)
         already_ids = [ps.id for ps in today_sets]
-
         fallback_sets = list(
             active_sets
             .exclude(id__in=already_ids)
@@ -165,10 +164,9 @@ def get_problem_set_recommendations(user, limit_today=3, limit_review=3, limit_w
         )
         today_sets.extend(fallback_sets)
 
-    # 2) 복습 추천 세트: 최근 완료 기록 중 낮은 점수 우선
     review_sessions = list(
-        ProblemSetSession.objects
-        .filter(user=user, status="completed")
+        attempted_sessions
+        .filter(status="completed")
         .select_related("problem_set")
         .order_by("score", "-started_at")[:20]
     )
@@ -185,10 +183,12 @@ def get_problem_set_recommendations(user, limit_today=3, limit_review=3, limit_w
         if len(review_sets) >= limit_review:
             break
 
-    # 3) 약점 기반 추천 세트: 최근 오답이 많은 skill 기준
+    weak_attempt_qs = Attempt.objects.filter(user=user)
+    if subject is not None:
+        weak_attempt_qs = weak_attempt_qs.filter(mission__subject=subject)
+
     weak_skill_rows = (
-        Attempt.objects
-        .filter(user=user)
+        weak_attempt_qs
         .values("mission__skill")
         .annotate(
             total=Count("id"),
@@ -220,11 +220,14 @@ def get_problem_set_recommendations(user, limit_today=3, limit_review=3, limit_w
 
         if len(weak_sets) >= limit_weak:
             break
-    weak_patterns = get_weak_patterns(user)
+
+    weak_patterns = get_weak_patterns(user, subject=subject)
     pattern_missions = get_pattern_recommend_missions(
         user=user,
         weak_patterns=weak_patterns,
-    )           
+        subject=subject,
+    )
+
     return {
         "today_sets": today_sets,
         "review_sets": review_sets,
@@ -233,5 +236,5 @@ def get_problem_set_recommendations(user, limit_today=3, limit_review=3, limit_w
         "weak_patterns": weak_patterns,
         "pattern_missions": pattern_missions,
         "target_level": target_level,
-        "recent_avg_score": get_recent_average_score(user),
+        "recent_avg_score": get_recent_average_score(user, subject=subject),
     }

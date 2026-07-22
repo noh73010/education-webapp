@@ -8,6 +8,7 @@ from django.db.models import Count, Q, OuterRef, Subquery
 from django.utils import timezone
 from core.services.skill_labels import get_skill_label
 from core.services.skill_categories import get_skill_category
+from core.services.subjects import get_current_subject
 
 from core.models import (
     Mission,
@@ -19,6 +20,7 @@ from core.models import (
 
 @login_required
 def stats(request):
+    current_subject, _ = get_current_subject(request)
     # 기간 필터: all / 7 / 30 (기본 all)
     period = request.GET.get("period", "all").strip()
     since = None
@@ -32,8 +34,11 @@ def stats(request):
     # ---------------------------
     # A) 누적 통계(기간 필터 반영)
     # ---------------------------
-    attempt_qs = Attempt.objects.filter(user=request.user)
-    awr_qs = AttemptWrongReason.objects.filter(attempt__user=request.user)
+    attempt_qs = Attempt.objects.filter(user=request.user, mission__subject=current_subject)
+    awr_qs = AttemptWrongReason.objects.filter(
+        attempt__user=request.user,
+        attempt__mission__subject=current_subject,
+    )
 
     if since is not None:
         attempt_qs = attempt_qs.filter(created_at__gte=since)
@@ -76,7 +81,7 @@ def stats(request):
     
     wrong_pattern_rows = (
         AttemptWrongPattern.objects
-        .filter(attempt__user=request.user)
+        .filter(attempt__user=request.user, attempt__mission__subject=current_subject)
         .values(
             "wrong_pattern__skill",
             "wrong_pattern__name",
@@ -129,7 +134,7 @@ def stats(request):
 
     missions_with_last = (
         Mission.objects
-        .all()
+        .filter(subject=current_subject)
         .annotate(
             last_time=Subquery(latest_attempt_qs.values("created_at")[:1]),
             last_is_correct=Subquery(latest_attempt_qs.values("is_correct")[:1]),
@@ -245,4 +250,5 @@ def stats(request):
         "skill_current_rows": skill_current_rows,
         "learning_type_rows": learning_type_rows,
         "weak_learning_type": weak_learning_type,
+        "current_subject": current_subject,
     })

@@ -1,0 +1,67 @@
+{% load static %}
+{% if mission.question_image %}
+  <figure class="question-image-wrap" data-question-image>
+    <button
+      type="button"
+      class="question-image-trigger"
+      aria-haspopup="dialog"
+      aria-controls="question-image-dialog-{{ mission.id }}"
+      aria-label="문제 이미지 크게 보기"
+    >
+      <img
+        src="{% static mission.question_image.static_path %}"
+        alt="{% if mission.course %}{{ mission.course }}{% else %}{{ mission.subject.name }}{% endif %} 문제 이미지"
+        class="question-image"
+        loading="lazy"
+      >
+    </button>
+    <figcaption class="question-image-hint">이미지를 눌러 크게 보기</figcaption>
+  </figure>
+
+  <dialog
+    class="question-image-dialog"
+    id="question-image-dialog-{{ mission.id }}"
+    aria-label="문제 이미지 확대 보기"
+  >
+    <div class="question-image-dialog-inner">
+      <button type="button" class="question-image-dialog-close" aria-label="확대 이미지 닫기">&times;</button>
+      <img
+        src="{% static mission.question_image.static_path %}"
+        alt="{% if mission.course %}{{ mission.course }}{% else %}{{ mission.subject.name }}{% endif %} 문제 이미지 확대"
+        class="question-image-full"
+      >
+    </div>
+  </dialog>
+
+  <script>
+    (() => {
+      const dialog = document.getElementById("question-image-dialog-{{ mission.id }}");
+      const imageWrap = dialog.previousElementSibling;
+      const trigger = imageWrap.querySelector(".question-image-trigger");
+      const image = imageWrap.querySelector(".question-image");
+      const closeButton = dialog.querySelector(".question-image-dialog-close");
+
+      const setOrientation = () => {
+        if (!image.naturalWidth || !image.naturalHeight) return;
+        const ratio = image.naturalWidth / image.naturalHeight;
+        const orientation = ratio <= 0.82 ? "portrait" : ratio >= 1.35 ? "wide" : "standard";
+        imageWrap.classList.add(`is-${orientation}`);
+        imageWrap.dataset.orientation = orientation;
+      };
+
+      if (image.complete) setOrientation();
+      else image.addEventListener("load", setOrientation, { once: true });
+
+      trigger.addEventListener("click", () => {
+        if (typeof dialog.showModal === "function") dialog.showModal();
+        else dialog.setAttribute("open", "");
+      });
+
+      closeButton.addEventListener("click", () => dialog.close());
+      dialog.addEventListener("click", (event) => {
+        if (event.target === dialog) dialog.close();
+      });
+      dialog.addEventListener("close", () => trigger.focus());
+    })();
+  </script>
+{% endif %}

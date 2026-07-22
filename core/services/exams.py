@@ -7,15 +7,19 @@ from core.models import Mission, ExamSession, ExamSessionMission, Attempt
 from core.services.streaks import update_user_streak
 
 @transaction.atomic
-def create_exam_session(user, title="실전 모의고사 1회", time_limit_min=40, total_questions=40):
+def create_exam_session(user, title="실전 모의고사 1회", time_limit_min=40, total_questions=40, subject=None):
     """
     시험 세션 1개와 시험 문제를 생성한다.
     - 스킬별로 최대한 고르게 문제를 뽑는다.
     - 부족하면 전체 문제에서 추가 보충한다.
     - total_questions 개수에 맞춰 최종 구성한다.
     """
+    mission_qs = Mission.objects.filter(is_usable_for_set=True)
+    if subject is not None:
+        mission_qs = mission_qs.filter(subject=subject)
+
     skills = list(
-        Mission.objects.values_list("skill", flat=True).distinct()
+        mission_qs.values_list("skill", flat=True).distinct()
     )
 
     if not skills:
@@ -37,7 +41,7 @@ def create_exam_session(user, title="실전 모의고사 1회", time_limit_min=4
     # 1) 스킬별 우선 선발
     for skill in skills:
         picked = list(
-            Mission.objects
+            mission_qs
             .filter(skill=skill)
             .exclude(id__in=used_ids)
             .order_by("?")[:per_skill]
@@ -49,7 +53,7 @@ def create_exam_session(user, title="실전 모의고사 1회", time_limit_min=4
     remain = total_questions - len(selected)
     if remain > 0:
         extra = list(
-            Mission.objects
+            mission_qs
             .exclude(id__in=used_ids)
             .order_by("?")[:remain]
         )

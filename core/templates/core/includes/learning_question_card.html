@@ -1,0 +1,36 @@
+{% load mission_tags %}
+<a href="{% url 'mission_detail' mission.id %}" class="learning-question-card">
+  <div class="learning-question-card-head">
+    {% if question_number %}
+      <span class="learning-question-number">문제 {{ question_number }}</span>
+    {% endif %}
+    <span class="learning-question-course">
+      <span aria-hidden="true">📘</span>
+      {% if mission.course %}{{ mission.course }}{% else %}{{ mission.subject.name }}{% endif %}
+    </span>
+  </div>
+
+  <h3 class="learning-question-title">
+    {{ mission.prompt|question_excerpt:60|default:"문제 내용을 확인하세요." }}
+  </h3>
+
+  <div class="learning-question-status">
+    {% if mission.daily_category_label %}
+      <span class="learning-question-reason">
+        <b>{{ mission.daily_category_label }}</b> · {{ mission.daily_reason }}
+      </span>
+    {% endif %}
+    {% if mission.my_total %}
+      <span>풀이 {{ mission.my_total }}회 · 정답률 {{ mission.my_accuracy }}%</span>
+      <span class="learning-question-last {% if mission.my_last == '오답' %}is-wrong{% else %}is-correct{% endif %}">
+        최근: {{ mission.my_last }}
+      </span>
+    {% else %}
+      <span class="learning-question-untried">미풀이</span>
+    {% endif %}
+
+    {% if mission.today_done %}
+      <span class="learning-question-today">오늘 완료</span>
+    {% endif %}
+  </div>
+</a>

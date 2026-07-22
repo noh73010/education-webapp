@@ -7,10 +7,11 @@
 <section class="card">
   <h1 class="section-title">{{ problem_set.title }}</h1>
 
-  <div class="info-box">
-    <p><b>유형:</b> {{ problem_set.get_set_type_display }}</p>
-    <p><b>스킬 그룹:</b> {{ problem_set.skill_label }}</p>
-    <p><b>레벨:</b> Lv {{ problem_set.level }}</p>
+  <div class="problem-set-summary" aria-label="문제 세트 안내">
+    <span><b>총 {{ items|length }}문제</b></span>
+    <span>예상 소요시간 약 {{ estimated_minutes }}분</span>
+    {% if course_label %}<span>과목: {{ course_label }}</span>{% endif %}
+    {% if chapter_label %}<span>단원: {{ chapter_label }}</span>{% endif %}
   </div>
 
   {% if problem_set.description %}
@@ -31,13 +32,10 @@
 <section class="card">
   <h2 class="card-title">세트 구성 문제</h2>
 
-  <ol class="clean-list">
+  <ol class="clean-list learning-question-list">
     {% for item in items %}
-      <li>
-        <b>{{ item.mission.title }}</b>
-        <div class="meta-text">
-          {{ item.mission.skill_label }} / Lv {{ item.mission.level }} / 역할: {{ item.get_role_display }}
-        </div>
+      <li class="learning-question-item">
+        {% include "core/includes/learning_question_card.html" with mission=item.mission question_number=item.order_no %}
       </li>
     {% empty %}
       <li>현재 표시할 문제가 없습니다.</li>

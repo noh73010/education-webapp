@@ -9,6 +9,7 @@ from django.core.paginator import Paginator
 from core.models import Mission, Attempt, WrongReason, UserStreak, ProblemSetSession, ProblemSet, DailyMission
 from core.services.attempts import save_attempt, AttemptSaveError
 from core.services.daily import (
+    build_daily_study_plan,
     get_or_create_daily_recommendations,
     get_daily_done_ids,
     get_daily_progress,
@@ -20,6 +21,7 @@ from core.services.grading import (
     grade_multi_answer,
 )
 from core.services.problem_sets import (
+    record_problem_set_item_review,
     submit_problem_set_item_answer,
     finish_problem_set_session,
 )
@@ -27,37 +29,54 @@ from core.services.problem_set_recommendations import get_problem_set_recommenda
 from core.services.skill_labels import get_skill_label
 from core.services.analytics import record_event
 from core.services.learning_dashboard import build_learning_dashboard
-from core.services.subjects import get_current_subject, get_default_subject
+from core.services.learning_concepts import get_answer_display
+from core.services.learning_feedback import build_mission_feedback
+from core.services.logistics_curriculum import build_logistics_chapter_roadmap
+from core.services.mission_cards import load_mission_cards, prepare_mission_cards, with_user_learning_state
+from core.services.subjects import LOGISTICS_SUBJECT_CODE, get_current_subject, get_default_subject
+from core.services.theory import build_subject_theory_roadmap, get_theory_chapter_context
 
 
-def get_today_action(user):
+def get_today_action(user, subject=None):
     session = (
         ProblemSetSession.objects
         .filter(user=user, status="in_progress")
         .order_by("-started_at")
         .first()
     )
+    if subject is not None:
+        session = (
+            ProblemSetSession.objects
+            .filter(user=user, status="in_progress", items__mission__subject=subject)
+            .distinct()
+            .order_by("-started_at")
+            .first()
+        )
 
     if session:
         return "continue", session
 
-    done_today = (
+    done_today_qs = (
         ProblemSetSession.objects
         .filter(
             user=user,
             status="completed",
             started_at__date=date.today(),
         )
-        .exists()
     )
+    if subject is not None:
+        done_today_qs = done_today_qs.filter(items__mission__subject=subject).distinct()
+
+    done_today = done_today_qs.exists()
 
     if not done_today:
-        ps = (
+        ps_qs = (
             ProblemSet.objects
             .filter(is_active=True, set_type="training")
-            .order_by("-created_at")
-            .first()
         )
+        if subject is not None:
+            ps_qs = ps_qs.filter(items__mission__subject=subject).distinct()
+        ps = ps_qs.order_by("-created_at").first()
         return "start", ps
 
     return "review", None
@@ -360,6 +379,10 @@ def mission_list(request):
     current_subject, subject_needs_selection = get_current_subject(request)
     subject_mission_count = Mission.objects.filter(subject=current_subject).count()
     qs = Mission.objects.filter(subject=current_subject)
+    recommendation_qs = with_user_learning_state(
+        Mission.objects.filter(subject=current_subject, is_usable_for_set=True),
+        request.user,
+    ).order_by("id")
 
     if q:
         qs = qs.filter(
@@ -374,19 +397,7 @@ def mission_list(request):
     if level.isdigit():
         qs = qs.filter(level=int(level))
 
-    latest_attempt_qs = (
-        Attempt.objects
-        .filter(user=request.user, mission=OuterRef("pk"))
-        .order_by("-created_at")
-    )
-
-    qs = qs.annotate(
-        my_total=Count("attempt", filter=Q(attempt__user=request.user)),
-        my_correct=Count("attempt", filter=Q(attempt__user=request.user, attempt__is_correct=True)),
-        my_wrong=Count("attempt", filter=Q(attempt__user=request.user, attempt__is_correct=False)),
-        my_last_is_correct=Subquery(latest_attempt_qs.values("is_correct")[:1]),
-        my_last_time=Subquery(latest_attempt_qs.values("created_at")[:1]),
-    )
+    qs = with_user_learning_state(qs, request.user)
 
     if sort == "untried":
         qs = qs.order_by("my_total", "-created_at")
@@ -395,25 +406,11 @@ def mission_list(request):
     else:
         qs = qs.order_by("-created_at")
 
-    recommendation_qs = qs.filter(is_usable_for_set=True)
-
     paginator = Paginator(qs, 10)
     page_number = request.GET.get("page", "1")
     page_obj = paginator.get_page(page_number)
 
-    for m in page_obj.object_list:
-        total = m.my_total or 0
-        correct = m.my_correct or 0
-        m.my_accuracy = round((correct / total) * 100, 1) if total else 0.0
-
-        if total == 0:
-            m.my_last = "미풀이"
-        elif m.my_last_is_correct is True:
-            m.my_last = "정답"
-        elif m.my_last_is_correct is False:
-            m.my_last = "오답"
-        else:
-            m.my_last = "미풀이"
+    prepare_mission_cards(page_obj.object_list)
 
     reset_daily = request.GET.get("reset_daily") == "1"
 
@@ -424,24 +421,17 @@ def mission_list(request):
         subject=current_subject,
     )
 
-    for m in recommended:
-        total = m.my_total or 0
-        correct = m.my_correct or 0
-        m.my_accuracy = round((correct / total) * 100, 1) if total else 0.0
-
-        if total == 0:
-            m.my_last = "미풀이"
-        elif m.my_last_is_correct is True:
-            m.my_last = "정답"
-        elif m.my_last_is_correct is False:
-            m.my_last = "오답"
-        else:
-            m.my_last = "미풀이"
+    prepare_mission_cards(recommended)
 
     done_ids = get_daily_done_ids(request.user, today_date, subject=current_subject)
 
     for m in recommended:
         m.today_done = (m.id in done_ids)
+
+    today_start_mission = next(
+        (mission for mission in recommended if not mission.today_done),
+        None,
+    )
 
     skill_choices = (
         Mission.objects
@@ -452,10 +442,20 @@ def mission_list(request):
     )
 
     daily_progress = get_daily_progress(request.user, today_date, subject=current_subject)
+    daily_study_plan = build_daily_study_plan(
+        request.user,
+        recommended,
+        done_ids=done_ids,
+        today=today_date,
+    )
     streak, _ = UserStreak.objects.get_or_create(user=request.user)
-    dashboard = build_learning_dashboard(request.user, streak=streak)
+    dashboard = build_learning_dashboard(request.user, streak=streak, subject=current_subject)
 
-    recommendation_data = get_problem_set_recommendations(request.user)
+    recommendation_data = get_problem_set_recommendations(request.user, subject=current_subject)
+    recommendation_data["pattern_missions"] = load_mission_cards(
+        recommendation_data["pattern_missions"],
+        request.user,
+    )
 
     auto_start = request.GET.get("auto", "0") == "1"
 
@@ -476,15 +476,38 @@ def mission_list(request):
 
     recent_sessions = (
         ProblemSetSession.objects
-        .filter(user=request.user, status="completed")
+        .filter(user=request.user, status="completed", items__mission__subject=current_subject)
+        .distinct()
         .order_by("-started_at")[:3]
     )
-    today_action, today_action_obj = get_today_action(request.user)
-    weak_learning_type = get_weak_learning_type(request.user, subject=current_subject)
-    learning_roadmap = get_learning_roadmap(request.user, subject=current_subject)
-    next_learning_step = get_next_learning_step(learning_roadmap)
+    today_action, today_action_obj = get_today_action(request.user, subject=current_subject)
+    is_logistics_subject = current_subject.code == LOGISTICS_SUBJECT_CODE
+    weak_learning_type = None
+    learning_roadmap = []
+    logistics_chapter_roadmap = []
+    theory_roadmap = build_subject_theory_roadmap(request.user, current_subject)
 
-    if next_learning_step:
+    if is_logistics_subject:
+        logistics_chapter_roadmap = build_logistics_chapter_roadmap(
+            request.user,
+            current_subject,
+        )
+        next_learning_step = None
+    else:
+        weak_learning_type = get_weak_learning_type(request.user, subject=current_subject)
+        learning_roadmap = get_learning_roadmap(request.user, subject=current_subject)
+        next_learning_step = get_next_learning_step(learning_roadmap)
+
+    if today_start_mission and today_start_mission.chapter_code:
+        chapter_label = today_start_mission.chapter_name or today_start_mission.course or "현재 챕터"
+        today_guide_message = (
+            f"{chapter_label}의 미학습 문제부터 시작하고, 마지막에는 약점 문제를 복습합니다."
+        )
+        today_guide_url_name = "daily_mission"
+        today_guide_skill = ""
+        today_guide_learning_type = ""
+        today_guide_text = "오늘 학습 시작"
+    elif next_learning_step:
         today_guide_message = (
             f"{next_learning_step['skill_label']} "
             f"{next_learning_step['learning_type_label']} 단계가 "
@@ -507,7 +530,11 @@ def mission_list(request):
 
     today_guide_pattern_code = ""
 
-    if not next_learning_step and recommendation_data["weak_patterns"]:
+    if (
+        today_guide_url_name != "daily_mission"
+        and not next_learning_step
+        and recommendation_data["weak_patterns"]
+    ):
         top_pattern = recommendation_data["weak_patterns"][0]
 
         today_guide_message = (
@@ -529,6 +556,7 @@ def mission_list(request):
         "recommended": recommended,
         "today": today_str,
         "daily_progress": daily_progress,
+        "daily_study_plan": daily_study_plan,
         "streak": streak,
         "today_sets": recommendation_data["today_sets"],
         "recent_sessions": recent_sessions,
@@ -548,8 +576,12 @@ def mission_list(request):
         "today_guide_skill": today_guide_skill,
         "today_guide_learning_type": today_guide_learning_type,
         "today_guide_text": today_guide_text,
+        "today_start_mission": today_start_mission,
         "weak_learning_type": weak_learning_type,
         "learning_roadmap": learning_roadmap,
+        "logistics_chapter_roadmap": logistics_chapter_roadmap,
+        "theory_roadmap": theory_roadmap,
+        "is_logistics_subject": is_logistics_subject,
         "dashboard": dashboard,
         "current_subject": current_subject,
         "subject_needs_selection": subject_needs_selection,
@@ -559,7 +591,8 @@ def mission_list(request):
 
 @login_required
 def mission_detail(request, mission_id):
-    mission = get_object_or_404(Mission, id=mission_id)
+    current_subject, _ = get_current_subject(request)
+    mission = get_object_or_404(Mission, id=mission_id, subject=current_subject)
     wrong_reasons = WrongReason.objects.all()
 
     saved = False
@@ -567,6 +600,7 @@ def mission_detail(request, mission_id):
     saved_is_correct = None
     grading_rows = []
     next_daily_mission = None
+    saved_attempt = None
     schema_items = parse_answer_schema(mission.answer_schema)
     choice_items = parse_choice_schema(mission.answer_schema)
     mission_event_metadata = {
@@ -574,6 +608,14 @@ def mission_detail(request, mission_id):
         "skill": mission.skill,
         "question_type": mission.question_type,
     }
+    active_problem_set_ids = request.session.get("problem_set_mission_ids", [])
+    if mission.question_type == "manual":
+        submit_button_label = "학습 결과 저장"
+    elif mission.id in active_problem_set_ids:
+        current_position = active_problem_set_ids.index(mission.id)
+        submit_button_label = "결과 확인" if current_position == len(active_problem_set_ids) - 1 else "다음 문제"
+    else:
+        submit_button_label = "답안 제출"
 
     if request.method == "GET":
         record_event(
@@ -583,7 +625,7 @@ def mission_detail(request, mission_id):
             metadata=mission_event_metadata,
         )
 
-    def handle_problem_set_progress(is_correct: bool):
+    def handle_problem_set_progress(is_correct: bool, attempt=None):
         problem_set_ids = request.session.get("problem_set_mission_ids", [])
         problem_set_id = request.session.get("problem_set_id")
         problem_set_session_id = request.session.get("problem_set_session_id")
@@ -604,6 +646,17 @@ def mission_detail(request, mission_id):
 
             request.session["wrong_retry_results"] = retry_results
             request.session.modified = True
+
+            original_session = ProblemSetSession.objects.filter(
+                id=wrong_retry_return_session_id,
+                user=request.user,
+            ).first()
+            if original_session:
+                record_problem_set_item_review(
+                    session=original_session,
+                    mission_id=mission.id,
+                    is_correct=is_correct,
+                )
             
         problem_set_session = (
             ProblemSetSession.objects
@@ -616,6 +669,8 @@ def mission_detail(request, mission_id):
                 session=problem_set_session,
                 mission_id=mission.id,
                 is_correct=is_correct,
+                submitted_answer=getattr(attempt, "submitted_answer", ""),
+                attempt=attempt,
             )
 
         current_index = problem_set_ids.index(mission.id)
@@ -691,7 +746,7 @@ def mission_detail(request, mission_id):
 
         daily_mission_ids = list(
             DailyMission.objects
-            .filter(user=request.user, date=today)
+            .filter(user=request.user, date=today, mission__subject=current_subject)
             .order_by("id")
             .values_list("mission_id", flat=True)
         )
@@ -701,7 +756,7 @@ def mission_detail(request, mission_id):
 
         done_ids = set(
             Attempt.objects
-            .filter(user=request.user, daily_date=today)
+            .filter(user=request.user, daily_date=today, mission__subject=current_subject)
             .values_list("mission_id", flat=True)
         )
 
@@ -710,6 +765,7 @@ def mission_detail(request, mission_id):
                 return Mission.objects.filter(
                     id=next_mission_id,
                     is_usable_for_set=True,
+                    subject=current_subject,
                 ).first()
 
         return None
@@ -796,7 +852,7 @@ def mission_detail(request, mission_id):
 
         return redirect("mission_detail", mission_id=next_mission_id)
     
-    def handle_after_save_redirect(is_correct: bool):
+    def handle_after_save_redirect(is_correct: bool, attempt=None):
         """
         저장 후 이동 처리
 
@@ -814,7 +870,7 @@ def mission_detail(request, mission_id):
         if pattern_training_redirect:
             return pattern_training_redirect
         
-        problem_set_redirect = handle_problem_set_progress(is_correct=is_correct)
+        problem_set_redirect = handle_problem_set_progress(is_correct=is_correct, attempt=attempt)
         if problem_set_redirect:
             return problem_set_redirect
 
@@ -851,6 +907,7 @@ def mission_detail(request, mission_id):
                             row["submitted_answer"] for row in grading_rows
                         )
                         attempt.save(update_fields=["submitted_answer"])
+                        saved_attempt = attempt
 
                         saved = True
                         record_event(
@@ -864,7 +921,8 @@ def mission_detail(request, mission_id):
                         )
 
                         after_save_redirect = handle_after_save_redirect(
-                            is_correct=saved_is_correct
+                            is_correct=saved_is_correct,
+                            attempt=attempt,
                         )
                         if after_save_redirect:
                             return after_save_redirect
@@ -895,6 +953,7 @@ def mission_detail(request, mission_id):
                         )
                         attempt.submitted_answer = submitted_answer
                         attempt.save(update_fields=["submitted_answer"])
+                        saved_attempt = attempt
 
                         saved = True
                         record_event(
@@ -908,7 +967,8 @@ def mission_detail(request, mission_id):
                         )
 
                         after_save_redirect = handle_after_save_redirect(
-                            is_correct=saved_is_correct
+                            is_correct=saved_is_correct,
+                            attempt=attempt,
                         )
                         if after_save_redirect:
                             return after_save_redirect
@@ -940,12 +1000,13 @@ def mission_detail(request, mission_id):
 
                 if error is None:
                     try:
-                        save_attempt(
+                        attempt = save_attempt(
                             user=request.user,
                             mission=mission,
                             is_correct=saved_is_correct,
                             wrong_reason_ids=None if saved_is_correct else only_int_ids,
                         )
+                        saved_attempt = attempt
 
                         saved = True
                         record_event(
@@ -959,7 +1020,8 @@ def mission_detail(request, mission_id):
                         )
 
                         after_save_redirect = handle_after_save_redirect(
-                            is_correct=saved_is_correct
+                            is_correct=saved_is_correct,
+                            attempt=attempt,
                         )
                         if after_save_redirect:
                             return after_save_redirect
@@ -968,6 +1030,38 @@ def mission_detail(request, mission_id):
                         error = str(e)
     if saved:
         next_daily_mission = get_next_daily_mission()
+    related_theory_chapter = None
+    related_learning_concept = None
+    mission_feedback = None
+    if saved and saved_is_correct is False:
+        mission_feedback = build_mission_feedback(
+            mission,
+            saved_attempt.submitted_answer if saved_attempt else "",
+        )
+        related_learning_concept = mission_feedback["learning_concept"]
+        if mission.chapter_code:
+            theory_context = get_theory_chapter_context(
+                request.user,
+                current_subject,
+                mission.chapter_code,
+            )
+            if theory_context and theory_context["chapter"]["has_theory"]:
+                related_theory_chapter = theory_context["chapter"]
+
+    daily_completion = None
+    if saved and next_daily_mission is None:
+        today_date = date.today()
+        is_daily_mission = DailyMission.objects.filter(
+            user=request.user,
+            date=today_date,
+            mission=mission,
+        ).exists()
+        if is_daily_mission:
+            daily_completion = get_daily_progress(
+                request.user,
+                today_date,
+                subject=current_subject,
+            )
     return render(request, "core/mission_detail.html", {
         "mission": mission,
         "wrong_reasons": wrong_reasons,
@@ -978,4 +1072,11 @@ def mission_detail(request, mission_id):
         "choice_items": choice_items,
         "grading_rows": grading_rows,
         "next_daily_mission": next_daily_mission,
+        "related_theory_chapter": related_theory_chapter,
+        "related_learning_concept": related_learning_concept,
+        "mission_feedback": mission_feedback,
+        "daily_completion": daily_completion,
+        "saved_answer_display": get_answer_display(mission, saved_attempt.submitted_answer if saved_attempt else ""),
+        "correct_answer_display": get_answer_display(mission, mission.correct_answer),
+        "submit_button_label": submit_button_label,
     })

@@ -8,6 +8,8 @@ from core.views import (
     inquiry,
     inquiry_done,
     landing,
+    service_info,
+    select_subject,
     mission_list,
     mission_detail,
     stats,
@@ -31,6 +33,8 @@ from core.views import (
     problem_set_wrong_retry,
     problem_set_wrong_retry_result,
     signup,
+    theory_chapter,
+    chapter_practice_start,
 )
 from core.views.missions import (
     learning_type_training_start,
@@ -39,6 +43,8 @@ from core.views.missions import (
 
 urlpatterns = [
     path("", landing, name="landing"),
+    path("service/", service_info, name="service_info"),
+    path("subjects/<str:subject_code>/", select_subject, name="select_subject"),
     path("inquiry/", inquiry, name="inquiry"),
     path("inquiry/done/", inquiry_done, name="inquiry_done"),
 
@@ -63,6 +69,18 @@ urlpatterns = [
 
     # missions
     path("missions/", mission_list, name="mission_list"),
+
+    # theory roadmap
+    path(
+        "roadmap/<str:chapter_slug>/",
+        theory_chapter,
+        name="theory_chapter",
+    ),
+    path(
+        "roadmap/<str:chapter_slug>/practice/",
+        chapter_practice_start,
+        name="chapter_practice_start",
+    ),
     
     path(
         "missions/learning-type/<str:skill>/<str:learning_type>/start/",

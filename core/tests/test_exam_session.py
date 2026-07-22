@@ -3,6 +3,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from core.models import ExamSession, ExamSessionMission, Mission, UserAccess
+from core.services.subjects import get_default_subject
 
 
 User = get_user_model()
@@ -15,9 +16,11 @@ class ExamResumeTest(TestCase):
             password="1234",
         )
         UserAccess.objects.create(user=self.user, is_premium=True)
+        self.subject = get_default_subject()
 
         self.mission = Mission.objects.create(
             external_id="TEST_EXAM_RESUME_001",
+            subject=self.subject,
             title="시험 재개 테스트 문제",
             skill="IF",
             level=1,

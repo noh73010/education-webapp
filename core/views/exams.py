@@ -1,4 +1,5 @@
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.db.models import Count, Q
@@ -17,9 +18,11 @@ from core.services.exam_analysis import build_exam_analysis
 from core.services.skill_labels import get_skill_label
 from core.services.grading import (
     parse_answer_schema,
+    parse_choice_schema,
     grade_answer,
     grade_multi_answer,
 )
+from core.services.subjects import get_current_subject
 
 
 
@@ -30,8 +33,10 @@ def exam_start(request):
     시험 시작 안내 페이지
     """
     access = get_user_access(request.user)
+    current_subject, _ = get_current_subject(request)
     return render(request, "core/exam_start.html", {
         "is_premium": access.is_premium,
+        "current_subject": current_subject,
     })
 
 
@@ -46,6 +51,7 @@ def exam_create(request):
         return redirect("exam_start")
 
     access = get_user_access(request.user)
+    current_subject, _ = get_current_subject(request)
     today = timezone.localdate()
 
     if not access.is_premium:
@@ -70,7 +76,9 @@ def exam_create(request):
         .filter(
             user=request.user,
             status="in_progress",
+            items__mission__subject=current_subject,
         )
+        .distinct()
         .order_by("-started_at")
         .first()
     )
@@ -114,7 +122,11 @@ def exam_create(request):
         )
         return redirect("exam_result", exam_id=existing_exam.id)
 
-    exam = create_exam_session(user=request.user)
+    try:
+        exam = create_exam_session(user=request.user, subject=current_subject)
+    except ValueError:
+        messages.warning(request, "현재 선택한 과목에는 아직 등록된 모의고사 문제가 없습니다.")
+        return redirect("mission_list")
     record_event(
         request.user,
         "start_exam",
@@ -135,7 +147,14 @@ def exam_create(request):
 
 @login_required
 def exam_take(request, exam_id, order_no):
-    exam = get_object_or_404(ExamSession, id=exam_id, user=request.user)
+    current_subject, _ = get_current_subject(request)
+    exam = get_object_or_404(
+        ExamSession.objects
+        .filter(items__mission__subject=current_subject)
+        .distinct(),
+        id=exam_id,
+        user=request.user,
+    )
 
     if exam.status != "in_progress":
         return redirect("exam_result", exam_id=exam.id)
@@ -166,6 +185,7 @@ def exam_take(request, exam_id, order_no):
     mission = item.mission
     total_count = exam.items.count()
     schema_items = parse_answer_schema(mission.answer_schema)
+    choice_items = parse_choice_schema(mission.answer_schema)
 
     if request.method == "POST":
         is_correct = None
@@ -234,13 +254,21 @@ def exam_take(request, exam_id, order_no):
         "total_count": total_count,
         "remaining_seconds": max(remaining_seconds, 0),
         "schema_items": schema_items,
+        "choice_items": choice_items,
     })
 
 
 @login_required
 @require_POST
 def exam_submit(request, exam_id):
-    exam = get_object_or_404(ExamSession, id=exam_id, user=request.user)
+    current_subject, _ = get_current_subject(request)
+    exam = get_object_or_404(
+        ExamSession.objects
+        .filter(items__mission__subject=current_subject)
+        .distinct(),
+        id=exam_id,
+        user=request.user,
+    )
 
     if exam.status == "in_progress":
         finish_exam_session(exam)
@@ -265,8 +293,15 @@ def exam_result(request, exam_id):
     """
     시험 결과 페이지
     """
-    exam = get_object_or_404(ExamSession, id=exam_id, user=request.user)
-    items = exam.items.select_related("mission").all()
+    current_subject, _ = get_current_subject(request)
+    exam = get_object_or_404(
+        ExamSession.objects
+        .filter(items__mission__subject=current_subject)
+        .distinct(),
+        id=exam_id,
+        user=request.user,
+    )
+    items = exam.items.select_related("mission").filter(mission__subject=current_subject)
     access = get_user_access(request.user)
 
     skill_rows = (
@@ -306,6 +341,7 @@ def exam_result(request, exam_id):
             Mission.objects.filter(
                 skill__in=weak_skill_names,
                 is_usable_for_set=True,
+                subject=current_subject,
             )
             .exclude(
                 id__in=[item.mission.id for item in items]
@@ -329,8 +365,15 @@ def exam_recommend_start(request, exam_id):
     """
     시험 결과에서 추천된 5문제 복습 루프 시작
     """
-    exam = get_object_or_404(ExamSession, id=exam_id, user=request.user)
-    items = exam.items.select_related("mission").all()
+    current_subject, _ = get_current_subject(request)
+    exam = get_object_or_404(
+        ExamSession.objects
+        .filter(items__mission__subject=current_subject)
+        .distinct(),
+        id=exam_id,
+        user=request.user,
+    )
+    items = exam.items.select_related("mission").filter(mission__subject=current_subject)
 
     skill_rows = (
         items.values("mission__skill")
@@ -365,6 +408,7 @@ def exam_recommend_start(request, exam_id):
             Mission.objects.filter(
                 skill__in=weak_skill_names,
                 is_usable_for_set=True,
+                subject=current_subject,
             )
             .exclude(id__in=[item.mission.id for item in items])
             .order_by("?")[:5]
@@ -388,7 +432,8 @@ def exam_history(request):
     """
     exams = (
         ExamSession.objects
-        .filter(user=request.user)
+        .filter(user=request.user, items__mission__subject=get_current_subject(request)[0])
+        .distinct()
         .order_by("-started_at")
     )
 

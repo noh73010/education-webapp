@@ -2,28 +2,27 @@
 {% load mission_tags %}
 
 {% block title %}
-{{ mission.title }}
+{% if mission.course %}{{ mission.course }}{% else %}{{ mission.subject.name }}{% endif %} 문제 풀이
 {% endblock %}
 
 {% block content %}
+<main class="cbt-page">
 
-<section class="card">
-<h1>{{ mission.title }}</h1>
+<section class="card cbt-question-card">
+  <p class="cbt-subject-name">
+    {% if mission.course %}{{ mission.course }}{% else %}{{ mission.subject.name }}{% endif %}
+  </p>
+  <div class="cbt-divider"></div>
 
-<p>
-    <b>스킬:</b> {{ mission.skill }} /
-    <b>난이도:</b> {{ mission.level }}
-</p>
+  {% for block in mission.prompt|prompt_blocks %}
+    <div class="cbt-prompt-block">
+      <h1 class="cbt-block-label">{{ block.label }}</h1>
+      <div class="pre-line cbt-question-text">{{ block.content }}</div>
+    </div>
+  {% endfor %}
 
-<p><b>문제유형:</b> {{ mission.get_question_type_display }}</p>
+  {% include "core/includes/mission_image.html" with mission=mission %}
 </section>
-
-{% for block in mission.prompt|prompt_blocks %}
-  <section class="card">
-    <h3 class="card-title">{{ block.label }}</h3>
-    <div class="pre-line">{{ block.content }}</div>
-  </section>
-{% endfor %}
 
 {% if saved %}
   {% if saved_is_correct %}
@@ -35,13 +34,56 @@
       <b>오답입니다. 다시 풀어야 합니다.</b>
 
       {% if mission.question_type != "manual" %}
-        <p><b>정답:</b> {{ mission.correct_answer }}</p>
+        <div class="answer-comparison compact">
+          <div class="answer-box is-user-wrong">
+            <span>내가 선택한 답</span><b>{{ saved_answer_display }}</b>
+          </div>
+          <div class="answer-box is-correct">
+            <span>정답</span><b>{{ correct_answer_display }}</b>
+          </div>
+        </div>
 
         {% if mission.explanation %}
           <p class="pre-line">
             <b>해설:</b> {{ mission.explanation }}
           </p>
+        {% else %}
+          <p>등록된 해설이 없습니다. 정답 선택지와 관련 개념을 확인해보세요.</p>
         {% endif %}
+      {% endif %}
+
+      {% if mission_feedback.has_choice_explanations %}
+        <div class="choice-feedback-list">
+          <h3>선택지별 해설</h3>
+          {% for row in mission_feedback.choice_rows %}
+            <div class="choice-feedback-row {% if row.is_correct %}is-correct{% elif row.is_selected %}is-selected-wrong{% endif %}">
+              <div>
+                <b>{{ row.key }}번</b>
+                {% if row.is_correct %}<span>정답</span>{% elif row.is_selected %}<span>내가 선택</span>{% endif %}
+              </div>
+              <p>{{ row.label }}</p>
+              {% if row.explanation %}<small>{{ row.explanation }}</small>{% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if related_learning_concept %}
+        <div class="related-theory-callout">
+          <div>
+            <span class="eyebrow">이 문제의 관련 개념</span>
+            <b>{{ related_learning_concept.title }}</b>
+            <span>{{ related_learning_concept.summary }}</span>
+            {% if mission_feedback.exam_tip %}
+              <span class="exam-tip"><b>시험장에서 구분하는 법</b> {{ mission_feedback.exam_tip }}</span>
+            {% endif %}
+          </div>
+          {% if related_theory_chapter %}
+            <a href="{% url 'theory_chapter' related_theory_chapter.slug %}?mission={{ mission.id }}#related-concept" class="sub-button">
+              3분 개념 복습
+            </a>
+          {% endif %}
+        </div>
       {% endif %}
     </section>
   {% endif %}
@@ -58,7 +100,15 @@
   </section>
 {% elif saved %}
   <section class="card">
-    <p>오늘 추천 문제를 모두 풀었습니다.</p>
+    {% if daily_completion %}
+      <p><b>오늘 학습을 완료했습니다.</b></p>
+      <p>
+        {{ daily_completion.done }}문제 풀이 · 정답률 {{ daily_completion.accuracy }}%
+        {% if daily_completion.wrong %} · 내일 복습 예정 {{ daily_completion.wrong }}문제{% endif %}
+      </p>
+    {% else %}
+      <p>문제 풀이를 완료했습니다.</p>
+    {% endif %}
 
     <a href="{% url 'mission_list' %}"
        class="main-button">
@@ -93,22 +143,26 @@
   </section>
 {% endif %}
 
-<section class="card">
+<section class="card cbt-answer-card">
   <form method="POST">
     {% csrf_token %}
 
-    <h3>풀이 결과 제출</h3>
+    <h2 class="cbt-answer-title">
+      {% if mission.question_type == "manual" %}학습 결과를 선택하세요.{% else %}답안을 선택하세요.{% endif %}
+    </h2>
 
     {% if mission.question_type == "manual" %}
-        <label>
+        <div class="cbt-choice-list cbt-binary-list">
+        <label class="form-option cbt-choice-option">
             <input type="radio" name="is_correct" value="true">
-            정답
+            <span class="cbt-choice-text">정답</span>
         </label>
 
-        <label>
+        <label class="form-option cbt-choice-option">
             <input type="radio" name="is_correct" value="false">
-            오답
+            <span class="cbt-choice-text">오답</span>
         </label>
+        </div>
 
         <br><br>
 
@@ -125,16 +179,17 @@
     {% else %}
 
         {% if mission.question_type == "choice_one" or mission.question_type == "true_false" or mission.question_type == "error_detect" %}
-            <p><b>선택지를 고르세요.</b></p>
-
+            <div class="cbt-choice-list">
             {% for item in choice_items %}
-                <label class="form-option">
+                <label class="form-option cbt-choice-option">
                   <input type="radio" name="submitted_answer" value="{{ item.key }}" required>
-                  {{ item.key }}. {{ item.label }}
-              </label>
+                  <span class="cbt-choice-marker">{{ item.key }}</span>
+                  <span class="cbt-choice-text">{{ item.label }}</span>
+                </label>
             {% empty %}
                 <p class="text-danger">선택지가 없습니다. answer_schema를 확인하세요.</p>
             {% endfor %}
+            </div>
 
         {% elif schema_items %}
             <p><b>아래 결과값을 입력하세요.</b></p>
@@ -167,13 +222,17 @@
 
     {% endif %}
 
-    <br><br>
-    <button type="submit">제출</button>
+    <div class="cbt-submit-row">
+      <button type="submit" class="cbt-submit-button">
+        {{ submit_button_label }}
+      </button>
+    </div>
   </form>
 </section>
 
 <section class="card">
   <a href="{% url 'mission_list' %}" class="sub-link">← 목록으로</a>
 </section>
+</main>
 
 {% endblock %}

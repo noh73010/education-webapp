@@ -52,6 +52,37 @@ SKILL_LABELS = {
     "large_if": "LARGE 조건 계산",
 }
 
+LOGISTICS_SKILL_LABELS = {
+    "LM01": "물류관리 일반",
+    "LM02": "물류시스템 구축",
+    "LM03": "SCM과 녹색물류",
+    "LM04": "국제물류",
+    "TR01": "화물운송의 기초이론",
+    "TR02": "화물자동차운송",
+    "TR03": "수·배송시스템의 합리화",
+    "TR04": "철도운송",
+    "TR05": "항공운송",
+    "TR06": "해상운송",
+    "TR07": "국제복합운송",
+    "TR08": "택배·생활물류",
+    "IL01": "국제물류관리",
+    "IL02": "무역실무",
+    "IL03": "해상운송",
+    "IL04": "해상보험",
+    "IL05": "항공운송",
+    "IL06": "컨테이너 운송",
+    "IL07": "복합운송",
+    "WH01": "보관론",
+    "WH02": "하역론",
+    "LW01": "물류정책기본법",
+    "LW02": "물류시설법",
+    "LW03": "유통산업발전법",
+    "LW04": "화물자동차 운수사업법",
+    "LW05": "철도사업법",
+    "LW06": "항만운송사업법",
+    "LW07": "농수산물 유통법",
+}
+
 
 def get_skill_label(skill):
     if not skill:
@@ -61,5 +92,8 @@ def get_skill_label(skill):
 
     return SKILL_LABELS.get(
         skill,
-        SKILL_LABELS.get(skill.lower(), skill)
+        SKILL_LABELS.get(
+            skill.lower(),
+            LOGISTICS_SKILL_LABELS.get(skill.upper(), skill),
+        ),
     )

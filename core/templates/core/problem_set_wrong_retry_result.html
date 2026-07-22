@@ -25,14 +25,15 @@
 
   <ul class="clean-list">
     {% for row in retry_results %}
-      <li>
-        <b>{{ row.mission_title }}</b>
-        -
+      <li class="retry-result-item">
+        <div><b>문제 {{ row.order_no }}</b> · {{ row.course }}</div>
+        <p class="pre-line">{{ row.question }}</p>
         {% if row.is_correct %}
-          <span class="text-success">정답</span>
+          <span class="text-success">재도전 정답</span>
         {% else %}
-          <span class="text-danger">오답</span>
+          <span class="text-danger">재도전 오답</span>
         {% endif %}
+        {% if row.review_attempt_count %}<span> · 누적 재도전 {{ row.review_attempt_count }}회</span>{% endif %}
       </li>
     {% empty %}
       <li>오답 복습 결과가 없습니다.</li>
@@ -43,7 +44,21 @@
 <section class="card result-wrong">
   <h2 class="card-title">다음 학습</h2>
 
-  {% if next_set %}
+  {% if theory_context.chapter.remaining_count %}
+    <p>오답 복습을 마쳤습니다. 아직 풀지 않은 문제를 10개씩 이어서 학습하세요.</p>
+    <p>
+      <a href="{% url 'chapter_practice_start' theory_context.chapter.slug %}" class="main-button">
+        다음 10문제 이어서 풀기
+      </a>
+    </p>
+  {% elif theory_context.next_chapter %}
+    <p>오답 복습을 마쳤습니다. 다음 챕터의 핵심 이론으로 이어가세요.</p>
+    <p>
+      <a href="{% url 'theory_chapter' theory_context.next_chapter.slug %}" class="main-button">
+        {{ theory_context.next_chapter.chapter_name }} 학습하기
+      </a>
+    </p>
+  {% elif next_set %}
     <p>이어서 이 세트를 추천합니다.</p>
 
     <p>
@@ -73,9 +88,11 @@
 
 <section class="card">
   <p>
-    <a href="{% url 'problem_set_start' original_session.problem_set.id %}" class="main-button">
-      이 세트 전체 다시 풀기
-    </a>
+    {% if theory_context %}
+      <a href="{% url 'chapter_practice_start' theory_context.chapter.slug %}?mode=all" class="main-button">챕터 전체 문제 풀기</a>
+    {% else %}
+      <a href="{% url 'problem_set_start' original_session.problem_set.id %}" class="main-button">이 세트 전체 다시 풀기</a>
+    {% endif %}
   </p>
 
   <p>

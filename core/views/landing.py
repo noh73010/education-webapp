@@ -25,3 +25,19 @@ def landing(request):
         "subjects": subjects,
         "selected_subject_code": request.session.get(CURRENT_SUBJECT_SESSION_KEY, ""),
     })
+
+
+def service_info(request):
+    return render(request, "core/service_info.html")
+
+
+def select_subject(request, subject_code):
+    subjects = get_active_subjects()
+    subject = next((item for item in subjects if item.code == subject_code), None)
+
+    if not subject:
+        messages.warning(request, "선택할 수 없는 과목입니다. 다시 확인해 주세요.")
+        return redirect("landing")
+
+    set_current_subject(request, subject)
+    return redirect("mission_list")

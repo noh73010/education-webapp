@@ -20,10 +20,12 @@ def _percent(part, total):
     return round((part / total) * 100, 1) if total else 0.0
 
 
-def _recent_attempt_stats(user, limit=50):
+def _recent_attempt_stats(user, limit=50, subject=None):
+    qs = Attempt.objects.filter(user=user)
+    if subject is not None:
+        qs = qs.filter(mission__subject=subject)
     attempts = list(
-        Attempt.objects
-        .filter(user=user)
+        qs
         .select_related("mission")
         .order_by("-created_at")[:limit]
     )
@@ -38,8 +40,8 @@ def _recent_attempt_stats(user, limit=50):
     }
 
 
-def get_learning_level(user):
-    stats = _recent_attempt_stats(user)
+def get_learning_level(user, subject=None):
+    stats = _recent_attempt_stats(user, subject=subject)
     total = stats["total"]
     accuracy = stats["accuracy"]
 
@@ -73,10 +75,12 @@ def get_learning_level(user):
     }
 
 
-def get_exam_average(user, limit=3):
+def get_exam_average(user, limit=3, subject=None):
+    qs = ExamSession.objects.filter(user=user, status="submitted")
+    if subject is not None:
+        qs = qs.filter(items__mission__subject=subject).distinct()
     exams = list(
-        ExamSession.objects
-        .filter(user=user, status="submitted")
+        qs
         .order_by("-ended_at", "-started_at")[:limit]
     )
 
@@ -86,11 +90,11 @@ def get_exam_average(user, limit=3):
     return round(sum(exam.score for exam in exams) / len(exams), 1)
 
 
-def get_pass_readiness(user, streak=None):
-    stats = _recent_attempt_stats(user)
+def get_pass_readiness(user, streak=None, subject=None):
+    stats = _recent_attempt_stats(user, subject=subject)
     streak = streak or UserStreak.objects.filter(user=user).first()
     current_streak = streak.current_streak if streak else 0
-    exam_average = get_exam_average(user)
+    exam_average = get_exam_average(user, subject=subject)
 
     accuracy_score = min(stats["accuracy"], 100) * 0.40
     volume_score = min(stats["total"] / 50, 1) * 20
@@ -120,10 +124,12 @@ def get_pass_readiness(user, streak=None):
     }
 
 
-def get_weakness_top3(user):
+def get_weakness_top3(user, subject=None):
+    attempt_qs = Attempt.objects.filter(user=user)
+    if subject is not None:
+        attempt_qs = attempt_qs.filter(mission__subject=subject)
     skill_rows = list(
-        Attempt.objects
-        .filter(user=user)
+        attempt_qs
         .values("mission__skill")
         .annotate(
             total=Count("id"),
@@ -148,7 +154,7 @@ def get_weakness_top3(user):
 
     pattern_rows = list(
         AttemptWrongPattern.objects
-        .filter(attempt__user=user)
+        .filter(attempt__in=attempt_qs)
         .values(
             "wrong_pattern__skill",
             "wrong_pattern__name",
@@ -184,8 +190,8 @@ def get_weakness_top3(user):
     return unique
 
 
-def get_coach_message(user, weaknesses, level_info, pass_readiness):
-    recent_stats = _recent_attempt_stats(user, limit=20)
+def get_coach_message(user, weaknesses, level_info, pass_readiness, subject=None):
+    recent_stats = _recent_attempt_stats(user, limit=20, subject=subject)
 
     if recent_stats["total"] == 0:
         return {
@@ -230,12 +236,12 @@ def get_streak_message(streak):
     return "오늘 학습하면 연속 학습을 새로 시작할 수 있습니다."
 
 
-def build_learning_dashboard(user, streak=None):
+def build_learning_dashboard(user, streak=None, subject=None):
     streak = streak or UserStreak.objects.filter(user=user).first()
-    level_info = get_learning_level(user)
-    pass_readiness = get_pass_readiness(user, streak=streak)
-    weaknesses = get_weakness_top3(user)
-    coach = get_coach_message(user, weaknesses, level_info, pass_readiness)
+    level_info = get_learning_level(user, subject=subject)
+    pass_readiness = get_pass_readiness(user, streak=streak, subject=subject)
+    weaknesses = get_weakness_top3(user, subject=subject)
+    coach = get_coach_message(user, weaknesses, level_info, pass_readiness, subject=subject)
 
     return {
         "streak_message": get_streak_message(streak),
@@ -243,8 +249,4 @@ def build_learning_dashboard(user, streak=None):
         "pass_readiness": pass_readiness,
         "weakness_top3": weaknesses,
         "coach": coach,
-        "ranking_placeholder": {
-            "title": "주간 랭킹 준비 중",
-            "message": "개인정보와 경쟁 요소를 신중히 검토한 뒤 선택 기능으로 제공할 예정입니다.",
-        },
     }

@@ -9,10 +9,12 @@ from django.utils import timezone
 
 from core.models import Mission, Attempt, AttemptWrongReason
 from core.services.access import get_user_access
+from core.services.subjects import get_current_subject
 
 
 @login_required
 def wrong_notes(request):
+    current_subject, _ = get_current_subject(request)
     # --- 필터 파라미터 ---
     mode = request.GET.get("mode", "open").strip()   # open(미해결) / all(전체)
     days = request.GET.get("days", "all").strip()    # all / 7 / 30
@@ -26,7 +28,7 @@ def wrong_notes(request):
         since = now - timedelta(days=30)
 
     # 1) 사용자 Attempt 전체(기간 필터는 여기서 적용)
-    base_qs = Attempt.objects.filter(user=request.user)
+    base_qs = Attempt.objects.filter(user=request.user, mission__subject=current_subject)
     if since is not None:
         base_qs = base_qs.filter(created_at__gte=since)
 
@@ -89,6 +91,7 @@ def wrong_notes(request):
     # 7) skill 드롭다운용 목록
     skill_choices = (
         Mission.objects
+        .filter(subject=current_subject)
         .values_list("skill", flat=True)
         .distinct()
         .order_by("skill")
@@ -103,4 +106,5 @@ def wrong_notes(request):
         "skill_choices": skill_choices,
         "is_premium": access.is_premium,
         "is_limited": is_limited,
+        "current_subject": current_subject,
     })

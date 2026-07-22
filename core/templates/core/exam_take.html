@@ -6,6 +6,7 @@
 {% endblock %}
 
 {% block content %}
+<main class="cbt-page cbt-exam-page">
 
 <section class="card">
   <h1 class="section-title">{{ exam.title }}</h1>
@@ -16,45 +17,54 @@
   </div>
 </section>
 
-<section class="card">
-  <h2 class="card-title">{{ mission.title }}</h2>
-
-  <p>
-    <b>스킬:</b> {{ mission.skill }} /
-    <b>난이도:</b> {{ mission.level }}
+<section class="card cbt-question-card">
+  <p class="cbt-subject-name">
+    {% if mission.course %}{{ mission.course }}{% else %}{{ mission.subject.name }}{% endif %}
   </p>
+  <div class="cbt-divider"></div>
 
-  <p>
-    <b>문제유형:</b> {{ mission.get_question_type_display }}
-  </p>
+  {% for block in mission.prompt|prompt_blocks %}
+    <div class="cbt-prompt-block">
+      <h2 class="cbt-block-label">{{ block.label }}</h2>
+      <div class="pre-line cbt-question-text">{{ block.content }}</div>
+    </div>
+  {% endfor %}
+
+  {% include "core/includes/mission_image.html" with mission=mission %}
 </section>
 
-{% for block in mission.prompt|prompt_blocks %}
-  <section class="card">
-    <h3 class="card-title">{{ block.label }}</h3>
-    <div class="pre-line">{{ block.content }}</div>
-  </section>
-{% endfor %}
-
-<section class="card">
+<section class="card cbt-answer-card">
   <form method="post">
     {% csrf_token %}
 
     {% if mission.question_type == "manual" %}
-      <h3 class="card-title">풀이 결과 제출</h3>
+      <h2 class="cbt-answer-title">학습 결과를 선택하세요.</h2>
 
-      <label class="form-option">
+      <label class="form-option cbt-choice-option">
         <input type="radio" name="is_correct" value="true" required>
-        정답
+        <span class="cbt-choice-text">정답</span>
       </label>
 
-      <label class="form-option">
+      <label class="form-option cbt-choice-option">
         <input type="radio" name="is_correct" value="false" required>
-        오답
+        <span class="cbt-choice-text">오답</span>
       </label>
 
     {% else %}
-      {% if schema_items %}
+      {% if mission.question_type == "choice_one" or mission.question_type == "true_false" or mission.question_type == "error_detect" %}
+        <h2 class="cbt-answer-title">답안을 선택하세요.</h2>
+        <div class="cbt-choice-list">
+        {% for choice in choice_items %}
+          <label class="form-option cbt-choice-option">
+            <input type="radio" name="submitted_answer" value="{{ choice.key }}" required>
+            <span class="cbt-choice-marker">{{ choice.key }}</span>
+            <span class="cbt-choice-text">{{ choice.label }}</span>
+          </label>
+        {% empty %}
+          <p class="text-danger">선택지가 없습니다. 문제 데이터를 확인해 주세요.</p>
+        {% endfor %}
+        </div>
+      {% elif schema_items %}
         <h3 class="card-title">답안을 입력하세요</h3>
         <p><b>아래 각 항목의 결과값을 입력하세요.</b></p>
 
@@ -84,12 +94,12 @@
       {% endif %}
     {% endif %}
 
-    <p class="mt-medium">
-      <button type="submit">
+    <p class="cbt-submit-row">
+      <button type="submit" class="cbt-submit-button">
         {% if order_no == total_count %}
-          마지막 문제 제출
+          답안 제출 및 종료
         {% else %}
-          다음 문제
+          답안 제출
         {% endif %}
       </button>
     </p>
@@ -131,5 +141,6 @@ function updateTimer() {
 setInterval(updateTimer, 1000);
 updateTimer();
 </script>
+</main>
 
 {% endblock %}
