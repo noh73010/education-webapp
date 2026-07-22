@@ -39,3 +39,6 @@ git push
 
 업로드 하기 (저장폴더 안에서)
 git clone https://github.com/noh73010/education-webapp.git
+
+업데이트 하기
+git pull
