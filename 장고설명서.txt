@@ -31,3 +31,11 @@ mission.csv
 3.나는 Django로 컴활2급 교육 웹앱을 만들고 있다.
 프로젝트 경로: C:\노세영\코딩\프로젝트\컴활2급
 단계별로 이어서 진행해줘.
+
+저장하기
+git add .
+git commit -m "..."
+git push
+
+업로드 하기 (저장폴더 안에서)
+git clone https://github.com/noh73010/education-webapp.git
