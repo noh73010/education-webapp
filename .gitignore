@@ -1,10 +1,20 @@
 __pycache__/
 *.pyc
 venv/
+.venv/
 .env
 db.sqlite3
+db.sqlite3.backup_*
+*.sqlite3.backup_*
+.local-backups/
 media/
 staticfiles/
 .idea/
 .vscode/
+automation/logs/
+automation/attachments/
+automation/tasks/pending/
+automation/tasks/processing/
+automation/tasks/done/
+automation/state/
 아이디 비번.txt

@@ -3,45 +3,35 @@
 {% block title %}회원가입{% endblock %}
 
 {% block content %}
-
 <section class="card">
   <h1 class="section-title">회원가입</h1>
-  <p>아이디와 비밀번호를 만들면 바로 학습 홈으로 이동합니다.</p>
+  <p>계정을 만들면 학습 기록과 오답 노트를 계속 관리할 수 있습니다.</p>
 </section>
 
+{% include "registration/includes/social_login_buttons.html" with social_login_mode="signup" %}
+
 <section class="card">
-  {% if form.errors %}
-    <div class="info-box result-wrong">
-      입력한 내용을 다시 확인해 주세요.
+  {% if form.non_field_errors %}
+    <div class="info-box result-wrong" role="alert">
+      {{ form.non_field_errors }}
     </div>
   {% endif %}
 
-  <form method="post">
+  <form method="post" novalidate>
     {% csrf_token %}
 
-    <div class="mb-medium">
-      <label for="{{ form.username.id_for_label }}"><b>아이디</b></label><br>
-      {{ form.username }}
-      {% if form.username.errors %}
-        <div class="text-danger">{{ form.username.errors }}</div>
-      {% endif %}
-    </div>
-
-    <div class="mb-medium">
-      <label for="{{ form.password1.id_for_label }}"><b>비밀번호</b></label><br>
-      {{ form.password1 }}
-      {% if form.password1.errors %}
-        <div class="text-danger">{{ form.password1.errors }}</div>
-      {% endif %}
-    </div>
-
-    <div class="mb-medium">
-      <label for="{{ form.password2.id_for_label }}"><b>비밀번호 확인</b></label><br>
-      {{ form.password2 }}
-      {% if form.password2.errors %}
-        <div class="text-danger">{{ form.password2.errors }}</div>
-      {% endif %}
-    </div>
+    {% for field in form %}
+      <div class="form-field">
+        <label for="{{ field.id_for_label }}"><b>{{ field.label }}</b></label><br>
+        {{ field }}
+        {% if field.help_text %}
+          <div class="text-muted">{{ field.help_text|safe }}</div>
+        {% endif %}
+        {% if field.errors %}
+          <div class="text-danger" role="alert">{{ field.errors }}</div>
+        {% endif %}
+      </div>
+    {% endfor %}
 
     <button type="submit" class="main-button">회원가입</button>
   </form>
@@ -50,8 +40,7 @@
 <section class="card">
   <p>
     이미 계정이 있나요?
-    <a href="{% url 'login' %}" class="sub-link">로그인하기</a>
+    <a href="{% url 'login' %}" class="sub-link signup-login-link">로그인하기</a>
   </p>
 </section>
-
 {% endblock %}

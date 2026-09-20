@@ -34,6 +34,18 @@ class AnalyticsTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(UserEvent.objects.filter(event_type="login").exists())
 
+    def test_login_failure_does_not_authenticate_or_record_event(self):
+        User.objects.create_user(username="login_user", password="pass12345")
+
+        response = self.client.post(
+            reverse("login"),
+            {"username": "login_user", "password": "wrong-password"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("_auth_user_id", self.client.session)
+        self.assertFalse(UserEvent.objects.filter(event_type="login").exists())
+
     def test_signup_success_records_event(self):
         response = self.client.post(
             reverse("signup"),

@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 
@@ -21,7 +21,16 @@ class ServiceInfoPageTests(TestCase):
         self.assertNotContains(response, "물류관리사")
         self.assertNotContains(response, "컴활 2급")
 
-    def test_service_info_shows_actual_free_and_premium_ranges(self):
+    def test_service_info_shows_all_features_free_during_launch(self):
+        response = self.client.get(reverse("service_info"))
+
+        self.assertContains(response, "지금은 모든 기능을 무료로 이용하세요")
+        self.assertContains(response, "횟수 제한 없이 이용")
+        self.assertNotContains(response, "최근 5개")
+        self.assertNotContains(response, "하루 1회")
+
+    @override_settings(PREMIUM_GATING_ENABLED=True)
+    def test_service_info_preserves_future_free_and_premium_ranges(self):
         response = self.client.get(reverse("service_info"))
 
         self.assertContains(response, "최근 5개")

@@ -5,8 +5,8 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from core.models import Attempt, Mission
-from core.services.daily import build_daily_study_plan
+from core.models import Attempt, Mission, UserWeakness
+from core.services.daily import build_daily_completion_summary, build_daily_study_plan
 from core.management.commands.import_missions import normalize_korean_row, normalize_standard_row
 from core.services.mission_cards import with_user_learning_state
 from core.services.review_schedule import get_mission_review_states
@@ -34,7 +34,7 @@ class LearningGuidanceTests(TestCase):
                 answer_schema="1|운송만 관리한다\n2|물류 활동을 통합 관리한다\n3|회계만 관리한다",
                 explanation="물류는 관련 활동을 통합적으로 관리합니다.",
             )
-            for number in range(1, 6)
+            for number in range(1, 11)
         ]
 
     def setUp(self):
@@ -47,7 +47,7 @@ class LearningGuidanceTests(TestCase):
         Attempt.objects.create(user=self.user, mission=self.missions[1], is_correct=False)
         annotated = list(
             with_user_learning_state(
-                Mission.objects.filter(id__in=[mission.id for mission in self.missions]),
+                Mission.objects.filter(id__in=[mission.id for mission in self.missions[:5]]),
                 self.user,
             ).order_by("id")
         )
@@ -56,9 +56,9 @@ class LearningGuidanceTests(TestCase):
 
         self.assertEqual(plan["total"], 5)
         self.assertEqual(plan["total_estimated_minutes"], 10)
-        self.assertEqual(plan["categories"][0], {"label": "새 학습", "count": 4})
+        self.assertEqual(plan["categories"][0], {"label": "처음 푸는 문제", "count": 4})
         weak_mission = next(mission for mission in annotated if mission.id == self.missions[1].id)
-        self.assertEqual(weak_mission.daily_category_label, "약점 보완")
+        self.assertEqual(weak_mission.daily_category_label, "전에 틀린 문제")
         self.assertIn("최근 오답", weak_mission.daily_reason)
 
     def test_review_schedule_uses_attempt_history(self):
@@ -78,6 +78,9 @@ class LearningGuidanceTests(TestCase):
                 user=self.user,
                 mission=self.missions[0],
                 is_correct=is_correct,
+                confidence_level=(
+                    Attempt.CONFIDENCE_CERTAIN if is_correct else ""
+                ),
             )
             Attempt.objects.filter(id=attempt.id).update(
                 created_at=timezone.now() - timedelta(days=days_ago)
@@ -95,7 +98,86 @@ class LearningGuidanceTests(TestCase):
         self.assertContains(response, "오늘의 학습 계획")
         self.assertContains(response, "총 5문제")
         self.assertContains(response, "약 10분")
-        self.assertContains(response, "새 학습")
+        self.assertContains(response, "처음 푸는 문제")
+        self.assertContains(response, "오늘 10분 학습 시작")
+        self.assertContains(response, "시험 전 핵심 복습")
+
+    def test_mobile_learner_can_choose_five_ten_or_twenty_minute_plan(self):
+        five_minute = self.client.get(reverse("mission_list") + "?minutes=5")
+        self.assertEqual(len(five_minute.context["recommended"]), 3)
+        self.assertContains(five_minute, "총 3문제")
+
+        ten_minute = self.client.get(reverse("mission_list") + "?minutes=10")
+        self.assertEqual(len(ten_minute.context["recommended"]), 5)
+        self.assertContains(ten_minute, "총 5문제")
+
+        twenty_minute = self.client.get(reverse("mission_list") + "?minutes=20")
+        self.assertEqual(len(twenty_minute.context["recommended"]), 10)
+        self.assertContains(twenty_minute, "총 10문제")
+        self.assertContains(twenty_minute, "약 20분")
+
+    def test_guessed_correct_answer_is_scheduled_for_confidence_review(self):
+        attempt = Attempt.objects.create(
+            user=self.user, mission=self.missions[0], is_correct=True,
+            confidence_level=Attempt.CONFIDENCE_GUESSED,
+        )
+        Attempt.objects.filter(id=attempt.id).update(
+            created_at=timezone.now() - timedelta(days=2)
+        )
+
+        state = get_mission_review_states(self.user, [self.missions[0].id])[self.missions[0].id]
+        self.assertEqual(state["status"], "uncertain")
+        self.assertTrue(state["is_due"])
+
+    def test_daily_completion_summary_identifies_weakest_skill(self):
+        for mission, is_correct in zip(self.missions[:3], [False, False, True]):
+            Attempt.objects.create(
+                user=self.user,
+                mission=mission,
+                is_correct=is_correct,
+                daily_date=timezone.localdate(),
+            )
+
+        summary = build_daily_completion_summary(
+            self.user,
+            timezone.localdate(),
+            subject=self.subject,
+        )
+
+        self.assertEqual(summary["weak_skill"]["label"], "물류관리총론")
+        self.assertEqual(summary["weak_skill"]["wrong"], 2)
+        self.assertIn("먼저 복습", summary["next_action"])
+
+    def test_daily_completion_exposes_plain_language_weakness_action(self):
+        pattern = self.subject.wrong_patterns.get(code="LOGISTICS_LM01")
+        mission = self.missions[0]
+        mission.wrong_pattern_code = pattern.code
+        mission.variation_group = pattern.code
+        mission.save(update_fields=["wrong_pattern_code", "variation_group"])
+        Attempt.objects.create(
+            user=self.user, mission=mission, is_correct=False,
+            daily_date=timezone.localdate(),
+        )
+        UserWeakness.objects.create(
+            user=self.user, subject=self.subject, wrong_pattern=pattern,
+            status=UserWeakness.STATUS_ACTIVE, severity=70,
+            recent_failure_count=2,
+        )
+
+        summary = build_daily_completion_summary(
+            self.user, timezone.localdate(), subject=self.subject,
+        )
+
+        self.assertEqual(summary["weakness_signal"]["status_label"], "집중 학습이 필요해요")
+        self.assertTrue(summary["weakness_signal"]["can_train"])
+
+    def test_mobile_home_collapses_secondary_status_and_uses_four_primary_tabs(self):
+        response = self.client.get(reverse("mission_list"))
+
+        self.assertContains(response, 'class="home-secondary-panel"')
+        self.assertContains(response, "내 학습 상태")
+        self.assertContains(response, ">내 기록</a>")
+        self.assertNotContains(response, '<nav class="bottom-mobile-nav" aria-label="모바일 빠른 메뉴">\n    <a href="/missions/">홈</a>\n    <a href="/problem-sets/">문제</a>')
 
     def test_wrong_answer_shows_curated_choice_feedback_and_exam_tip(self):
         mission = self.missions[0]
@@ -113,8 +195,9 @@ class LearningGuidanceTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "선택지별 해설")
+        self.assertContains(response, "30초 오답 교정")
         self.assertContains(response, "물류의 범위를 운송으로만 제한하므로 틀립니다.")
+        self.assertContains(response, "구매·생산·보관·운송을 통합한다는 설명입니다.")
         self.assertContains(response, mission.concept_summary)
         self.assertContains(response, "시험장에서 구분하는 법")
         self.assertContains(response, mission.exam_tip)

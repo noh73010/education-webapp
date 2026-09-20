@@ -5,10 +5,34 @@
 
 {% block content %}
 
-<section class="card daily-focus-card">
+<div class="home-primary-grid">
+<section class="card daily-focus-card coach-summary-card coach-summary-action {% if daily_progress.total and daily_progress.done == daily_progress.total %}is-complete{% endif %}">
   <p class="eyebrow">오늘 학습</p>
-  <h1 class="section-title">오늘 가장 먼저 할 일</h1>
+  <h1 class="section-title">오늘 {{ selected_daily_minutes }}분만 공부해요</h1>
   <p class="subject-label">현재 과목: <b>{{ current_subject.name }}</b></p>
+  {% if ongoing_exam %}
+    <div class="coach-inline-notice">
+      <b>{{ ongoing_exam.exam.title }} · {{ ongoing_exam.answered }}/{{ ongoing_exam.total }}문제 저장</b>
+      {% if ongoing_exam.expired %}
+        <a href="{% url 'exam_result' ongoing_exam.exam.id %}">시간 종료 결과 확인</a>
+      {% else %}
+        <a href="{% url 'exam_take' ongoing_exam.exam.id ongoing_exam.resume_order %}">시험 이어하기</a>
+      {% endif %}
+    </div>
+  {% endif %}
+  {% if learning_experience.needs_start %}
+    <div class="coach-inline-notice">
+      <b>처음이라면 나의 출발점 정하기부터 시작하세요.</b>
+      <a href="{% url 'learning_start' %}">3문제 진단 시작</a>
+    </div>
+  {% endif %}
+  {% if learning_experience.draft %}
+    <div class="coach-inline-notice">
+      <b>{{ learning_experience.draft.mission.chapter_name|default:learning_experience.draft.mission.course }} 답안이 저장되어 있어요.</b>
+      <a href="{% url 'mission_detail' learning_experience.draft.mission_id %}">풀던 문제 이어하기</a>
+    </div>
+  {% endif %}
+  {% if learning_experience.start_advice %}<p>{{ learning_experience.start_advice }} 이 진단은 합격 예측이 아닙니다. <a href="{% url 'learning_start' %}">출발점 변경</a></p>{% endif %}
   {% if subject_needs_selection %}
     <p class="meta-text">
       과목을 아직 선택하지 않아 기본 과목으로 시작합니다.
@@ -23,6 +47,12 @@
       <a href="{% url 'landing' %}" class="sub-button">과목 선택으로 돌아가기</a>
     </div>
   {% else %}
+    <div class="study-time-picker" aria-label="오늘 가능한 학습 시간">
+      <span>오늘 가능한 시간</span>
+      <a href="?minutes=5" class="{% if selected_daily_minutes == 5 %}is-selected{% endif %}">5분</a>
+      <a href="?minutes=10" class="{% if selected_daily_minutes == 10 %}is-selected{% endif %}">10분</a>
+      <a href="?minutes=20" class="{% if selected_daily_minutes == 20 %}is-selected{% endif %}">20분</a>
+    </div>
     <div class="info-box daily-guide-box">
       <b>{{ today_guide_message }}</b>
     </div>
@@ -61,12 +91,12 @@
     <p class="meta-text">{{ daily_progress.pct }}% 완료</p>
 
     <p class="primary-action-wrap">
-      {% if today_guide_url_name == "pattern_training_start" %}
-        <a href="{% url 'pattern_training_start' today_guide_pattern_code %}" class="main-button main-button-large">오늘 학습 시작</a>
+      {% if today_start_mission %}
+        <a href="{% url 'mission_detail' today_start_mission.id %}" class="main-button main-button-large">오늘 {{ selected_daily_minutes }}분 학습 시작</a>
+      {% elif today_guide_url_name == "pattern_training_start" %}
+        <a href="{% url 'pattern_training_start' today_guide_pattern_code %}" class="main-button main-button-large">3문제 약점 훈련 시작</a>
       {% elif today_guide_url_name == "learning_type_training_start" %}
         <a href="{% url 'learning_type_training_start' today_guide_skill today_guide_learning_type %}" class="main-button main-button-large">오늘 학습 시작</a>
-      {% elif today_guide_url_name == "daily_mission" and today_start_mission %}
-        <a href="{% url 'mission_detail' today_start_mission.id %}" class="main-button main-button-large">오늘 학습 시작</a>
       {% else %}
         <a href="{% url 'problem_set_list' %}" class="main-button main-button-large">오늘 학습 시작</a>
       {% endif %}
@@ -74,12 +104,96 @@
   {% endif %}
 
   <div class="quick-action-row">
+    <a href="{% url 'final_cards' %}" class="sub-button">시험 전 핵심 복습</a>
     <a href="{% url 'wrong_notes' %}" class="sub-button">오답 복습</a>
     <a href="{% url 'exam_start' %}" class="sub-button">모의고사</a>
-    <a href="{% url 'stats' %}" class="sub-button">통계 보기</a>
+    <a href="{% url 'stats' %}" class="sub-button">학습 변화</a>
   </div>
 </section>
 
+<section class="card coach-summary-card coach-summary-warning">
+  <p class="eyebrow">지금 가장 위험한 약점</p>
+  {% if personal_coach.priority_weakness %}
+    <h2 class="section-title">{{ personal_coach.priority_weakness.label }}</h2>
+    <span class="coach-status-chip">{{ personal_coach.priority_weakness.status_label }}</span>
+    <p>{{ personal_coach.priority_weakness.message }}</p>
+    <a href="{% url 'pattern_training_start' personal_coach.priority_weakness.pattern_code %}" class="main-button coach-warning-button">
+      {{ personal_coach.priority_weakness.action_label }}
+    </a>
+  {% else %}
+    <h2 class="section-title">아직 확인 중이에요</h2>
+    <p>학습 기록이 더 쌓이면 가장 먼저 보완할 한 영역만 알려드릴게요.</p>
+    {% if today_start_mission %}<a href="{% url 'mission_detail' today_start_mission.id %}" class="sub-button">오늘 문제로 확인하기</a>{% endif %}
+  {% endif %}
+</section>
+
+<section class="card coach-summary-card coach-summary-success">
+  <p class="eyebrow">최근 좋아진 점</p>
+  {% if personal_coach.recent_improvement %}
+    <h2 class="section-title">{{ personal_coach.recent_improvement.label }}</h2>
+    <p><b>{{ personal_coach.recent_improvement.message }}</b></p>
+    <p class="meta-text">{{ personal_coach.recent_improvement.detail }}</p>
+  {% else %}
+    <h2 class="section-title">첫 변화를 기다리고 있어요</h2>
+    <p>오답을 다시 맞히거나 학습을 이어가면 여기에 나의 변화가 기록됩니다.</p>
+  {% endif %}
+  <a href="{% url 'stats' %}" class="sub-button">학습 변화 자세히</a>
+</section>
+</div>
+
+<details class="home-learning-more">
+<summary><b>로드맵·모의고사·상세 학습 도구</b><span>필요할 때 펼쳐보기</span></summary>
+
+<section class="card mobile-coach-strip">
+  <div>
+    <p class="eyebrow">시험 전략</p>
+    <h2 class="section-title">{{ personal_coach.dday_label }}</h2>
+    <p>{{ personal_coach.dday_message }}</p>
+  </div>
+  <a href="{% url 'study_profile' %}" class="sub-button">시험일 설정</a>
+  {% if personal_coach.confusion_cards or personal_coach.dday_phase == "final" or personal_coach.dday_phase == "review" %}
+    <a href="{% url 'final_cards' %}" class="sub-button">시험 직전 카드</a>
+  {% endif %}
+</section>
+
+{% if personal_coach.confusion_cards %}
+<section class="card">
+  <p class="eyebrow">나만의 혼동 카드</p>
+  <h2 class="section-title">내가 헷갈린 선택지 다시 보기</h2>
+  <div class="confusion-card-list">
+    {% for card in personal_coach.confusion_cards %}
+      <a class="confusion-card" href="{% url 'mission_detail' card.mission_id %}">
+        <b>{{ card.mission.chapter_name|default:card.mission.title }}</b>
+        <span>내 선택 {{ card.selected_display|default:'기록 없음' }} → 정답 {{ card.correct_display }}</span>
+        <small>{{ card.times_seen }}회 헷갈림 · 다시 풀기</small>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<details class="card weakness-map-panel">
+  <summary><b>나의 약점 지도</b><span>챕터별 상태 보기</span></summary>
+  {% for course in personal_coach.weakness_map %}
+    <h3>{{ course.course }}</h3>
+    <div class="weakness-map-list">
+      {% for chapter in course.chapters %}
+        <div class="weakness-map-row weakness-status-{{ chapter.status }}">
+          <span>{{ chapter.name }}</span>
+          {% if chapter.pattern_code %}
+            <a href="{% url 'pattern_training_start' chapter.pattern_code %}">{{ chapter.status_label }}</a>
+          {% else %}<small>{{ chapter.status_label }}</small>{% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% endfor %}
+</details>
+
+<details class="home-secondary-panel">
+  <summary>
+    <span><b>내 학습 상태</b><small>준비도 {{ dashboard.pass_readiness.score }}점 · 약점 {{ dashboard.weakness_top3|length }}개</small></span>
+    <span class="disclosure-label">자세히 보기</span>
+  </summary>
 <section class="dashboard-grid">
   <article class="card dashboard-card">
     <h2 class="section-title">합격 준비도</h2>
@@ -88,6 +202,12 @@
       <div class="readiness-meter-fill" style="width: {{ dashboard.pass_readiness.score }}%;"></div>
     </div>
     <p>{{ dashboard.pass_readiness.message }}</p>
+    {% if dashboard.pass_readiness.actions %}
+      <div class="dashboard-empty-guide">
+        <b>점수 대신 이렇게 행동하세요</b>
+        {% for action in dashboard.pass_readiness.actions %}<span>• {{ action }}</span>{% endfor %}
+      </div>
+    {% endif %}
     <p class="meta-text">
       최근 정답률 {{ dashboard.pass_readiness.recent_accuracy }}% /
       최근 풀이 {{ dashboard.pass_readiness.recent_total }}개
@@ -95,6 +215,22 @@
         / 최근 모의고사 평균 {{ dashboard.pass_readiness.exam_average }}점
       {% endif %}
     </p>
+    {% if dashboard.pass_readiness.area_rows %}
+      <div class="weakness-list" aria-label="자격증 평가 영역별 준비도">
+        {% for area in dashboard.pass_readiness.area_rows %}
+          <div class="weakness-item">
+            <b>{{ area.name }}</b>
+            <span>정답률 {{ area.accuracy }}% · 기준 {{ area.passing_floor }}%</span>
+            <span class="meta-text">최근 {{ area.total }}문제{% if area.at_risk %} · 과락 위험{% endif %}</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% if dashboard.pass_readiness.risks %}
+      <div class="dashboard-empty-guide">
+        {% for risk in dashboard.pass_readiness.risks %}<span>{{ risk }}</span>{% endfor %}
+      </div>
+    {% endif %}
     {% if dashboard.pass_readiness.recent_total < 20 %}
       <div class="dashboard-empty-guide">
         <b>20문제 이상 풀면 준비도 분석이 더 정확해집니다.</b>
@@ -148,6 +284,7 @@
     </div>
   {% endif %}
 </section>
+</details>
 
 {% if not is_logistics_subject %}
 <section class="card result-wrong">
@@ -180,28 +317,30 @@
 </section>
 {% endif %}
 
-<section class="card theory-roadmap-section" id="learning-roadmap">
+<details class="card theory-roadmap-section" id="learning-roadmap">
+  <summary><b>전체 학습 로드맵 보기</b></summary>
   {% if theory_roadmap %}
     <p class="eyebrow">처음 공부한다면</p>
     <h2 class="section-title">{{ current_subject.name }} 학습 로드맵</h2>
-    <p>챕터를 선택해 핵심 이론을 익힌 뒤, 연결된 기출문제로 이해도를 확인하세요.</p>
+    <p>챕터를 선택해 핵심 이론을 익힌 뒤, 연결된 기출·유형 문제로 이해도를 확인하세요.</p>
 
     {% for course in theory_roadmap %}
-      <div class="roadmap-skill-card theory-course-card">
-        <div class="theory-course-head">
+      <details class="roadmap-skill-card theory-course-card" {% if course.is_recommended %}open{% endif %}>
+        <summary class="theory-course-head">
           <div>
             <span class="theory-course-kicker">SUBJECT</span>
             <h3>{{ course.course }}</h3>
+            <span class="meta-text">{% if course.attempted_count %}학습 중{% else %}시작 전{% endif %}</span>
           </div>
-          <span class="theory-course-count">{{ course.chapters|length }}개 챕터</span>
-        </div>
+          <span class="theory-course-count">{{ course.chapters|length }}개 챕터 ▾</span>
+        </summary>
 
         <div class="roadmap-step-grid">
           {% for chapter in course.chapters %}
             {% include "core/includes/theory_roadmap_card.html" with chapter=chapter %}
           {% endfor %}
         </div>
-      </div>
+      </details>
     {% endfor %}
   {% else %}
     <h2 class="section-title">학습 로드맵</h2>
@@ -269,7 +408,7 @@
       <p>아직 로드맵을 만들 만큼 문제가 없습니다. 관리자가 문제를 추가하면 자동으로 표시됩니다.</p>
     {% endfor %}
   {% endif %}
-</section>
+</details>
 
 <section class="card">
   <h2 class="section-title">지금 이어서 할 학습</h2>
@@ -317,8 +456,16 @@
 <section class="card">
   <h2 class="section-title">최근 학습 기록</h2>
 
-  {% if recent_sessions %}
+  {% if recent_sessions or recent_attempts %}
     <ul class="clean-list">
+      {% for a in recent_attempts %}
+        <li>
+          {{ a.mission.course|default:current_subject.name }} · {{ a.skill_label }} /
+          {% if a.is_correct %}<b>정답</b>{% else %}<b>오답</b>{% endif %} /
+          {{ a.created_at|date:"m-d H:i" }} /
+          <a href="{% url 'mission_detail' a.mission.id %}?attempt={{ a.id }}">결과 보기</a>
+        </li>
+      {% endfor %}
       {% for s in recent_sessions %}
         <li>
           {{ s.problem_set.title }} /
@@ -369,7 +516,7 @@
 <div class="learning-tools-heading">
   <p class="eyebrow">보조 학습 도구</p>
   <h2 class="section-title">필요할 때 더 깊게 학습하세요</h2>
-  <p>풀이 기록이 쌓이면 약점과 반복 오답을 분석하고, 전체 문제 검색으로 원하는 영역을 직접 찾을 수 있습니다.</p>
+  <p>풀이 기록이 쌓이면 약점과 반복 오답을 분석하고, 문제 찾기로 원하는 영역을 직접 학습할 수 있습니다.</p>
 </div>
 
 <section class="card">
@@ -410,7 +557,7 @@
       {% for row in weak_patterns %}
         <li class="mb-small">
           <b>{{ row.wrong_pattern__name }}</b>
-          ({{ row.wrong_pattern__skill }} / {{ row.cnt }}회)
+          ({{ row.cnt }}회)
 
           <p class="mt-small">
             <a href="{% url 'pattern_training_start' row.wrong_pattern__code %}" class="main-button">
@@ -440,7 +587,7 @@
 </section>
 
 <section class="card" id="search-section">
-  <h2 class="section-title">전체 문제 검색</h2>
+  <h2 class="section-title">문제 찾아보기</h2>
 
   <form method="get" class="mb-medium filter-form" action="#search-section">
     <input type="text" name="q" placeholder="문제 내용으로 검색" value="{{ q }}" />
@@ -476,5 +623,6 @@
     {% endif %}
   </div>
 </section>
+</details>
 
 {% endblock %}

@@ -1,84 +1,45 @@
 {% extends 'core/base.html' %}
-
-{% block title %}
-시험 히스토리
-{% endblock %}
-
+{% block title %}시험 기록{% endblock %}
 {% block content %}
-
+<section class="card"><h1>시험 기록</h1><p>서로 다른 모드의 점수는 직접 비교하지 않습니다. 전체 합격 기준 판정은 실전 두 교시 완료 후 결과에서 확인하세요.</p></section>
+{% for card in history_cards %}
 <section class="card">
-  <h1 class="section-title">시험 히스토리</h1>
-
-  <div class="info-box">
-    <p><b>최근 5회 평균 점수:</b> {{ avg_score }}점</p>
-    <p><b>최근 5회 합격률:</b> {{ pass_rate }}% ({{ passed_count }} / {{ total_count }})</p>
-    <p>
-      <b>최근 5회 점수 흐름:</b>
-      {% for score in recent_scores %}
-        {{ score }}{% if not forloop.last %} / {% endif %}
-      {% empty %}
-        기록 없음
-      {% endfor %}
-    </p>
-    <p><b>추이:</b> {{ trend_label }}</p>
-    <p><b>최고 점수:</b> {{ best_score }}점</p>
-    <p>
-      <b>직전 대비:</b>
-      {% if score_change > 0 %}
-        +{{ score_change }}점
-      {% else %}
-        {{ score_change }}점
-      {% endif %}
-    </p>
-  </div>
+  <h2>{{ card.title }}</h2>
+  <p>{{ card.started_at|date:'Y-m-d H:i' }}</p>
+  {% if card.is_full %}
+    <h3>1교시</h3>
+    <p>{{ card.first.status_label }}{% if card.first.finished %} · {{ card.first.score|floatformat:"-1" }}점 · 정답 {{ card.first.correct_count }} / {{ card.first.total_questions }}{% endif %}</p>
+    <h3>2교시</h3>
+    {% if card.second %}
+      <p>{{ card.second.status_label }}{% if card.second.finished %} · {{ card.second.score|floatformat:"-1" }}점 · 정답 {{ card.second.correct_count }} / {{ card.second.total_questions }}{% endif %}</p>
+    {% else %}
+      <p>시험 구성 확인이 필요합니다.</p>
+    {% endif %}
+    {% if card.course_rows %}
+      <h3>과목별 점수</h3>
+      <ul class="clean-list">
+        {% for row in card.course_rows %}
+          <li>{{ row.course }} · {{ row.score|floatformat:"-1" }}점{% if row.below_minimum %} · 과락 기준 미달{% endif %}</li>
+        {% endfor %}
+      </ul>
+      <p><strong>전체 평균 {{ card.average|floatformat:"-1" }}점 · {{ card.verdict }}</strong></p>
+    {% endif %}
+  {% else %}
+    <p>{{ card.session.status_label }}</p>
+    {% if card.session.finished %}<p>정답 {{ card.session.correct_count }} / {{ card.session.total_questions }} · {{ card.session.score|floatformat:"-1" }}점</p>{% endif %}
+  {% endif %}
+  {% if card.action %}
+    {% if card.action.kind == 'post' %}
+      <form method="post" action="{% url 'exam_create' %}">
+        {% csrf_token %}
+        <input type="hidden" name="second_sitting" value="{{ card.action.exam_id }}">
+        <button type="submit">{{ card.action.label }}</button>
+      </form>
+    {% else %}
+      <a href="{% url 'exam_result' card.action.exam_id %}">{{ card.action.label }}</a>
+    {% endif %}
+  {% endif %}
 </section>
-
-<section class="card">
-  <h2 class="card-title">시험 기록</h2>
-
-  <table class="data-table">
-    <tr>
-      <th>응시일시</th>
-      <th>시험명</th>
-      <th>점수</th>
-      <th>정답</th>
-      <th>오답</th>
-      <th>판정</th>
-      <th>상세</th>
-    </tr>
-
-    {% for exam in exams %}
-      <tr>
-        <td>{{ exam.started_at|date:"Y-m-d H:i" }}</td>
-        <td>{{ exam.title }}</td>
-        <td>{{ exam.score }}점</td>
-        <td>{{ exam.correct_count }}</td>
-        <td>{{ exam.wrong_count }}</td>
-        <td>
-          {% if exam.score >= 60 %}
-            <span class="text-success">합격권</span>
-          {% else %}
-            <span class="text-danger">미달</span>
-          {% endif %}
-        </td>
-        <td>
-          <a href="{% url 'exam_result' exam.id %}" class="sub-link">
-            결과 보기
-          </a>
-        </td>
-      </tr>
-    {% empty %}
-      <tr>
-        <td colspan="7">아직 시험 기록이 없습니다.</td>
-      </tr>
-    {% endfor %}
-  </table>
-</section>
-
-<section class="card">
-  <a href="{% url 'exam_start' %}" class="sub-link">실전 모의고사</a> |
-  <a href="{% url 'mission_list' %}" class="sub-link">학습 홈</a> |
-  <a href="{% url 'stats' %}" class="sub-link">통계</a>
-</section>
-
+{% empty %}<section class="card">아직 시험 기록이 없습니다.</section>{% endfor %}
+<a href="{% url 'exam_start' %}">모의고사 선택</a>
 {% endblock %}

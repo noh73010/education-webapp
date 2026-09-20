@@ -4,7 +4,7 @@ from core.services.subjects import seed_platform_subjects
 
 
 class Command(BaseCommand):
-    help = "Seed platform subjects such as 컴활 2급 and 물류관리사."
+    help = "Seed active platform subjects while keeping Subject-based expansion."
 
     def handle(self, *args, **options):
         subjects = seed_platform_subjects()

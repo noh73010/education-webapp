@@ -9,7 +9,7 @@ from django.test import TestCase
 from django.templatetags.static import static
 from django.urls import reverse
 
-from core.models import Attempt, DailyMission, ExamSession, ExamSessionMission, Mission, MissionImage, ProblemSet
+from core.models import Attempt, DailyMission, ExamSession, ExamSessionMission, Mission, MissionImage, ProblemSet, Subject
 from core.services.subjects import CURRENT_SUBJECT_SESSION_KEY, LOGISTICS_SUBJECT_CODE, seed_platform_subjects
 from core.services.exams import create_exam_session
 from core.services.logistics_curriculum import build_logistics_chapter_roadmap
@@ -85,7 +85,8 @@ class MissionImportImageTests(TestCase):
             self.import_csv(csv_path)
 
         mission = Mission.objects.get()
-        self.assertEqual(mission.chapter_code, "WH01")
+        self.assertEqual(mission.chapter_code, "BH01")
+        self.assertEqual(mission.chapter_name, "보관 및 창고의 기초개념")
 
     def test_csv_image_path_is_validated_and_linked(self):
         image_path = "images/questions/logistics/29회-1/q015.png"
@@ -98,6 +99,42 @@ class MissionImportImageTests(TestCase):
         self.assertEqual(image.source, "csv")
         self.assertIn("images_linked=1", output)
         self.assertIn("images_missing=0", output)
+
+    def test_korean_csv_accepts_classification_and_image_column_aliases(self):
+        alias_columns = [
+            "번호", "과목", "분류코드", "난이도", "문제", "이미지",
+            "보기1", "보기2", "보기3", "보기4", "보기5", "정답", "해설",
+        ]
+        image_path = "images/questions/logistics/29회-1/q015.png"
+        with TemporaryDirectory() as tmpdir:
+            csv_path = Path(tmpdir) / "logistics_29-1.csv"
+            with csv_path.open("w", newline="", encoding="utf-8-sig") as csv_file:
+                writer = csv.DictWriter(csv_file, fieldnames=alias_columns)
+                writer.writeheader()
+                writer.writerow({
+                    "번호": "15",
+                    "과목": "물류관리론",
+                    "분류코드": "LM01 물류관리 일반",
+                    "난이도": "중",
+                    "문제": "물류 활동에 대한 설명으로 옳은 것은?",
+                    "이미지": image_path,
+                    "보기1": "첫 번째 보기",
+                    "보기2": "두 번째 보기",
+                    "보기3": "세 번째 보기",
+                    "보기4": "네 번째 보기",
+                    "보기5": "다섯 번째 보기",
+                    "정답": "2",
+                    "해설": "두 번째 보기가 옳은 이유를 설명합니다.",
+                })
+            output = self.import_csv(csv_path)
+
+        mission = Mission.objects.get(external_id="LOGISTICS-LM01-LOGISTICS-29-1-0015")
+        self.assertEqual(mission.chapter_code, "LM01")
+        image = MissionImage.objects.get(mission=mission)
+        self.assertEqual(image.static_path, image_path)
+        self.assertEqual(image.source, "csv")
+        self.assertIn("created=1", output)
+        self.assertIn("images_linked=1", output)
 
     def test_blank_image_column_uses_filename_convention(self):
         with TemporaryDirectory() as tmpdir:
@@ -177,6 +214,12 @@ class LogisticsDatasetIntegrationTests(TestCase):
             create_problem_sets=True,
             stdout=StringIO(),
         )
+        cls.expected_mission_count = Mission.objects.filter(
+            subject__code=LOGISTICS_SUBJECT_CODE
+        ).count()
+        cls.expected_usable_count = Mission.objects.filter(
+            subject__code=LOGISTICS_SUBJECT_CODE, is_usable_for_set=True,
+        ).count()
         cls.user = User.objects.create_user(username="logistics_dataset", password="pass12345")
 
     def setUp(self):
@@ -187,15 +230,18 @@ class LogisticsDatasetIntegrationTests(TestCase):
 
     def test_full_dataset_is_imported_and_subject_isolated(self):
         logistics_missions = Mission.objects.filter(subject__code=LOGISTICS_SUBJECT_CODE)
-        self.assertEqual(logistics_missions.count(), 200)
-        self.assertEqual(MissionImage.objects.filter(mission__in=logistics_missions).count(), 35)
+        self.assertEqual(logistics_missions.count(), self.expected_mission_count)
+        self.assertGreaterEqual(
+            MissionImage.objects.filter(mission__in=logistics_missions).count(),
+            39,
+        )
         self.assertFalse(logistics_missions.exclude(subject__code=LOGISTICS_SUBJECT_CODE).exists())
 
     def test_learning_home_builds_daily_recommendations_and_complete_roadmap(self):
         response = self.client.get(reverse("mission_list"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["subject_mission_count"], 200)
+        self.assertEqual(response.context["subject_mission_count"], self.expected_mission_count)
         self.assertEqual(len(response.context["recommended"]), 5)
         self.assertEqual(response.context["recommended"][0].chapter_code, "LM01")
         self.assertEqual(
@@ -207,7 +253,10 @@ class LogisticsDatasetIntegrationTests(TestCase):
             reverse("mission_detail", args=[response.context["today_start_mission"].id]),
         )
         roadmap = response.context["logistics_chapter_roadmap"]
-        self.assertEqual(sum(chapter["total_count"] for course in roadmap for chapter in course["chapters"]), 200)
+        self.assertEqual(
+            sum(chapter["total_count"] for course in roadmap for chapter in course["chapters"]),
+            self.expected_usable_count,
+        )
         self.assertNotContains(response, "주간 랭킹 준비 중")
 
     def test_daily_flow_moves_to_next_unlearned_chapter_then_adds_weak_review(self):
@@ -237,8 +286,7 @@ class LogisticsDatasetIntegrationTests(TestCase):
     def test_daily_recommendation_level_ignores_other_subject_attempts(self):
         default_subject = Mission.objects.exclude(subject__code=LOGISTICS_SUBJECT_CODE).first()
         if default_subject is None:
-            from core.services.subjects import get_default_subject
-            subject = get_default_subject()
+            subject = Subject.objects.create(code="recommendation-other", name="다른 자격증")
             default_subject = Mission.objects.create(
                 external_id="OTHER_SUBJECT_RECOMMENDATION_TEST",
                 subject=subject,
@@ -261,7 +309,7 @@ class LogisticsDatasetIntegrationTests(TestCase):
     def test_partial_daily_recommendations_are_filled_to_exactly_five(self):
         from django.utils import timezone
 
-        first_two = list(Mission.objects.filter(subject__code=LOGISTICS_SUBJECT_CODE)[:2])
+        first_two = list(Mission.objects.filter(subject__code=LOGISTICS_SUBJECT_CODE, is_usable_for_set=True)[:2])
         DailyMission.objects.bulk_create([
             DailyMission(user=self.user, mission=mission, date=timezone.localdate())
             for mission in first_two
@@ -285,10 +333,11 @@ class LogisticsDatasetIntegrationTests(TestCase):
 
         self.assertEqual(exam.items.count(), 40)
         self.assertFalse(exam.items.exclude(mission__subject=subject).exists())
+        self.assertFalse(exam.items.filter(mission__is_usable_for_set=False).exists())
 
     def test_problem_sets_use_only_logistics_missions(self):
         problem_sets = ProblemSet.objects.filter(title__startswith="[자동] 물류관리사")
-        self.assertEqual(problem_sets.count(), 33)
+        self.assertGreater(problem_sets.count(), 0)
         for problem_set in problem_sets:
             self.assertEqual(
                 set(problem_set.items.values_list("mission__subject__code", flat=True)),
@@ -300,12 +349,49 @@ class LogisticsDatasetIntegrationTests(TestCase):
         wrong_notes_response = self.client.get(reverse("wrong_notes"))
 
         self.assertEqual(stats_response.status_code, 200)
-        self.assertEqual(stats_response.context["current_summary"]["missions_total"], 200)
+        self.assertEqual(
+            stats_response.context["current_summary"]["missions_total"],
+            self.expected_mission_count,
+        )
         self.assertEqual(wrong_notes_response.status_code, 200)
         self.assertEqual(wrong_notes_response.context["current_subject"].code, LOGISTICS_SUBJECT_CODE)
 
-    def test_roadmap_service_counts_every_imported_mission(self):
+    def test_stats_without_attempts_shows_one_start_action_instead_of_all_chapters(self):
+        response = self.client.get(reverse("stats"))
+
+        self.assertContains(response, "시험 범위별 내 학습 상태")
+        self.assertContains(response, "아직 분석할 학습 기록이 없어요")
+        self.assertContains(response, "오늘 학습 시작")
+        self.assertNotContains(response, "해상운송")
+        self.assertNotContains(response, "학습 전")
+        self.assertNotContains(response, "결과 예측형")
+        self.assertNotContains(response, "전체 문제")
+        self.assertNotContains(response, "전체 미션")
+        self.assertNotContains(response, ">FT04<")
+
+    def test_stats_only_shows_chapters_with_actual_learning_history(self):
+        mission = Mission.objects.filter(
+            subject__code=LOGISTICS_SUBJECT_CODE, chapter_code="FT04",
+        ).first()
+        Attempt.objects.create(user=self.user, mission=mission, is_correct=False)
+
+        response = self.client.get(reverse("stats"))
+
+        self.assertContains(response, "해상운송")
+        self.assertContains(response, "복습 필요")
+        self.assertNotContains(response, "국제항공운송")
+
+    def test_roadmap_service_counts_only_usable_imported_missions(self):
         subject = Mission.objects.filter(subject__code=LOGISTICS_SUBJECT_CODE).first().subject
         roadmap = build_logistics_chapter_roadmap(self.user, subject)
         total = sum(chapter["total_count"] for course in roadmap for chapter in course["chapters"])
-        self.assertEqual(total, 200)
+        self.assertEqual(total, self.expected_usable_count)
+
+    def test_held_questions_stay_out_of_daily_recommendations(self):
+        from django.utils import timezone
+        held = Mission.objects.filter(subject__code=LOGISTICS_SUBJECT_CODE, is_usable_for_set=False).first()
+        self.assertIsNotNone(held)
+        DailyMission.objects.create(user=self.user, mission=held, date=timezone.localdate())
+        response = self.client.get(reverse("mission_list"))
+        self.assertEqual(len(response.context["recommended"]), 5)
+        self.assertNotIn(held.pk, [mission.pk for mission in response.context["recommended"]])

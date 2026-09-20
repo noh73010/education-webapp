@@ -41,12 +41,14 @@ def build_exam_analysis(exam, skill_rows, wrong_items):
         if acc <= 50:
             weak_skills.append({
                 "skill": skill,
+                "skill_label": row.get("skill_label", skill),
                 "accuracy": acc,
                 "total": total,
             })
         elif acc >= 80:
             strong_skills.append({
                 "skill": skill,
+                "skill_label": row.get("skill_label", skill),
                 "accuracy": acc,
                 "total": total,
             })
@@ -89,7 +91,7 @@ def build_exam_analysis(exam, skill_rows, wrong_items):
         summary_lines.append("특정 취약 스킬이 두드러지지 않습니다. 실전 반복으로 안정성을 높이면 됩니다.")
 
     # 5) 합격 확률 계산
-    # 컴활 2급 기준: 60점 이상을 합격권으로 간주
+    # 자격증별 정책이 없는 경우 사용하는 공통 임시 기준
     base_score = exam.score
     pass_score = 60
     gap = pass_score - base_score

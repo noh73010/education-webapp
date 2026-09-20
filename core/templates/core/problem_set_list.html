@@ -36,13 +36,13 @@
     {% for ps in today_sets %}
       <li>
         <a href="{% url 'problem_set_detail' ps.id %}">
-          <b>{{ ps.title }}</b>
+          <b>{{ ps.learner_title }}</b>
         </a>
         <div class="meta-text">
-          유형: {{ ps.get_set_type_display }} /
-          스킬그룹: {{ ps.skill_label }} /
-          난이도: {{ ps.level }}
+          {{ ps.question_count }}문제{% if ps.estimated_minutes %} · 약 {{ ps.estimated_minutes }}분{% endif %}
+          · {{ ps.skill_label }}
         </div>
+        <p class="mt-small">{{ ps.recommendation_reason }}</p>
       </li>
     {% empty %}
       <li>추천할 세트가 없습니다.</li>
@@ -62,11 +62,12 @@
       {% for ps in weak_sets %}
         <li>
           <a href="{% url 'problem_set_detail' ps.id %}">
-            <b>{{ ps.title }}</b>
+            <b>{{ ps.learner_title }}</b>
           </a>
           <div class="meta-text">
-            스킬: {{ ps.skill_label }} / 난이도: {{ ps.level }}
+            {{ ps.question_count }}문제{% if ps.estimated_minutes %} · 약 {{ ps.estimated_minutes }}분{% endif %}
           </div>
+          <p class="mt-small">{{ ps.recommendation_reason }}</p>
         </li>
       {% endfor %}
     </ul>
@@ -82,13 +83,13 @@
     {% for ps in review_sets %}
       <li>
         <a href="{% url 'problem_set_detail' ps.id %}">
-          <b>{{ ps.title }}</b>
+          <b>{{ ps.learner_title }}</b>
         </a>
         <div class="meta-text">
-          유형: {{ ps.get_set_type_display }} /
-          스킬그룹: {{ ps.skill_label }} /
-          난이도: {{ ps.level }}
+          {{ ps.question_count }}문제{% if ps.estimated_minutes %} · 약 {{ ps.estimated_minutes }}분{% endif %}
+          · {{ ps.skill_label }}
         </div>
+        <p class="mt-small">{{ ps.recommendation_reason }}</p>
       </li>
     {% empty %}
       <li>아직 복습 추천 세트가 없습니다.</li>
@@ -103,18 +104,14 @@
     {% for ps in problem_sets %}
       <li>
         <a href="{% url 'problem_set_detail' ps.id %}">
-          <b>{{ ps.title }}</b>
+          <b>{{ ps.learner_title }}</b>
         </a>
 
         <div class="meta-text">
-          유형: {{ ps.get_set_type_display }} /
-          스킬그룹: {{ ps.skill_label }} /
-          난이도: {{ ps.level }}
+          {{ ps.question_count }}문제{% if ps.estimated_minutes %} · 약 {{ ps.estimated_minutes }}분{% endif %}
+          · {{ ps.skill_label }}
         </div>
-
-        {% if ps.description %}
-          <p class="mt-small">{{ ps.description }}</p>
-        {% endif %}
+        <p class="mt-small">{{ ps.recommendation_reason }}</p>
       </li>
     {% empty %}
       <li>등록된 문제 세트가 없습니다.</li>

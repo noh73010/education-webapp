@@ -18,6 +18,7 @@ class UserFlowLinkTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "회원가입하기")
         self.assertContains(response, reverse("signup"))
+        self.assertContains(response, "signup-callout-button")
 
     def test_inquiry_done_has_next_action_links_for_authenticated_user(self):
         user = User.objects.create_user(username="flow_user", password="pass12345")

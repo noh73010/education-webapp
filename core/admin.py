@@ -20,7 +20,11 @@ from .models import (
     ExamSessionMission,
     Inquiry,
     PatternTrainingSession,
+    UserWeakness,
+    CertificationPolicy,
+    CertificationArea,
     UserEvent,
+    ConceptUnit,
 )
 
 
@@ -51,12 +55,17 @@ class MissionAdmin(admin.ModelAdmin):
         "question_type",
         "learning_type",
         "quality_level",
+        "review_status",
+        "content_version",
         "is_usable_for_set",
         "is_quality_checked",
         "created_at",
     )
 
     list_filter = (
+        "source_type",
+        "reviewed_on",
+        "review_status",
         "subject",
         "skill",
         "level",
@@ -83,6 +92,13 @@ class MissionAdmin(admin.ModelAdmin):
     list_per_page = 50
 
 
+@admin.register(ConceptUnit)
+class ConceptUnitAdmin(admin.ModelAdmin):
+    list_display = ("title", "subject", "reviewed_on")
+    list_filter = ("subject", "reviewed_on")
+    search_fields = ("title", "comparison", "example")
+
+
 @admin.register(MissionImage)
 class MissionImageAdmin(admin.ModelAdmin):
     list_display = ("id", "mission", "static_path", "source", "updated_at")
@@ -101,13 +117,24 @@ class WrongReasonAdmin(admin.ModelAdmin):
 
 @admin.register(Attempt)
 class AttemptAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "mission", "is_correct", "created_at")
-    list_filter = ("is_correct", "mission__skill", "mission__level")
+    list_display = (
+        "id", "user", "mission", "mission_content_version",
+        "is_correct", "grading_valid", "created_at",
+    )
+    list_filter = ("grading_valid", "is_correct", "mission__skill", "mission__level")
     search_fields = ("user__username", "mission__title", "mission__skill")
     ordering = ("-created_at",)
     list_select_related = ("user", "mission")
     list_per_page = 50
     date_hierarchy = "created_at"
+    readonly_fields = (
+        "mission_content_version",
+        "mission_content_fingerprint",
+        "mission_grading_fingerprint",
+        "mission_snapshot",
+        "grading_invalidated_at",
+        "grading_invalidation_reason",
+    )
 
 
 @admin.register(AttemptWrongReason)
@@ -191,7 +218,7 @@ class UserEventAdmin(admin.ModelAdmin):
 
 @admin.register(Inquiry)
 class InquiryAdmin(admin.ModelAdmin):
-    list_display = ("id", "inquiry_type", "status", "name", "contact", "user", "created_at")
+    list_display = ("id", "inquiry_type", "status", "mission", "name", "contact", "user", "created_at")
     list_filter = ("inquiry_type", "status", "created_at")
     search_fields = ("name", "contact", "message", "user__username")
     readonly_fields = ("created_at", "updated_at")
@@ -204,7 +231,7 @@ class InquiryAdmin(admin.ModelAdmin):
 class ProblemSetAdmin(admin.ModelAdmin):
     list_display = ("id", "title", "subject_names", "skill_group", "level", "set_type", "is_active", "created_at")
     list_filter = ("set_type", "is_active", "level", "skill_group", "items__mission__subject")
-    search_fields = ("title", "skill_group", "description")
+    search_fields = ("title", "generation_key", "skill_group", "description")
     ordering = ("-created_at",)
     list_per_page = 50
 
@@ -265,21 +292,32 @@ class ProblemSetSessionItemAdmin(admin.ModelAdmin):
 class WrongPatternAdmin(admin.ModelAdmin):
     list_display = (
         "id",
+        "subject",
         "skill",
         "code",
         "name",
         "created_at",
     )
+    search_fields = ("code", "name", "skill")
+    list_filter = ("subject", "skill")
 
-    search_fields = (
-        "code",
-        "name",
-        "skill",
-    )
 
-    list_filter = (
-        "skill",
-    )
+@admin.register(UserWeakness)
+class UserWeaknessAdmin(admin.ModelAdmin):
+    list_display = ("user", "subject", "wrong_pattern", "status", "severity", "next_review_at")
+    list_filter = ("subject", "status")
+    search_fields = ("user__username", "wrong_pattern__name")
+
+
+class CertificationAreaInline(admin.TabularInline):
+    model = CertificationArea
+    extra = 0
+
+
+@admin.register(CertificationPolicy)
+class CertificationPolicyAdmin(admin.ModelAdmin):
+    list_display = ("subject", "passing_score", "minimum_area_score", "readiness_min_attempts")
+    inlines = (CertificationAreaInline,)
 
 
 @admin.register(AttemptWrongPattern)

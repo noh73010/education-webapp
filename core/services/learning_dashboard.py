@@ -3,7 +3,8 @@ from datetime import timedelta
 from django.db.models import Count, Q
 from django.utils import timezone
 
-from core.models import Attempt, AttemptWrongPattern, ExamSession, UserStreak
+from core.models import Attempt, AttemptWrongPattern, ExamSession, UserStreak, UserWeakness
+from core.services.exams import exact_exam_score
 from core.services.skill_labels import get_skill_label
 
 
@@ -21,7 +22,7 @@ def _percent(part, total):
 
 
 def _recent_attempt_stats(user, limit=50, subject=None):
-    qs = Attempt.objects.filter(user=user)
+    qs = Attempt.objects.valid_for_learning().filter(user=user)
     if subject is not None:
         qs = qs.filter(mission__subject=subject)
     attempts = list(
@@ -79,6 +80,10 @@ def get_exam_average(user, limit=3, subject=None):
     qs = ExamSession.objects.filter(user=user, status="submitted")
     if subject is not None:
         qs = qs.filter(items__mission__subject=subject).distinct()
+    qs = qs.exclude(
+        items__mission__attempt__user=user,
+        items__mission__attempt__grading_valid=False,
+    ).distinct()
     exams = list(
         qs
         .order_by("-ended_at", "-started_at")[:limit]
@@ -87,10 +92,15 @@ def get_exam_average(user, limit=3, subject=None):
     if not exams:
         return None
 
-    return round(sum(exam.score for exam in exams) / len(exams), 1)
+    return round(sum(exact_exam_score(exam) for exam in exams) / len(exams), 1)
 
 
 def get_pass_readiness(user, streak=None, subject=None):
+    policy = None
+    if subject is not None:
+        policy = getattr(subject, "certification_policy", None)
+    if policy is not None:
+        return _get_policy_readiness(user, subject, policy, streak=streak)
     stats = _recent_attempt_stats(user, subject=subject)
     streak = streak or UserStreak.objects.filter(user=user).first()
     current_streak = streak.current_streak if streak else 0
@@ -121,11 +131,106 @@ def get_pass_readiness(user, streak=None, subject=None):
         "exam_average": exam_average,
         "streak_days": current_streak,
         "message": message,
+        "actions": ["오늘 추천 문제 5개 풀기", "틀린 문제를 오답노트에서 다시 풀기"],
+    }
+
+
+def _get_policy_readiness(user, subject, policy, streak=None):
+    stats = _recent_attempt_stats(user, limit=policy.recent_attempt_window, subject=subject)
+    attempts = stats["attempts"]
+    areas = list(policy.areas.all())
+    area_rows = []
+    for area in areas:
+        matched = [
+            attempt for attempt in attempts
+            if (area.course and attempt.mission.course == area.course)
+            or (area.chapter_prefix and attempt.mission.chapter_code.startswith(area.chapter_prefix))
+        ]
+        total = len(matched)
+        correct = sum(1 for attempt in matched if attempt.is_correct)
+        accuracy = _percent(correct, total)
+        floor = area.passing_floor or policy.minimum_area_score
+        area_rows.append({
+            "code": area.code, "name": area.name, "total": total,
+            "accuracy": accuracy, "passing_floor": floor,
+            "at_risk": total > 0 and accuracy < floor,
+        })
+
+    area_by_code = {area.code: area for area in areas}
+    total_weight = sum(area.weight for area in areas) or 1
+    coverage_score = sum(
+        area_by_code[row["code"]].weight for row in area_rows if row["total"] >= 3
+    ) / total_weight * 100
+    balance_score = sum(
+        min(row["accuracy"] / max(row["passing_floor"], 1), 1)
+        * area_by_code[row["code"]].weight
+        for row in area_rows if row["total"]
+    ) / total_weight * 100
+    exam_average = get_exam_average(user, subject=subject)
+    exam_count = ExamSession.objects.filter(
+        user=user, status="submitted", items__mission__subject=subject
+    ).exclude(
+        items__mission__attempt__user=user,
+        items__mission__attempt__grading_valid=False,
+    ).distinct().count()
+    weakness_qs = UserWeakness.objects.filter(user=user, subject=subject)
+    weakness_total = weakness_qs.count()
+    mastered = weakness_qs.filter(status=UserWeakness.STATUS_MASTERED).count()
+    weakness_score = _percent(mastered, weakness_total) if weakness_total else 100
+
+    score = round(
+        stats["accuracy"] * 0.25
+        + balance_score * 0.20
+        + (exam_average or 0) * 0.30
+        + weakness_score * 0.15
+        + coverage_score * 0.10
+    )
+    risks = []
+    if stats["total"] < policy.readiness_min_attempts:
+        score = min(score, 59)
+        risks.append(f"판단에 필요한 최근 풀이 {policy.readiness_min_attempts}개가 아직 부족합니다.")
+    if exam_count < policy.required_mock_exam_count:
+        score = min(score, 65)
+        risks.append(
+            f"제출 완료한 모의고사가 {policy.required_mock_exam_count}회보다 부족합니다."
+        )
+    risky_areas = [row["name"] for row in area_rows if row["at_risk"]]
+    if risky_areas:
+        score = min(score, policy.passing_score - 1)
+        risks.append(f"과락 위험 영역: {', '.join(risky_areas)}")
+    score = max(0, min(score, 100))
+
+    if not attempts:
+        message = "아직 준비도를 계산할 학습 기록이 부족합니다."
+    elif score >= 80:
+        message = "과목 균형과 모의고사 성적이 합격권에 근접했습니다."
+    elif score >= policy.passing_score:
+        message = "합격 기준에 근접했습니다. 남은 약점과 과목별 위험을 보강하세요."
+    else:
+        message = "풀이 근거를 더 쌓고 과락 위험 과목을 우선 보강하세요."
+    streak = streak or UserStreak.objects.filter(user=user).first()
+    actions = []
+    if risky_areas:
+        actions.append(f"{risky_areas[0]} 3문제 집중 훈련")
+    if weakness_total > mastered:
+        actions.append("미해결 약점 1개 재평가")
+    if exam_count < policy.required_mock_exam_count:
+        actions.append("모의고사 1회로 실전 점검")
+    if not actions:
+        actions.append("오늘 추천 5문제로 학습 흐름 유지")
+    return {
+        "score": score, "recent_accuracy": stats["accuracy"],
+        "recent_total": stats["total"], "exam_average": exam_average,
+        "streak_days": streak.current_streak if streak else 0,
+        "message": message, "area_rows": area_rows,
+        "risks": risks, "passing_score": policy.passing_score,
+        "evidence_sufficient": stats["total"] >= policy.readiness_min_attempts,
+        "actions": actions[:3],
     }
 
 
 def get_weakness_top3(user, subject=None):
-    attempt_qs = Attempt.objects.filter(user=user)
+    attempt_qs = Attempt.objects.valid_for_learning().filter(user=user)
     if subject is not None:
         attempt_qs = attempt_qs.filter(mission__subject=subject)
     skill_rows = list(
@@ -152,6 +257,26 @@ def get_weakness_top3(user, subject=None):
             "reason": "정답률 낮음",
         })
 
+    lifecycle_rows = []
+    if subject is not None:
+        lifecycle_rows = list(
+            UserWeakness.objects.filter(user=user, subject=subject)
+            .exclude(status=UserWeakness.STATUS_MASTERED)
+            .select_related("wrong_pattern")
+            .order_by("-severity", "-last_detected_at")[:3]
+        )
+    for weakness in lifecycle_rows:
+        skill = weakness.wrong_pattern.skill or ""
+        weaknesses.append({
+            "skill": skill,
+            "skill_label": get_skill_label(skill) if skill else "오답 패턴",
+            "total": weakness.recent_failure_count,
+            "wrong": weakness.recent_failure_count,
+            "accuracy": max(0, 100 - weakness.severity),
+            "reason": weakness.wrong_pattern.name,
+            "status": weakness.status,
+        })
+
     pattern_rows = list(
         AttemptWrongPattern.objects
         .filter(attempt__in=attempt_qs)
@@ -163,7 +288,7 @@ def get_weakness_top3(user, subject=None):
         .order_by("-count")[:3]
     )
 
-    for row in pattern_rows:
+    for row in pattern_rows if not lifecycle_rows else []:
         skill = row["wrong_pattern__skill"] or ""
         weaknesses.append({
             "skill": skill,

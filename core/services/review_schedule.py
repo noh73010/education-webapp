@@ -21,7 +21,7 @@ def get_mission_review_states(user, mission_ids, *, today=None):
 
     today = today or timezone.localdate()
     recent_attempts = (
-        Attempt.objects
+        Attempt.objects.valid_for_learning()
         .filter(user=user, mission_id__in=mission_ids)
         .annotate(
             recent_rank=Window(
@@ -48,6 +48,16 @@ def _build_review_state(attempts, *, today):
     latest = attempts[0]
     latest_date = timezone.localtime(latest.created_at).date()
 
+    if latest.is_correct and latest.confidence_level != Attempt.CONFIDENCE_CERTAIN:
+        due_date = latest_date + timedelta(days=1)
+        return {
+            "status": "uncertain",
+            "label": "확신 보강",
+            "due_date": due_date,
+            "is_due": due_date <= today,
+            "consecutive_correct": 0,
+        }
+
     if not latest.is_correct:
         due_date = latest_date + timedelta(days=1)
         return {
@@ -60,14 +70,20 @@ def _build_review_state(attempts, *, today):
 
     consecutive_correct = 0
     has_recent_wrong = False
+    certain_correct_dates = []
     for attempt in attempts:
-        if attempt.is_correct:
+        if attempt.is_correct and attempt.confidence_level == Attempt.CONFIDENCE_CERTAIN:
             consecutive_correct += 1
+            certain_correct_dates.append(timezone.localtime(attempt.created_at).date())
             continue
         has_recent_wrong = True
         break
 
-    if not has_recent_wrong or consecutive_correct >= 2:
+    has_delayed_confirmation = (
+        consecutive_correct >= 2
+        and (max(certain_correct_dates) - min(certain_correct_dates)).days >= 3
+    )
+    if has_delayed_confirmation:
         return {
             "status": "mastered",
             "label": "숙련",

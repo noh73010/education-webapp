@@ -5,8 +5,12 @@
 {% endblock %}
 
 {% block content %}
+  {% if progress_evidence %}
+  <section class="card"><h2>{{ progress_evidence.label }}</h2><p>{{ progress_evidence.message }}</p></section>
+  {% endif %}
   <section class="card">
     <h1 class="section-title">학습 통계</h1>
+    <a href="{% url 'account_settings' %}">계정 및 학습 기록 관리</a>
     <p>내 풀이 기록, 반복 오답, 패턴 훈련 기록을 확인합니다.</p>
   </section>
   <section class="card result-wrong">
@@ -29,111 +33,64 @@
       <p>아직 충분한 오답 패턴 데이터가 없습니다.</p>
     {% endif %}
   </section>
-  <section class="card result-wrong">
-    <h2 class="card-title">현재 가장 약한 학습 단계</h2>
+  <section class="card learning-status-section">
+    <p class="eyebrow">나의 학습 지도</p>
+    <h2 class="card-title">시험 범위별 내 학습 상태</h2>
+    <p>다양한 기출·변형 문제를 학습 기록에 맞춰 계속 추천합니다. 문제 수보다 지금 필요한 다음 학습에 집중하세요.</p>
 
-    {% if weak_learning_type %}
-      <p>
-        <b>{{ weak_learning_type.skill_label }}</b> /
-        <b>{{ weak_learning_type.learning_type_label }}</b>
-      </p>
-
-      <div class="info-box">
-        전체 {{ weak_learning_type.total }}문제 /
-        시도 {{ weak_learning_type.attempted }}문제 /
-        해결 {{ weak_learning_type.solved }}문제 /
-        해결률 {{ weak_learning_type.solve_rate }}%
+    {% if learning_focus %}
+      <div class="info-box learning-focus-box">
+        <b>지금 우선할 범위 · {{ learning_focus.label }}</b>
+        <span>{{ learning_focus.status_label }} · {{ learning_focus.next_action }}</span>
+        {% if learning_focus.pattern_code %}
+          <a href="{% url 'pattern_training_start' learning_focus.pattern_code %}" class="main-button">3문제 집중 훈련</a>
+        {% endif %}
       </div>
-
-      <p>
-        {{ weak_learning_type.recommend_message }}
-      </p>
+      {% if learning_status_rows %}
+        <h3 class="learning-status-subtitle">최근 학습한 다른 범위</h3>
+        <div class="learning-status-list">
+          {% for row in learning_status_rows %}
+            {% include "core/includes/learning_status_card.html" with row=row %}
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% if learning_status_more_rows %}
+        <details class="learning-status-more">
+          <summary>학습한 범위 전체 보기</summary>
+          <div class="learning-status-list">
+            {% for row in learning_status_more_rows %}
+              {% include "core/includes/learning_status_card.html" with row=row %}
+            {% endfor %}
+          </div>
+        </details>
+      {% endif %}
     {% else %}
-      <p>아직 약한 학습 단계를 판단할 만큼의 풀이 기록이 없습니다.</p>
+      <div class="dashboard-empty-guide learning-status-empty">
+        <b>아직 분석할 학습 기록이 없어요.</b>
+        <span>오늘 추천 문제를 풀면 약점, 복습 시점, 안정된 범위를 알려드릴게요.</span>
+        <a href="{% url 'mission_list' %}" class="main-button">오늘 학습 시작</a>
+      </div>
     {% endif %}
   </section>
-
-  <section class="card">
-    <h2 class="card-title">현재 상태 (미션별 최신 풀이 기준)</h2>
-
-    <p>
-      전체 미션: {{ current_summary.missions_total }} /
-    시도한 미션: {{ current_summary.attempted }} /
-    해결(최근 정답): {{ current_summary.solved }} /
-    미해결(최근 오답): {{ current_summary.open }} /
-    해결률: {{ current_summary.solve_rate }}%
-    </p>
-
-  <h3>스킬별 현재 상태</h3>
-    <div class="table-scroll">
-    <table class="data-table">
-      <tr>
-        <th>카테고리</th>
-        <th>스킬</th>
-        <th>시도한 미션</th>
-        <th>해결</th>
-        <th>미해결</th>
-        <th>해결률</th>
-      </tr>
-      {% for row in skill_current_rows %}
-        <tr>
-          <td>{{ row.category }}</td>
-          <td>{{ row.skill_label }}</td>
-          <td>{{ row.attempted }}</td>
-          <td>{{ row.solved }}</td>
-          <td>{{ row.open }}</td>
-          <td>{{ row.solve_rate }}%</td>
-        </tr>
-      {% empty %}
-        <tr><td colspan="6">아직 풀이 기록이 없습니다.</td></tr>
-      {% endfor %}
-        </table>
-        </div>
-        </section>
-
-    <section class="card">
-      <h2 class="card-title">학습 단계별 진행률</h2>
-
-      <p>
-        각 스킬을 기능 선택형, 결과 예측형, 오류 진단형으로 나누어
-        현재 어느 단계가 약한지 확인합니다.
-      </p>
-
-      <div class="table-scroll">
-        <table class="data-table">
-          <tr>
-            <th>스킬</th>
-            <th>학습 단계</th>
-            <th>전체 문제</th>
-            <th>시도</th>
-            <th>해결</th>
-            <th>미해결</th>
-            <th>시도율</th>
-            <th>해결률</th>
-          </tr>
-
-          {% for row in learning_type_rows %}
-            <tr>
-              <td>{{ row.skill_label }}</td>
-              <td>{{ row.learning_type_label }}</td>
-              <td>{{ row.total }}</td>
-              <td>{{ row.attempted }}</td>
-              <td>{{ row.solved }}</td>
-              <td>{{ row.open }}</td>
-              <td>{{ row.attempt_rate }}%</td>
-              <td>{{ row.solve_rate }}%</td>
-            </tr>
-          {% empty %}
-            <tr>
-              <td colspan="8">아직 학습 단계별 기록이 없습니다.</td>
-            </tr>
-          {% endfor %}
-        </table>
-      </div>
+  <div class="home-primary-grid">
+    <section class="card coach-summary-card coach-summary-success">
+      <p class="eyebrow">최근 좋아진 내용</p>
+      {% if recent_improvement %}
+        <h2 class="card-title">{{ recent_improvement.wrong_pattern.name }}</h2>
+        <p>시간 간격을 둔 재평가 근거가 쌓여 안정 상태로 전환됐습니다.</p>
+      {% else %}<p>아직 장기 개선으로 판단할 충분한 근거가 없습니다.</p>{% endif %}
     </section>
+    <section class="card coach-summary-card coach-summary-warning">
+      <p class="eyebrow">재평가가 필요한 내용</p>
+      {% if reassessment_due %}
+        <h2 class="card-title">{{ reassessment_due.wrong_pattern.name }}</h2>
+        <a href="{% url 'pattern_training_start' reassessment_due.wrong_pattern.code %}" class="main-button">3문제 재평가</a>
+      {% else %}<p>지금 바로 도래한 재평가 일정은 없습니다.</p>{% endif %}
+    </section>
+  </div>
 
-      <section class="card">
-        <h2 class="card-title">기간별 통계</h2>
+      <details class="card">
+        <summary><b>기간별 통계 보기</b></summary>
 
     <div class="filter-links">
       <a href="?period=all">전체</a>
@@ -154,10 +111,10 @@
     </div>
   {% endif %}
 
-  </section>
+  </details>
 
-<section class="card">
-  <h2 class="card-title">스킬별 성적</h2>
+<details class="card">
+  <summary><b>범위별 성적 자세히</b></summary>
   <div class="table-scroll">
   <table class="data-table">
     <tr>
@@ -180,10 +137,10 @@
     {% endfor %}
   </table>
   </div>
-  </section>
+  </details>
 
-<section class="card">
-  <h2 class="card-title">오답 원인 TOP 5</h2>
+<details class="card">
+  <summary><b>내가 기록한 오답 원인</b></summary>
   <ol>
     {% for r in wrong_reason_rows %}
       <li>{{ r.wrong_reason__name }} ({{ r.cnt }})</li>
@@ -191,36 +148,34 @@
       <li>아직 오답 원인이 없습니다.</li>
     {% endfor %}
     </ol>
-</section>
+</details>
 
-<section class="card">
-  <h2 class="card-title">반복 오답 패턴 TOP 10</h2>
+<details class="card">
+  <summary><b>반복 오답 패턴 자세히</b></summary>
   <div class="table-scroll">
   <table class="data-table">
     <tr>
       <th>스킬</th>
       <th>오답 패턴</th>
-      <th>코드</th>
       <th>횟수</th>
     </tr>
     {% for row in wrong_pattern_rows %}
       <tr>
         <td>{{ row.wrong_pattern_skill_label }}</td>
         <td>{{ row.wrong_pattern__name }}</td>
-        <td>{{ row.wrong_pattern__code }}</td>
         <td>{{ row.cnt }}</td>
       </tr>
     {% empty %}
       <tr>
-        <td colspan="4">아직 반복 오답 패턴이 없습니다.</td>
+        <td colspan="3">아직 반복 오답 패턴이 없습니다.</td>
       </tr>
     {% endfor %}
   </table>
   </div>
-  </section>
+  </details>
 
-<section class="card">
-  <h2 class="card-title">패턴 집중 훈련 기록</h2>
+<details class="card">
+  <summary><b>집중 훈련 기록</b></summary>
   {% if pattern_training_rows %}
     <div class="table-scroll">
     <table class="data-table">
@@ -245,15 +200,16 @@
   {% else %}
     <p>아직 패턴 집중 훈련 기록이 없습니다.</p>
   {% endif %}
-</section>
+</details>
 
-<section class="card">
-  <h2 class="card-title">최근 풀이 20개</h2>
+<details class="card">
+  <summary><b>최근 풀이 기록</b></summary>
 
   <ul class="clean-list">
     {% for a in recent_attempts %}
       <li>
-        <b>{{ a.mission.title }}</b><br>
+        <b>{{ a.mission.course|default:current_subject.name }} · {{ a.mission.chapter_name|default:a.skill_label }}</b><br>
+        <span>{{ a.mission.prompt|truncatechars:70 }}</span><br>
 
         <span class="meta-text">
           {{ a.created_at|date:"m-d H:i" }}
@@ -273,6 +229,6 @@
   <p class="mt-medium">
     <a href="{% url 'mission_list' %}" class="sub-link">학습 홈으로 돌아가기</a>
   </p>
-</section>
+</details>
 
 {% endblock %}

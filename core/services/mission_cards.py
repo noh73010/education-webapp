@@ -6,20 +6,30 @@ from core.models import Attempt, Mission
 def with_user_learning_state(queryset, user):
     """Attach reusable per-user learning statistics to a Mission queryset."""
     latest_attempt = (
-        Attempt.objects
+        Attempt.objects.valid_for_learning()
         .filter(user=user, mission=OuterRef("pk"))
-        .order_by("-created_at")
+        .order_by("-created_at", "-pk")
     )
 
     return queryset.annotate(
-        my_total=Count("attempt", filter=Q(attempt__user=user)),
+        my_total=Count(
+            "attempt", filter=Q(attempt__user=user, attempt__grading_valid=True)
+        ),
         my_correct=Count(
             "attempt",
-            filter=Q(attempt__user=user, attempt__is_correct=True),
+            filter=Q(
+                attempt__user=user,
+                attempt__is_correct=True,
+                attempt__grading_valid=True,
+            ),
         ),
         my_wrong=Count(
             "attempt",
-            filter=Q(attempt__user=user, attempt__is_correct=False),
+            filter=Q(
+                attempt__user=user,
+                attempt__is_correct=False,
+                attempt__grading_valid=True,
+            ),
         ),
         my_last_is_correct=Subquery(latest_attempt.values("is_correct")[:1]),
         my_last_time=Subquery(latest_attempt.values("created_at")[:1]),

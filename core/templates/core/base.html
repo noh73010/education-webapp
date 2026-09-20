@@ -7,8 +7,9 @@
 
     <title>{% block title %}자격증 시험 학습 플랫폼{% endblock %}</title>
 
-    <link rel="stylesheet" href="{% static 'core/style.css' %}?v=20260719-1">
+    <link rel="stylesheet" href="{% static 'core/style.css' %}?v=20260907-1">
     <link rel="stylesheet" href="{% static 'core/theory.css' %}?v=20260719-1">
+    <link rel="stylesheet" href="{% static 'core/responsive.css' %}?v=20260911-1">
     {% block extra_css %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
@@ -22,9 +23,12 @@
     </div>
 
     <div class="nav-links" id="primary-nav">
+        {% if user.is_authenticated %}
+            <a href="{% url 'account_settings' %}" class="sub-link">계정 관리</a>
+        {% endif %}
         {% if request.resolver_match.url_name == 'landing' or request.resolver_match.url_name == 'service_info' %}
             <a href="{% url 'service_info' %}" class="sub-link">서비스 소개</a>
-            <a href="{% url 'premium_info' %}" class="sub-link">프리미엄</a>
+            <a href="{% url 'premium_info' %}" class="sub-link">이용 안내</a>
             <a href="{% url 'inquiry' %}" class="sub-link">문의</a>
             {% if user.is_staff %}
                 <a href="{% url 'admin_dashboard' %}" class="sub-link">운영 대시보드</a>
@@ -77,10 +81,9 @@
 {% if user.is_authenticated and request.resolver_match.url_name != 'landing' and request.resolver_match.url_name != 'service_info' %}
 <nav class="bottom-mobile-nav" aria-label="모바일 빠른 메뉴">
     <a href="{% url 'mission_list' %}">홈</a>
-    <a href="{% url 'problem_set_list' %}">문제</a>
+    <a href="{% url 'problem_set_list' %}">학습</a>
     <a href="{% url 'wrong_notes' %}">오답</a>
-    <a href="{% url 'stats' %}">통계</a>
-    <a href="{% url 'inquiry' %}">문의</a>
+    <a href="{% url 'stats' %}">내 기록</a>
 </nav>
 {% endif %}
 

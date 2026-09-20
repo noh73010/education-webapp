@@ -15,8 +15,10 @@ from core.models import (
     AttemptWrongReason,
     WrongPattern,
     AttemptWrongPattern,
+    ConfusionCard,
 )
 from core.services.streaks import update_user_streak
+from core.services.weaknesses import resolve_mission_pattern, update_weakness_from_attempt
 
 class AttemptSaveError(ValueError):
     """Attempt 저장 과정에서 입력 검증/일관성 문제가 있을 때 사용."""
@@ -29,6 +31,8 @@ def save_attempt(
     mission: Mission,
     is_correct: bool,
     wrong_reason_ids: Optional[Iterable[int]] = None,
+    submitted_answer: str = "",
+    confidence_level: str = "",
 ) -> Attempt:
     """
     ✅ Attempt 저장 단일 진입점
@@ -51,6 +55,8 @@ def save_attempt(
         user=user,
         mission=mission,
         is_correct=is_correct,
+        submitted_answer=submitted_answer,
+        confidence_level=confidence_level,
         daily_date=today_date if is_daily else None,
     )
 
@@ -81,15 +87,34 @@ def save_attempt(
 
         # 4) 오답 패턴 자동 연결
         if mission.wrong_pattern_code:
-            wrong_pattern = WrongPattern.objects.filter(
-                code=mission.wrong_pattern_code
-            ).first()
+            wrong_pattern = resolve_mission_pattern(mission)
 
             if wrong_pattern:
                 AttemptWrongPattern.objects.get_or_create(
                     attempt=attempt,
                     wrong_pattern=wrong_pattern,
                 )
+
+            update_weakness_from_attempt(attempt, wrong_pattern)
+    elif mission.wrong_pattern_code:
+        update_weakness_from_attempt(attempt)
+
+    if mission.subject_id and (not is_correct or confidence_level == Attempt.CONFIDENCE_GUESSED):
+        card, created = ConfusionCard.objects.get_or_create(
+            user=user, subject=mission.subject, mission=mission,
+            selected_answer=submitted_answer,
+            defaults={"correct_answer": mission.correct_answer},
+        )
+        if not created:
+            card.times_seen += 1
+        card.correct_answer = mission.correct_answer
+        card.mastered = False
+        card.next_review_at = timezone.now() + timezone.timedelta(days=1)
+        card.save()
+    elif mission.subject_id and is_correct and confidence_level == Attempt.CONFIDENCE_CERTAIN:
+        ConfusionCard.objects.filter(user=user, mission=mission, mastered=False).update(
+            mastered=True, next_review_at=None
+        )
 
     # 5) streak 갱신
     update_user_streak(user, solved_date=today_date)

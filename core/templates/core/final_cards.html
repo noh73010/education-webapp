@@ -1,0 +1,39 @@
+{% extends 'core/base.html' %}
+{% block title %}나의 시험 직전 카드{% endblock %}
+{% block content %}
+<main class="page-shell compact-page">
+  <section class="card">
+    <p class="eyebrow">{{ current_subject.name }} 개인 요약</p>
+    <h1 class="section-title">나의 시험 직전 카드</h1>
+    <p>남들이 외우는 전체 요약이 아니라, 내가 실제로 헷갈리고 틀린 내용만 모았습니다.</p>
+  </section>
+  {% if cards %}
+    {% for card in cards %}
+      <article class="card final-review-card">
+        <small>{{ card.mission.course }} · {{ card.mission.chapter_name }}</small>
+        <h2>{{ card.mission.prompt|truncatechars:120 }}</h2>
+        <p class="final-card-wrong">내 선택 · {{ card.selected_display }}</p>
+        <p class="final-card-correct">정답 · {{ card.correct_display }}</p>
+        {% if card.mission.explanation %}<p class="pre-line">{{ card.mission.explanation }}</p>{% endif %}
+        {% if card.reviewed_concept %}
+          <p><b>{{ card.reviewed_concept.title }}</b> · {{ card.reviewed_concept.comparison }}</p>
+        {% endif %}
+        <a href="{% url 'mission_detail' card.mission_id %}" class="sub-button">다시 확인</a>
+      </article>
+    {% endfor %}
+  {% elif weaknesses %}
+    <section class="card">
+      <h2 class="section-title">마지막까지 확인할 약점</h2>
+      {% for weakness in weaknesses %}
+        <p><b>{{ weakness.wrong_pattern.name }}</b> · {{ weakness.wrong_pattern.remediation_message }}</p>
+      {% endfor %}
+    </section>
+  {% else %}
+    <section class="card dashboard-empty-guide">
+      <b>아직 개인 카드가 없습니다.</b>
+      <span>문제를 풀고 확신도와 오답을 기록하면 자동으로 만들어집니다.</span>
+      <a href="{% url 'mission_list' %}" class="main-button">오늘 학습 시작</a>
+    </section>
+  {% endif %}
+</main>
+{% endblock %}

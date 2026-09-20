@@ -6,6 +6,7 @@ from core.services.subjects import (
     get_active_subjects,
     set_current_subject,
 )
+from core.services.access import premium_gating_enabled
 
 
 def landing(request):
@@ -28,7 +29,9 @@ def landing(request):
 
 
 def service_info(request):
-    return render(request, "core/service_info.html")
+    return render(request, "core/service_info.html", {
+        "premium_gating_enabled": premium_gating_enabled(),
+    })
 
 
 def select_subject(request, subject_code):

@@ -131,12 +131,16 @@ def build_subject_theory_roadmap(user, subject):
             total_count=Count("id", distinct=True),
             attempted_count=Count(
                 "id",
-                filter=Q(attempt__user=user),
+                filter=Q(attempt__user=user, attempt__grading_valid=True),
                 distinct=True,
             ),
             solved_count=Count(
                 "id",
-                filter=Q(attempt__user=user, attempt__is_correct=True),
+                filter=Q(
+                    attempt__user=user,
+                    attempt__is_correct=True,
+                    attempt__grading_valid=True,
+                ),
                 distinct=True,
             ),
         )
@@ -144,7 +148,7 @@ def build_subject_theory_roadmap(user, subject):
 
     latest_attempt_by_mission = {}
     for attempt in (
-        Attempt.objects
+        Attempt.objects.valid_for_learning()
         .filter(
             user=user,
             mission__subject=subject,
@@ -232,10 +236,9 @@ def build_subject_theory_roadmap(user, subject):
             courses.append(course)
         course_map[course_name]["chapters"].append(chapter)
 
-    display_no = 1
     recommended_assigned = False
     for course in courses:
-        for chapter in course["chapters"]:
+        for display_no, chapter in enumerate(course["chapters"], start=1):
             chapter["display_no"] = f"{display_no:02d}"
             chapter["is_recommended"] = False
             if (
@@ -245,7 +248,13 @@ def build_subject_theory_roadmap(user, subject):
             ):
                 chapter["is_recommended"] = True
                 recommended_assigned = True
-            display_no += 1
+        course["total_count"] = sum(chapter["total_count"] for chapter in course["chapters"])
+        course["attempted_count"] = sum(chapter["attempted_count"] for chapter in course["chapters"])
+        course["solved_count"] = sum(chapter["solved_count"] for chapter in course["chapters"])
+        course["progress_pct"] = round(
+            (course["attempted_count"] / course["total_count"]) * 100, 1
+        ) if course["total_count"] else 0
+        course["is_recommended"] = any(chapter["is_recommended"] for chapter in course["chapters"])
     return courses
 
 
@@ -285,7 +294,7 @@ def build_chapter_practice_plan(user, subject, chapter_code: str, *, mode="batch
     mission_ids = [mission.id for mission in missions]
     latest_attempts = {}
     for attempt in (
-        Attempt.objects
+        Attempt.objects.valid_for_learning()
         .filter(user=user, mission_id__in=mission_ids)
         .order_by("mission_id", "-created_at")
     ):

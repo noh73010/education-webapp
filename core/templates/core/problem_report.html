@@ -1,0 +1,12 @@
+{% extends 'core/base.html' %}
+{% block title %}문제 오류 신고{% endblock %}
+{% block content %}
+<main class="page-shell compact-page"><section class="card">
+  <h1>문제 오류 신고</h1>
+  <p>{{ mission.course }} · {{ mission.chapter_name }}</p>
+  <p>{{ mission.prompt|truncatechars:180 }}</p>
+  <p>정답·해설·이미지 등 이상한 부분을 알려주세요. 문제 정보는 자동으로 함께 전달됩니다.</p>
+  <form method="post">{% csrf_token %}{{ form.as_p }}<button class="main-button" type="submit">신고 접수</button></form>
+  <p><a href="{% url 'mission_detail' mission.id %}">문제로 돌아가기</a></p>
+</section></main>
+{% endblock %}

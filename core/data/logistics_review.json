@@ -1,0 +1,48 @@
+{
+  "review_date": "2026-09-04",
+  "subject": "logistics",
+  "concepts": {
+    "flow_direction": {
+      "title": "조달·판매·회수 물류의 흐름 구분",
+      "comparison": "조달은 공급자에서 생산거점으로 들어오는 흐름, 판매는 완제품을 고객 쪽으로 보내는 흐름입니다. 회수는 사용 후 물품·용기·반품이 되돌아오는 흐름으로 재사용·재활용·처리와 연결됩니다. 활동의 이름보다 출발점과 도착점을 먼저 확인하세요.",
+      "example": "원재료를 공장으로 운반하면 조달, 완제품을 매장에 보내면 판매, 사용한 운반상자를 회수해 다시 쓰면 회수입니다.",
+      "references": ["https://www.ascm.org/topics/logistics-management/", "https://www.ascm.org/topics/supply-chain-management/"]
+    },
+    "erp_scm": {
+      "title": "ERP의 업무 통합과 SCM의 공급사슬 조정",
+      "comparison": "ERP는 회계·구매·생산·재고 등 기업의 업무와 데이터를 통합하는 데 초점을 둡니다. SCM은 공급자부터 고객까지의 수요·재고·주문·물류 흐름을 함께 계획하고 조정합니다. 실제 시스템 기능은 겹칠 수 있으므로, 문제에서 강조하는 관리 범위와 목적을 기준으로 구분하세요.",
+      "example": "부서별 회계·구매 데이터를 하나로 묶는다면 ERP, 공급업체부터 소비자까지 주문과 재고를 조정한다면 SCM이 핵심입니다.",
+      "references": ["https://www.oracle.com/erp/what-is-erp/", "https://www.ascm.org/topics/supply-chain-management/"]
+    },
+    "light_picking": {
+      "title": "DPS의 작업 안내와 자동 운반의 차이",
+      "comparison": "DPS는 위치별 램프와 수량 표시로 사람이 어디에서 몇 개를 피킹할지 안내합니다. 표시장치가 작업을 안내한다는 것과 설비가 물품을 직접 운반·반출한다는 것을 구분하세요. 표시등·수량·확인버튼이 함께 제시되면 빛 안내 피킹을 먼저 확인합니다.",
+      "example": "선반 표시등이 켜지고 수량 3이 표시되어 작업자가 3개를 꺼내 확인버튼을 누르는 장면은 DPS에 해당합니다.",
+      "references": ["https://www.dematic.com/en-ca/solutions/case-and-piece-picking/"]
+    },
+    "rail_break_even": {
+      "title": "철도와 화물자동차의 경제적 효용거리",
+      "comparison": "철도의 추가 부대비용을 두 운송수단의 ton·km당 비용 차이로 나누면 손익분기 거리가 됩니다. 500,000원을 5,000원과 2,500원의 차이인 2,500원으로 나누면 200km입니다.",
+      "example": "거리가 200km보다 길어지면 낮은 철도 단위운송비가 추가 부대비용을 상쇄하기 시작합니다.",
+      "references": []
+    }
+  },
+  "missions": {
+    "LOGISTICS-IT01-LOGISTICS-29-1-0120": {
+      "fingerprint": "7f96e5df6cbd4f5dc14be421a8ddd0586ca3942f2a591da07ee47414341c9e8c",
+      "hold": "ㄱ·ㄴ·ㄷ·ㄹ·ㅁ의 판단 지문과 연결 이미지가 없어 답을 판단할 수 없습니다. 원본 자료 복원 후 재검수 필요."
+    },
+    "LOGISTICS-LM07-LOGISTICS-29-1-0001": {"fingerprint": "0b702daff0deea3ff4a6d95308cdfcaf94a6074dd41f636870276dd1f4c9564e", "concept": "flow_direction"},
+    "LOGISTICS-LM01-LOGISTICS-28-1-0007": {"fingerprint": "de50aeb1a4c63d98dd2b9cef965d8b5d7fb242fa3b2ab94b13b2645430bd5b7a", "concept": "flow_direction"},
+    "LOGISTICS-LM04-LOGISTICS-29-1-0024": {"fingerprint": "7e3b60c45a90095d33ebef7a425a31baeb6612ecc78347a48ac77b990133d0b8", "concept": "erp_scm"},
+    "LOGISTICS-LM06-LOGISTICS-29-1-0003": {"fingerprint": "80d0ead2b67fb703b5b14216e13c2081819eaef9268cf0f8e15806fde075d5cf", "concept": "erp_scm"},
+    "LOGISTICS-LM04-LOGISTICS-29-1-0039": {"fingerprint": "da7382a627751c79c554e3bf54475a40ea1765f036473ec45cc04764fd931bfe", "concept": "light_picking"},
+    "LOGISTICS-LM04-LOGISTICS-28-1-0026": {"fingerprint": "3c3989eb80c5d01d509081e50276aa758aa4364d041d2c219e74ea8731cfc61d", "concept": "light_picking"},
+    "LOGISTICS-LM01-LOGISTICS-28-1-0001": {
+      "fingerprint": "b9c4f93a49e397b2860ec529e4844f9469bf1471d53d1d803c4accc5a793beaa",
+      "hold": "7R의 구성요소 정의와 '고객'을 오답으로 처리한 근거의 원본 대조가 필요합니다. 원본 문제지·정답표 확인 전 자동 출제 보류. 정답 자체는 변경하지 않음.",
+      "references": ["https://publication.sipmm.edu.sg/key-transport-considerations-integrated-logistics/"]
+    },
+    "LOGISTICS-FT03-LOGISTICS-29-1-0052": {"fingerprint": "55e9b0af6cdf9e064ccd0a36a42f4233954b12557a43647d11a631e5c4902379", "concept": "rail_break_even"}
+  }
+}

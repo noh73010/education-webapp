@@ -1,58 +1,41 @@
 {% extends 'core/base.html' %}
-
-{% block title %}
-실전 모의고사
-{% endblock %}
-
+{% block title %}모의고사 선택{% endblock %}
 {% block content %}
-
 <section class="card">
-  <h1 class="section-title">실전 모의고사</h1>
-
-  <div class="info-box">
-    <p><b>문제 수:</b> 총 40문제</p>
-    <p><b>제한 시간:</b> 40분</p>
-    <p>문제를 순서대로 풀고 마지막에 결과를 확인합니다.</p>
-  </div>
-
-  {% if limit_error %}
-    <div class="info-box result-wrong">
-      {{ limit_error }}
-    </div>
-  {% endif %}
+  <h1>내 시간에 맞는 모의고사</h1>
+  <p>{{ current_subject.name }} · 평소에는 짧게, 약점은 과목별로, 시험 전에는 실제처럼.</p>
+  <p>{% if has_full_access %}현재 모든 회원이 횟수 제한 없이 이용할 수 있습니다.{% else %}무료 회원은 세 모드를 합쳐 하루 1회 새 시험을 시작할 수 있습니다.{% endif %} 재개와 2교시 시작은 새 응시가 아닙니다.</p>
+  <p>미풀이 문제를 우선 출제합니다. 문제은행에 따라 이전 문제가 다시 나올 수 있습니다.</p>
 </section>
-
+{% for exam in open_exams %}
 <section class="card">
-  <h2 class="card-title">회원 상태</h2>
-
-  {% if is_premium %}
-    <div class="info-box">
-      현재 회원 상태: <b>프리미엄</b>
-    </div>
-  {% else %}
-    <div class="info-box">
-      현재 회원 상태: <b>무료</b><br>
-      실전 모의고사는 하루 1회 이용할 수 있습니다.
-    </div>
-  {% endif %}
-
-  <form method="post" action="{% url 'exam_create' %}">
-    {% csrf_token %}
-    <button type="submit">시험 시작하기</button>
+  <h2>{{ exam.title }} · {{ exam.get_status_display }}</h2>
+  {% if exam.status == 'waiting' %}
+    <a href="{% url 'exam_result' exam.previous_sitting_id %}">1교시 확인 후 2교시 시작</a>
+  {% else %}<a href="{% url 'exam_result' exam.id %}">풀던 시험 이어하기</a>{% endif %}
+</section>
+{% endfor %}
+<section class="card">
+  <h2>짧은 실전 연습</h2><p>10문제 · 10분</p><p>짧게 풀며 실력을 확인해요. 전체 합격 판정은 하지 않습니다.</p>
+  <form method="post" action="{% url 'exam_create' %}">{% csrf_token %}<input type="hidden" name="mode" value="short"><button type="submit">10분 연습 시작</button></form>
+</section>
+<section class="card">
+  <h2>과목별 모의고사</h2><p>한 과목 40문제 · 40분</p><p>40분은 앱의 연습 기준입니다. 실제 시험은 교시 안에서 시간을 배분합니다.</p>
+  <form method="post" action="{% url 'exam_create' %}">{% csrf_token %}<input type="hidden" name="mode" value="course">
+    <label for="exam-course">연습할 과목</label><select id="exam-course" name="course" required>{% for course in courses %}<option value="{{ course }}">{{ course }}</option>{% endfor %}</select>
+    <button type="submit" {% if not courses %}disabled{% endif %}>과목별 시험 시작</button>
   </form>
-
-  {% if not is_premium %}
-    <p class="mt-medium">
-      <a href="{% url 'premium_info' %}" class="main-button">
-        프리미엄 기능 보기
-      </a>
-    </p>
-  {% endif %}
 </section>
-
+{% if supports_full %}
 <section class="card">
-  <a href="{% url 'exam_history' %}" class="sub-link">시험 히스토리</a> |
-  <a href="{% url 'mission_list' %}" class="sub-link">학습 홈으로 돌아가기</a>
+  <h2>실전 모의고사</h2>
+  <p>1교시: 물류관리론 · 화물운송론 · 국제물류론<br>120문제 · 120분</p>
+  <p>2교시: 보관하역론 · 물류관련법규<br>80문제 · 80분</p>
+  <p>각 과목 40문제, 1문제당 2.5점. 각 과목 40점 이상이면서 전체 평균 60점 이상이면 합격 기준 충족입니다.</p>
+  <p>두 교시 모두 완료해야 판정합니다. 2교시는 직접 시작할 때부터 시간이 흐릅니다. 진행 중 앱을 닫아도 해당 교시 시간은 계속 흐릅니다.</p>
+  {% if missing_full_courses %}<p role="status">{{ missing_full_courses|join:', ' }}의 40문제 구성이 준비 중입니다. 짧은 연습이나 준비된 과목별 시험을 먼저 이용해 주세요.</p>{% endif %}
+  <form method="post" action="{% url 'exam_create' %}">{% csrf_token %}<input type="hidden" name="mode" value="full"><button type="submit" {% if missing_full_courses %}disabled{% endif %}>실전 1교시 시작</button></form>
 </section>
-
+{% endif %}
+<a href="{% url 'exam_history' %}">시험 기록</a>
 {% endblock %}

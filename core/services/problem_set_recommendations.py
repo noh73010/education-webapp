@@ -1,7 +1,46 @@
-from django.db.models import Count, Q
+from django.db.models import Count, Exists, OuterRef, Q
 
-from core.models import ProblemSet, ProblemSetSession, Attempt, AttemptWrongPattern, Mission
+from core.models import (
+    Attempt,
+    AttemptWrongPattern,
+    Mission,
+    ProblemSet,
+    ProblemSetItem,
+    ProblemSetSession,
+)
 from core.services.theory import THEORY_SET_PREFIX
+
+
+def eligible_problem_sets(subject=None, *, include_theory=False):
+    """Return sets whose metadata agrees with every eligible item."""
+    items = ProblemSetItem.objects.filter(problem_set=OuterRef("pk"))
+    queryset = (
+        ProblemSet.objects.filter(is_active=True)
+        .annotate(
+            has_items=Exists(items),
+            has_blocked_item=Exists(
+                items.filter(
+                    Q(mission__is_usable_for_set=False)
+                    | Q(mission__review_status=Mission.REVIEW_CONFIRMED_ERROR)
+                )
+            ),
+            has_chapter_mismatch=Exists(
+                items.exclude(mission__chapter_code=OuterRef("skill_group"))
+            ),
+        )
+        .filter(has_items=True, has_blocked_item=False, has_chapter_mismatch=False)
+    )
+    if not include_theory:
+        queryset = queryset.exclude(title__startswith=THEORY_SET_PREFIX)
+    if subject is not None:
+        queryset = (
+            queryset.annotate(
+                has_other_subject=Exists(items.exclude(mission__subject=subject)),
+            )
+            .filter(has_other_subject=False, items__mission__subject=subject)
+            .distinct()
+        )
+    return queryset
 
 
 def get_recent_average_score(user, limit=5, subject=None):
@@ -34,7 +73,9 @@ def get_target_level(user, subject=None):
 
 
 def get_weak_patterns(user, limit=3, subject=None):
-    qs = AttemptWrongPattern.objects.filter(attempt__user=user)
+    qs = AttemptWrongPattern.objects.filter(
+        attempt__user=user, attempt__grading_valid=True
+    )
     if subject is not None:
         qs = qs.filter(attempt__mission__subject=subject)
 
@@ -62,12 +103,12 @@ def get_pattern_recommend_missions(user, weak_patterns, limit=5, subject=None):
     if not pattern_codes:
         return []
 
-    attempted_correct_qs = Attempt.objects.filter(user=user, is_correct=True)
+    attempted_correct_qs = Attempt.objects.valid_for_learning().filter(user=user, is_correct=True)
     if subject is not None:
         attempted_correct_qs = attempted_correct_qs.filter(mission__subject=subject)
     attempted_correct_ids = set(attempted_correct_qs.values_list("mission_id", flat=True))
 
-    recent_wrong_qs = Attempt.objects.filter(
+    recent_wrong_qs = Attempt.objects.valid_for_learning().filter(
         user=user,
         is_correct=False,
         mission__variation_group__in=pattern_codes,
@@ -86,6 +127,7 @@ def get_pattern_recommend_missions(user, weak_patterns, limit=5, subject=None):
             variation_group__in=pattern_codes,
             is_usable_for_set=True,
         )
+        .exclude(review_status=Mission.REVIEW_CONFIRMED_ERROR)
         .exclude(id__in=attempted_correct_ids)
     )
     if subject is not None:
@@ -111,20 +153,7 @@ def get_pattern_recommend_missions(user, weak_patterns, limit=5, subject=None):
 
 
 def get_problem_set_recommendations(user, limit_today=3, limit_review=3, limit_weak=3, subject=None):
-    active_sets = (
-        ProblemSet.objects
-        .filter(is_active=True)
-        .exclude(title__startswith=THEORY_SET_PREFIX)
-        .annotate(
-            unusable_item_count=Count(
-                "items",
-                filter=Q(items__mission__is_usable_for_set=False),
-            )
-        )
-        .filter(unusable_item_count=0)
-    )
-    if subject is not None:
-        active_sets = active_sets.filter(items__mission__subject=subject).distinct()
+    active_sets = eligible_problem_sets(subject)
 
     target_level = get_target_level(user, subject=subject)
 
@@ -183,7 +212,7 @@ def get_problem_set_recommendations(user, limit_today=3, limit_review=3, limit_w
         if len(review_sets) >= limit_review:
             break
 
-    weak_attempt_qs = Attempt.objects.filter(user=user)
+    weak_attempt_qs = Attempt.objects.valid_for_learning().filter(user=user)
     if subject is not None:
         weak_attempt_qs = weak_attempt_qs.filter(mission__subject=subject)
 

@@ -10,7 +10,8 @@ class InquiryTests(TestCase):
         response = self.client.get(reverse("inquiry"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "프리미엄 신청/문의")
+        self.assertContains(response, "문의·오류 제보")
+        self.assertNotContains(response, "프리미엄 신청")
 
     def test_anonymous_user_can_submit_inquiry(self):
         response = self.client.post(

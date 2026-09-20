@@ -1,5 +1,6 @@
 {% extends 'core/base.html' %}
 {% load mission_tags %}
+{% load static %}
 
 {% block title %}
 시험 진행
@@ -14,7 +15,22 @@
   <div class="info-box">
     <p><b>진행 문제:</b> {{ order_no }} / {{ total_count }}</p>
     <p><b>남은 시간:</b> <span id="timer"></span></p>
+    <p><b>응답:</b> {{ answered_count }} · <b>미응답:</b> {{ unanswered_count }} · <b>다시 볼 문제:</b> {{ marked_count }}</p>
+    <p class="meta-text">답이 헷갈리면 <b>★ 나중에 다시 보기</b>로 표시하세요. 점수에는 영향을 주지 않으며, 최종 제출 전에 별표 문제를 다시 찾을 수 있습니다.</p>
   </div>
+  <details class="exam-palette" {% if total_count <= 10 %}open{% endif %}>
+    <summary>문항 번호로 이동</summary>
+    <div class="exam-question-grid" aria-label="시험 문항 상태">
+      {% for nav in navigation %}
+        <button form="mission-answer-form" type="submit" name="target_order" value="{{ nav.order_no }}" formnovalidate
+          class="exam-question-number{% if nav.answered %} is-answered{% endif %}{% if nav.marked %} is-marked{% endif %}{% if nav.current %} is-current{% endif %}"
+          {% if nav.current %}aria-current="step"{% endif %}
+          aria-label="{{ nav.order_no }}번{% if nav.answered %}, 응답{% else %}, 미응답{% endif %}{% if nav.marked %}, 나중에 다시 볼 문제{% endif %}">
+          {{ nav.order_no }}{% if nav.marked %}<span aria-hidden="true">★</span>{% endif %}
+        </button>
+      {% endfor %}
+    </div>
+  </details>
 </section>
 
 <section class="card cbt-question-card">
@@ -34,8 +50,10 @@
 </section>
 
 <section class="card cbt-answer-card">
-  <form method="post">
+  <p id="draft-status" role="status" aria-live="polite">선택한 답은 임시 저장됩니다. 시험 전체를 최종 제출할 때만 채점되며, 앱을 전환해도 시험 시간은 계속 흐릅니다.</p>
+  <form method="post" id="mission-answer-form" data-draft-url="{% url 'exam_draft' exam.id order_no %}" data-server-updated="{{ item.draft_updated_at|date:'c' }}">
     {% csrf_token %}
+    <input type="hidden" name="work_token" value="exam-{{ item.id }}">
 
     {% if mission.question_type == "manual" %}
       <h2 class="cbt-answer-title">학습 결과를 선택하세요.</h2>
@@ -94,51 +112,82 @@
       {% endif %}
     {% endif %}
 
-    <p class="cbt-submit-row">
-      <button type="submit" class="cbt-submit-button">
-        {% if order_no == total_count %}
-          답안 제출 및 종료
-        {% else %}
-          답안 제출
-        {% endif %}
+    <div class="exam-navigation-actions">
+      <button type="submit" name="action" value="previous" class="sub-button" formnovalidate {% if not previous_order %}disabled{% endif %}>이전</button>
+      <button type="submit" name="action" value="skip" class="sub-button" formnovalidate>미응답으로 건너뛰기</button>
+      <button type="submit" name="action" value="toggle_review" class="sub-button" formnovalidate>
+        {% if item.is_marked_for_review %}★ 다시 보기 해제{% else %}☆ 나중에 다시 보기{% endif %}
       </button>
-    </p>
+      <button type="submit" name="action" value="next" class="cbt-submit-button">
+        {% if next_order %}답안 저장 후 다음{% else %}답안 저장{% endif %}
+      </button>
+      <button type="button" class="main-button" id="open-final-submit-dialog"
+        data-answered-count="{{ answered_count }}" data-total-count="{{ total_count }}"
+        data-current-answered="{% if current_answered %}1{% else %}0{% endif %}">
+        시험 최종 제출
+      </button>
+    </div>
   </form>
+  <div class="draft-retry-row">
+    <button type="button" id="draft-retry" class="sub-button" hidden>저장 다시 시도</button>
+  </div>
 </section>
+{{ draft_answers|json_script:"draft-answers" }}
+<script src="{% static 'core/exam_submit_dialog.js' %}?v=20260910-1" defer></script>
+<script src="{% static 'core/mission_draft.js' %}?v=20260910-1" defer></script>
+
+<dialog id="final-submit-dialog" class="exam-submit-dialog" aria-labelledby="final-submit-title" aria-describedby="final-submit-description">
+  <div class="exam-submit-dialog__content">
+    <h2 id="final-submit-title" class="card-title">시험을 최종 제출할까요?</h2>
+    <p id="final-submit-description">제출하면 채점이 시작되며, 이후에는 답을 변경할 수 없습니다.</p>
+    <dl class="exam-submit-summary">
+      <div><dt>응답한 문항</dt><dd><span id="final-answered-count">{{ answered_count }}</span>개</dd></div>
+      <div><dt>미응답 문항</dt><dd><span id="final-unanswered-count">{{ unanswered_count }}</span>개</dd></div>
+      <div><dt>나중에 다시 볼 문항</dt><dd>{{ marked_count }}개</dd></div>
+    </dl>
+    <p class="exam-submit-warning" id="final-unanswered-warning" {% if not unanswered_count %}hidden{% endif %}>미응답 문항은 0점으로 계산됩니다.</p>
+    <div class="exam-submit-dialog__actions">
+      <button type="button" id="cancel-final-submit" class="sub-button" autofocus>시험으로 돌아가기</button>
+      <button type="submit" form="mission-answer-form" name="action" value="final" id="confirm-final-submit" class="main-button" formnovalidate>최종 제출</button>
+    </div>
+  </div>
+</dialog>
 
 <section class="card result-wrong">
   <h2 class="card-title">시험 종료</h2>
 
-  <p>시험을 지금 제출하면 현재까지 푼 문제 기준으로 결과가 계산됩니다.</p>
+  <p>지금 제출하면 미응답 {{ unanswered_count }}문제는 시험 점수에서 0점으로 계산됩니다. 미응답은 오답노트와 약점 분석에는 반영되지 않습니다.</p>
 
-  <form method="post" action="{% url 'exam_submit' exam.id %}">
-    {% csrf_token %}
-    <button type="submit" onclick="return confirm('시험을 지금 제출할까요?');">
-      시험 바로 제출
-    </button>
-  </form>
+  <p>현재 답안 카드의 <b>시험 최종 제출</b> 버튼을 누르기 전까지 자유롭게 문항을 이동하고 답을 바꿀 수 있습니다.</p>
 </section>
 
 <script>
-let remaining = {{ remaining_seconds }};
+const deadline = Date.now() + {{ remaining_seconds }} * 1000;
+let ending = false;
 
 function updateTimer() {
+    const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
     let minutes = Math.floor(remaining / 60);
     let seconds = remaining % 60;
 
     document.getElementById("timer").innerText =
         minutes + ":" + String(seconds).padStart(2, "0");
 
-    if (remaining <= 0) {
-        alert("시험 시간이 종료되었습니다.");
-        window.location.href = "{% url 'exam_result' exam.id %}";
+    if (remaining <= 0 && !ending) {
+        if (!navigator.onLine) {
+            document.getElementById("timer").innerText = "시간 종료 · 연결 후 종료 여부 확인";
+            return;
+        }
+        ending = true;
+        // The server owns the deadline and finalization, not this display timer.
+        window.location.href = "{% url 'exam_take' exam.id order_no %}";
         return;
     }
-
-    remaining--;
 }
 
 setInterval(updateTimer, 1000);
+document.addEventListener("visibilitychange", updateTimer);
+window.addEventListener("online", updateTimer);
 updateTimer();
 </script>
 </main>

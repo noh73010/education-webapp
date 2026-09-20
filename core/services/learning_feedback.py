@@ -26,9 +26,13 @@ def build_choice_feedback(mission, submitted_answer=""):
 
 def build_mission_feedback(mission, submitted_answer=""):
     choice_feedback = build_choice_feedback(mission, submitted_answer)
+    correction_rows = [
+        row for row in choice_feedback if row["is_selected"] or row["is_correct"]
+    ]
     return {
         "choice_rows": choice_feedback,
         "has_choice_explanations": any(row["explanation"] for row in choice_feedback),
+        "correction_rows": correction_rows,
         "learning_concept": get_mission_learning_concept(mission),
         "exam_tip": (mission.exam_tip or "").strip(),
     }

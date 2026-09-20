@@ -1,142 +1,90 @@
-﻿{% extends 'core/base.html' %}
-
-{% block title %}
-?쒗뿕 寃곌낵
-{% endblock %}
-
+{% extends 'core/base.html' %}
+{% block title %}시험 결과{% endblock %}
 {% block content %}
-  <section class="card">
-    <h1 class="section-title">?쒗뿕 寃곌낵</h1>
+<main class="cbt-page exam-result-page">
+  <section class="card exam-result-hero">
+    <p class="meta-text">최종 판정</p>
+    <h1 class="section-title">{{ mode_result.label }}</h1>
+    {% for row in mode_result.rows %}
+      <p><strong>{{ row.course }}</strong> · {{ row.score|floatformat:"-1" }}점 · 정답 {{ row.correct }}개{% if row.below_minimum %} · <span class="text-danger">과락 기준 미달</span>{% endif %}</p>
+    {% endfor %}
+    {% if mode_result.average != None %}<p><strong>전체 평균 {{ mode_result.average|floatformat:"-1" }}점</strong></p>{% endif %}
 
-    <p><b>?쒗뿕紐?</b> {{ exam.title }}</p>
-    <p><b>?먯닔:</b> {{ exam.score }}??/p>
-    <p><b>?뺣떟:</b> {{ exam.correct_count }} / <b>?ㅻ떟:</b> {{ exam.wrong_count }}</p>
-    <p><b>?곹깭:</b> {{ exam.get_status_display }}</p>
-
-    <div class="info-box">
-      <p><b>?⑷꺽 ?뺣쪧:</b> {{ analysis.pass_probability }}%</p>
-      <p><b>?먯젙:</b> {{ analysis.pass_label }}</p>
-      <p><b>?쒗뿕 湲곗?:</b> 100??湲곗? 60???댁긽 ({{ analysis.required_correct }}臾몄젣 ?댁긽 ?뺣떟)</p>
-      <p><b>?⑷꺽 ?꾪솴:</b> {{ analysis.pass_gap_text }}</p>
-      <p><b>?⑷꺽 ?꾨왂:</b> {{ analysis.pass_strategy_text }}</p>
-    </div>
-  </section>
-
-  <section class="card result-wrong">
-    <h2 class="card-title">?쎌젏 遺꾩꽍</h2>
-
-    {% if is_premium %}
-      {% if analysis %}
-        <ul class="clean-list">
-          {% for line in analysis.summary_lines %}
-            <li>{{ line }}</li>
-          {% endfor %}
-        </ul>
-
-        {% if analysis.weak_skills %}
-          <h3>?곗꽑 蹂듭뒿 ?ㅽ궗</h3>
-          <ul class="clean-list">
-            {% for row in analysis.weak_skills %}
-              <li>{{ row.skill }} - ?뺣떟瑜?{{ row.accuracy }}% ({{ row.total }}臾몄젣)</li>
-            {% endfor %}
-          </ul>
-        {% endif %}
-
-        {% if analysis.strong_skills %}
-          <h3>?곷??곸쑝濡??덉젙?곸씤 ?ㅽ궗</h3>
-          <ul class="clean-list">
-            {% for row in analysis.strong_skills %}
-              <li>{{ row.skill }} - ?뺣떟瑜?{{ row.accuracy }}% ({{ row.total }}臾몄젣)</li>
-            {% endfor %}
-          </ul>
-        {% endif %}
+    {% if mode_result.next %}
+      {% if mode_result.next.status == 'waiting' %}
+        <p>2교시는 시작 버튼을 누를 때부터 80분 타이머가 흐릅니다.</p>
+        <form method="post" action="{% url 'exam_create' %}">
+          {% csrf_token %}
+          <input type="hidden" name="second_sitting" value="{{ mode_result.next.id }}">
+          <button type="submit" class="main-button">2교시 시작</button>
+        </form>
+      {% elif mode_result.next.status == 'in_progress' %}
+        <a href="{% url 'exam_result' mode_result.next.id %}" class="main-button">이어서 풀기</a>
+      {% else %}
+        <a href="{% url 'exam_result' mode_result.next.id %}" class="main-button">종합 결과 보기</a>
       {% endif %}
-    {% else %}
-      <div class="info-box">
-        臾대즺 ?뚯썝? ?먯닔? 臾몄젣蹂?寃곌낵留??뺤씤?????덉뒿?덈떎.
-        ?꾩껜 ?쎌젏 遺꾩꽍, ?곗꽑 蹂듭뒿 ?ㅽ궗, ?곸꽭 ?쇰뱶諛깆? ?꾨━誘몄뾼?먯꽌 ?쒓났?⑸땲??
-      </div>
-
-      <p>
-        <a href="{% url 'premium_info' %}" class="main-button">
-          ?꾨━誘몄뾼 湲곕뒫 蹂닿린
-        </a>
-      </p>
     {% endif %}
   </section>
 
   <section class="card">
-    <h2 class="card-title">?ㅽ궗蹂?寃곌낵</h2>
-    <table class="data-table">
-    <tr>
-      <th>?ㅽ궗</th>
-      <th>?꾩껜</th>
-      <th>?뺣떟</th>
-      <th>?ㅻ떟</th>
-      <th>?뺣떟瑜?/th>
-    </tr>
-    {% for row in skill_rows %}
-    <tr>
-      <td>{{ row.skill_label }}</td>
-      <td>{{ row.total }}</td>
-      <td>{{ row.correct }}</td>
-      <td>{{ row.wrong }}</td>
-      <td>{{ row.accuracy }}%</td>
-    </tr>
-    {% empty %}
-    <tr>
-      <td colspan="5">寃곌낵媛 ?놁뒿?덈떎.</td>
-    </tr>
-    {% endfor %}
-    </table>
+    <h2 class="card-title">이번 시험 요약</h2>
+    <p>{{ result_title }}</p>
+    <p><strong>{{ result_score|floatformat:"-1" }}점</strong> · 정답 {{ result_correct_count }} / {{ result_total_questions }} · 오답 {{ total_wrong_count }} · 미응답 {{ unanswered_count }}</p>
+    <p class="meta-text">이번에 푼 문제의 결과입니다. 실제 시험의 합격 확률이나 전체 범위의 숙련도를 의미하지 않습니다.</p>
   </section>
 
   <section class="card">
-    <h2 class="card-title">?由?臾몄젣</h2>
+    <p class="meta-text">다음 학습 우선순위</p>
+    <h2 class="card-title">가장 위험한 약점 3개</h2>
+    <ul class="clean-list">
+      {% for row in analysis.weak_skills %}
+        <li><strong>{{ row.skill_label }}</strong><br>이번 정답률 {{ row.accuracy }}% · 이 영역부터 짧게 다시 확인해 보세요.</li>
+      {% empty %}
+        <li>이번 응답에서는 뚜렷한 집중 복습 영역이 확인되지 않았습니다.</li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2 class="card-title">바로 복습할 대표 문제</h2>
     <ul class="clean-list">
       {% for item in wrong_items %}
         <li>
-          {{ item.order_no }}踰?-
-          <a href="{% url 'mission_detail' item.mission.id %}">{{ item.mission.title }}</a>
-          ({{ item.mission.skill_label }} / Lv {{ item.mission.level }})
-        </li>
-      {% empty %}
-        <li>현재 추천 가능한 복습 문제가 없습니다.</li>
-      {% endfor %}
-    </ul>
-  </section>
-
-  <section class="card result-wrong">
-    <h2 class="card-title">吏湲??댁빞 ??5臾몄젣</h2>
-    <ul class="clean-list">
-      {% if recommend_missions and recommend_missions|length < 5 %}
-        <li>현재 추천 가능한 복습 문제가 {{ recommend_missions|length }}개뿐입니다. 가능한 문제만 먼저 표시합니다.</li>
-      {% endif %}
-      {% for m in recommend_missions %}
-        <li>
-          <a href="{% url 'mission_detail' m.id %}">
-            {{ m.title }} ({{ m.skill_label }} / Lv {{ m.level }})
+          <a href="{% url 'mission_detail' item.mission.id %}">
+            {% if item.sitting_number %}{{ item.sitting_number }}교시 · {% endif %}{{ item.order_no }}번 · {{ item.mission.skill_label }} 해설 보기
           </a>
         </li>
       {% empty %}
-        <li>현재 추천 가능한 복습 문제가 없습니다.</li>
+        <li>이번 시험에서 틀린 문제는 없습니다. 시간을 두고 다시 확인해 보세요.</li>
       {% endfor %}
     </ul>
-
-    {% if recommend_missions %}
-      <p>
-        <a href="{% url 'exam_recommend_start' exam.id %}" class="main-button">
-          異붿쿇 5臾몄젣 諛붾줈 ?湲?
-        </a>
-      </p>
+    {% if total_wrong_count %}
+      <a href="{% url 'exam_wrong_answers' exam.id %}" class="sub-button exam-all-wrong-link">전체 오답 보기</a>
     {% endif %}
+  </section>
 
+  {% if unanswered_count %}
+    <section class="card">
+      <h2 class="card-title">미응답 문제</h2>
+      <p>{{ unanswered_count }}문제는 시험 점수에는 0점으로 계산되지만 오답노트와 약점 분석에는 반영하지 않았습니다.</p>
+    </section>
+  {% endif %}
+
+  <section class="card">
+    <h2 class="card-title">다른 문제로 약점 확인</h2>
+    {% if recommend_missions %}
+      <p>이번 시험에서 약했던 영역의 다른 문제 5개로 짧게 확인해 보세요.</p>
+      <a href="{% url 'exam_recommend_start' exam.id %}" class="main-button">추천 복습 시작</a>
+    {% else %}
+      <p>지금은 위의 대표 오답 해설부터 확인해 주세요.</p>
+    {% endif %}
   </section>
 
   <section class="card">
-    <a href="{% url 'exam_start' %}" class="sub-link">?쒗뿕 ?ㅼ떆 蹂닿린</a> |
-    <a href="{% url 'exam_history' %}" class="sub-link">?쒗뿕 ?덉뒪?좊━</a> |
-    <a href="{% url 'mission_list' %}" class="sub-link">誘몄뀡 紐⑸줉</a> |
-    <a href="{% url 'stats' %}" class="sub-link">?듦퀎</a>
+    <a href="{% url 'exam_start' %}" class="sub-link">모의고사</a> ·
+    <a href="{% url 'exam_history' %}" class="sub-link">시험 기록</a> ·
+    <a href="{% url 'mission_list' %}" class="sub-link">학습 홈</a> ·
+    <a href="{% url 'stats' %}" class="sub-link">내 기록</a>
   </section>
+</main>
 {% endblock %}

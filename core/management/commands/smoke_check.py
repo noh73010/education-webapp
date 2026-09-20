@@ -252,19 +252,19 @@ class Command(BaseCommand):
         else:
             self.ok(f"Unchecked Mission count: {unchecked_count}/{mission_count}")
 
-        default_subject = Subject.objects.filter(code=DEFAULT_SUBJECT_CODE).first()
-        if default_subject:
-            self.ok(f"Default subject exists: {default_subject.name}")
-            default_usable_count = Mission.objects.filter(
-                subject=default_subject,
+        primary_subject = Subject.objects.filter(code=DEFAULT_SUBJECT_CODE, is_active=True).first()
+        if primary_subject:
+            self.ok(f"Primary subject exists: {primary_subject.name}")
+            primary_usable_count = Mission.objects.filter(
+                subject=primary_subject,
                 is_usable_for_set=True,
             ).count()
-            if default_usable_count:
-                self.ok(f"Default subject usable Mission count: {default_usable_count}")
+            if primary_usable_count:
+                self.ok(f"Primary subject usable Mission count: {primary_usable_count}")
             else:
-                self.fail("Default subject has no usable missions")
+                self.fail("Primary subject has no usable missions")
         else:
-            self.fail(f"Default subject is missing: {DEFAULT_SUBJECT_CODE}")
+            self.fail(f"Primary subject is missing: {DEFAULT_SUBJECT_CODE}")
 
         null_subject_count = Mission.objects.filter(subject__isnull=True).count()
         if null_subject_count:

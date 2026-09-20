@@ -4,12 +4,20 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.db.models import Count, Q
 from django.utils import timezone
+from django.http import JsonResponse
+from django.db import transaction
+from django.contrib.auth import get_user_model
+from django.core.paginator import Paginator
+from types import SimpleNamespace
+from core.services.exam_modes import (available_courses, blueprint, create_mode_exam,
+    begin_second_sitting, mode_result, missing_full_courses)
 from datetime import timedelta
 
 from core.models import Mission, ExamSession, ExamSessionMission
-from core.services.access import get_user_access
+from core.services.access import get_user_access, has_full_learning_access
 from core.services.exams import (
     create_exam_session,
+    draft_has_answer,
     submit_exam_answer,
     finish_exam_session,
 )
@@ -23,6 +31,32 @@ from core.services.grading import (
     grade_multi_answer,
 )
 from core.services.subjects import get_current_subject
+from core.services.exam_requests import serialized_exam_request
+from core.services.exam_results import representative_wrong_items, result_sessions
+from core.services.exam_history import build_exam_history_cards
+
+
+EXAM_DRAFT_FIELDS = ("submitted_answer", "submitted_answers", "is_correct")
+
+
+def _posted_exam_draft(request):
+    return {
+        key: request.POST.getlist(key)
+        for key in EXAM_DRAFT_FIELDS
+        if key in request.POST
+    }
+
+
+def _resume_exam_order(exam):
+    items = list(exam.items.order_by("order_no"))
+    first_unanswered = next(
+        (item for item in items if not draft_has_answer(item.draft_answers) and item.submitted_at is None),
+        None,
+    )
+    if first_unanswered:
+        return first_unanswered.order_no
+    first_marked = next((item for item in items if item.is_marked_for_review), None)
+    return first_marked.order_no if first_marked else (items[0].order_no if items else None)
 
 
 
@@ -33,10 +67,17 @@ def exam_start(request):
     시험 시작 안내 페이지
     """
     access = get_user_access(request.user)
+    has_full_access = has_full_learning_access(request.user)
     current_subject, _ = get_current_subject(request)
     return render(request, "core/exam_start.html", {
         "is_premium": access.is_premium,
+        "has_full_access": has_full_access,
         "current_subject": current_subject,
+        "courses": available_courses(current_subject),
+        "supports_full": bool(blueprint(current_subject)),
+        "missing_full_courses": missing_full_courses(current_subject),
+        "open_exams": ExamSession.objects.filter(user=request.user,
+            items__mission__subject=current_subject, status__in=["in_progress", "waiting"]).distinct(),
     })
 
 
@@ -50,26 +91,12 @@ def exam_create(request):
     if request.method != "POST":
         return redirect("exam_start")
 
+    if "mode" in request.POST or "second_sitting" in request.POST:
+        return create_selected_mode(request)
+
     access = get_user_access(request.user)
     current_subject, _ = get_current_subject(request)
     today = timezone.localdate()
-
-    if not access.is_premium:
-        today_exam_count = ExamSession.objects.filter(
-            user=request.user,
-            started_at__date=today,
-        ).count()
-
-        if today_exam_count >= 1:
-            return render(
-                request,
-                "core/premium_required.html",
-                {
-                    "title": "실전 모의고사 제한",
-                    "message": "무료 회원은 실전 모의고사를 하루 1회만 이용할 수 있습니다.",
-                },
-            )
-
 
     existing_exam = (
         ExamSession.objects
@@ -84,43 +111,22 @@ def exam_create(request):
     )
 
     if existing_exam:
-        answered_order_numbers = set(
-            existing_exam.items
-            .exclude(user_answer_correct__isnull=True)
-            .values_list("order_no", flat=True)
-        )
-
-        all_items = list(
-            existing_exam.items
-            .order_by("order_no")
-        )
-
-        first_unanswered_item = None
-
-        for item in all_items:
-            if item.order_no not in answered_order_numbers:
-                first_unanswered_item = item
-                break
-
-        if first_unanswered_item:
+        resume_order = _resume_exam_order(existing_exam)
+        if resume_order:
             return redirect(
                 "exam_take",
                 exam_id=existing_exam.id,
-                order_no=first_unanswered_item.order_no,
+                order_no=resume_order,
             )
 
-        finish_exam_session(existing_exam)
-        record_event(
-            request.user,
-            "finish_exam",
-            page="exam_create",
-            metadata={
-                "exam_id": existing_exam.id,
-                "score": existing_exam.score,
-                "total_questions": existing_exam.total_questions,
-            },
-        )
-        return redirect("exam_result", exam_id=existing_exam.id)
+    # Resuming an existing exam must not consume/block the daily new-exam quota.
+    if not has_full_learning_access(request.user) and ExamSession.objects.filter(
+        user=request.user, started_at__date=today,
+    ).exists():
+        return render(request, "core/premium_required.html", {
+            "title": "실전 모의고사 제한",
+            "message": "무료 회원은 실전 모의고사를 하루 1회만 이용할 수 있습니다.",
+        })
 
     try:
         exam = create_exam_session(user=request.user, subject=current_subject)
@@ -145,7 +151,48 @@ def exam_create(request):
     return redirect("exam_take", exam_id=exam.id, order_no=1)
 
 
+@transaction.atomic
+def create_selected_mode(request):
+    get_user_model().objects.select_for_update().get(pk=request.user.pk)
+    subject, _ = get_current_subject(request)
+    try:
+        if request.POST.get("second_sitting"):
+            exam = begin_second_sitting(request.user, subject, int(request.POST["second_sitting"]))
+        else:
+            mode, course = request.POST.get("mode"), request.POST.get("course", "")
+            if mode not in {"short", "course", "full"}:
+                raise ValueError("올바른 모드를 선택해 주세요.")
+            if mode == "course" and course not in available_courses(subject):
+                raise ValueError("올바른 과목을 선택해 주세요.")
+            existing = ExamSession.objects.filter(user=request.user, items__mission__subject=subject,
+                mode_config__mode=mode, status__in=["in_progress", "waiting"])
+            if mode == "course":
+                existing = existing.filter(mode_config__course=course)
+            exam = existing.distinct().order_by("pk").first()
+            if exam is None:
+                if not has_full_learning_access(request.user) and ExamSession.objects.filter(
+                    user=request.user, previous_sitting__isnull=True,
+                    started_at__date=timezone.localdate()).exists():
+                    raise ValueError("무료 회원은 세 모드를 합쳐 하루 1회 새 시험을 시작할 수 있습니다. 풀던 시험은 계속 이용할 수 있습니다.")
+                exam = create_mode_exam(request.user, subject, mode, course)
+                record_event(request.user, "start_exam", page="exam_create", metadata={
+                    "exam_id": exam.pk, "mode": mode, "total_questions": exam.total_questions,
+                    "time_limit_min": exam.time_limit_min})
+        if exam.status == "waiting":
+            return redirect("exam_result", exam_id=exam.previous_sitting_id)
+        if exam.status != "in_progress":
+            return redirect("exam_result", exam_id=exam.pk)
+        resume_order = _resume_exam_order(exam)
+        if not resume_order:
+            return redirect("exam_result", exam_id=exam.pk)
+        return redirect("exam_take", exam_id=exam.pk, order_no=resume_order)
+    except (ValueError, TypeError) as error:
+        messages.warning(request, str(error))
+        return redirect("exam_start")
+
+
 @login_required
+@serialized_exam_request
 def exam_take(request, exam_id, order_no):
     current_subject, _ = get_current_subject(request)
     exam = get_object_or_404(
@@ -183,68 +230,66 @@ def exam_take(request, exam_id, order_no):
     )
 
     mission = item.mission
-    total_count = exam.items.count()
+    all_items = list(exam.items.select_related("mission").order_by("order_no"))
+    total_count = len(all_items)
     schema_items = parse_answer_schema(mission.answer_schema)
     choice_items = parse_choice_schema(mission.answer_schema)
 
     if request.method == "POST":
-        is_correct = None
-
-        # 1) 수동 확인형 문제
-        if mission.question_type == "manual":
-            raw = request.POST.get("is_correct")
-
-            if raw in ("true", "false"):
-                is_correct = (raw == "true")
-
-        # 2) 자동채점형 문제 - 멀티 입력
-        elif schema_items:
-            submitted_answers = request.POST.getlist("submitted_answers")
-
-            grading_result = grade_multi_answer(
-                submitted_answers=submitted_answers,
-                schema_text=mission.answer_schema,
-            )
-
-            if grading_result["error"] is None:
-                is_correct = grading_result["is_correct"]
-
-        # 3) 자동채점형 문제 - 단일 입력
+        action = request.POST.get("action", "goto" if "target_order" in request.POST else "next")
+        if action == "skip":
+            item.draft_answers = {}
+            item.draft_updated_at = timezone.now()
+            item.save(update_fields=["draft_answers", "draft_updated_at"])
         else:
-            submitted_answer = request.POST.get("submitted_answer", "").strip()
+            posted_draft = _posted_exam_draft(request)
+            if posted_draft:
+                item.draft_answers = posted_draft
+                item.draft_updated_at = timezone.now()
+                item.save(update_fields=["draft_answers", "draft_updated_at"])
 
-            grading_result = grade_answer(
-                question_type=mission.question_type,
-                answer_input_type=mission.answer_input_type,
-                submitted_answer=submitted_answer,
-                correct_answer=mission.correct_answer,
-            )
-
-            if grading_result["error"] is None:
-                is_correct = grading_result["is_correct"]
-
-        if is_correct is not None:
-            submit_exam_answer(item, is_correct)
-
-            next_order = order_no + 1
-            if next_order <= total_count:
-                return redirect("exam_take", exam_id=exam.id, order_no=next_order)
-            else:
-                finish_exam_session(exam)
-                record_event(
-                    request.user,
-                    "finish_exam",
-                    page="exam_take",
-                    metadata={
-                        "exam_id": exam.id,
-                        "score": exam.score,
-                        "total_questions": exam.total_questions,
-                        "reason": "last_question",
-                    },
-                )
-                return redirect("exam_result", exam_id=exam.id)
+        if action == "toggle_review":
+            item.is_marked_for_review = not item.is_marked_for_review
+            item.save(update_fields=["is_marked_for_review"])
+            target_order = order_no
+        elif action == "previous":
+            target_order = max(1, order_no - 1)
+        elif action == "goto":
+            try:
+                target_order = int(request.POST.get("target_order", order_no))
+            except (TypeError, ValueError):
+                target_order = order_no
+            if target_order not in {row.order_no for row in all_items}:
+                target_order = order_no
+        elif action == "final":
+            finish_exam_session(exam)
+            record_event(request.user, "finish_exam", page="exam_take", metadata={
+                "exam_id": exam.id,
+                "score": exam.score,
+                "total_questions": exam.total_questions,
+                "reason": "manual_submit",
+            })
+            return redirect("exam_result", exam_id=exam.id)
+        else:
+            target_order = min(total_count, order_no + 1)
+        return redirect("exam_take", exam_id=exam.id, order_no=target_order)
 
     remaining_seconds = int((end_time - timezone.now()).total_seconds())
+    navigation = []
+    for nav_item in all_items:
+        answered = draft_has_answer(nav_item.draft_answers) or nav_item.submitted_at is not None
+        navigation.append({
+            "order_no": nav_item.order_no,
+            "answered": answered,
+            "marked": nav_item.is_marked_for_review,
+            "current": nav_item.pk == item.pk,
+        })
+    answered_count = sum(row["answered"] for row in navigation)
+    marked_count = sum(row["marked"] for row in navigation)
+    draft_answers = item.draft_answers
+    if not draft_answers and item.submitted_at is not None:
+        key = "is_correct" if mission.question_type == "manual" else "submitted_answer"
+        draft_answers = {key: [item.submitted_answer]}
 
     return render(request, "core/exam_take.html", {
         "exam": exam,
@@ -255,11 +300,20 @@ def exam_take(request, exam_id, order_no):
         "remaining_seconds": max(remaining_seconds, 0),
         "schema_items": schema_items,
         "choice_items": choice_items,
+        "draft_answers": draft_answers,
+        "navigation": navigation,
+        "answered_count": answered_count,
+        "unanswered_count": total_count - answered_count,
+        "marked_count": marked_count,
+        "current_answered": draft_has_answer(item.draft_answers) or item.submitted_at is not None,
+        "previous_order": order_no - 1 if order_no > 1 else None,
+        "next_order": order_no + 1 if order_no < total_count else None,
     })
 
 
 @login_required
 @require_POST
+@serialized_exam_request
 def exam_submit(request, exam_id):
     current_subject, _ = get_current_subject(request)
     exam = get_object_or_404(
@@ -287,8 +341,34 @@ def exam_submit(request, exam_id):
     return redirect("exam_result", exam_id=exam.id)
 
 
+@login_required
+@require_POST
+@serialized_exam_request
+def exam_draft(request, exam_id, order_no):
+    subject, _ = get_current_subject(request)
+    item = get_object_or_404(ExamSessionMission.objects.select_related("exam_session"),
+        exam_session_id=exam_id, order_no=order_no, exam_session__user=request.user,
+        mission__subject=subject)
+    exam = item.exam_session
+    if exam.status == "waiting":
+        return JsonResponse({"error": "아직 시작하지 않은 교시입니다."}, status=400)
+    if timezone.now() >= exam.started_at + timedelta(minutes=exam.time_limit_min):
+        finish_exam_session(exam)
+        exam.refresh_from_db()
+    if exam.status != "in_progress":
+        return JsonResponse({"saved": True, "submitted": True})
+    answers = _posted_exam_draft(request)
+    if sum(len(value) for values in answers.values() for value in values) > 12000:
+        return JsonResponse({"error": "답안이 너무 깁니다."}, status=400)
+    item.draft_answers = answers
+    item.draft_updated_at = timezone.now()
+    item.save(update_fields=["draft_answers", "draft_updated_at"])
+    return JsonResponse({"saved": True, "submitted": False})
+
+
 
 @login_required
+@serialized_exam_request
 def exam_result(request, exam_id):
     """
     시험 결과 페이지
@@ -301,36 +381,67 @@ def exam_result(request, exam_id):
         id=exam_id,
         user=request.user,
     )
-    items = exam.items.select_related("mission").filter(mission__subject=current_subject)
-    access = get_user_access(request.user)
-
-    skill_rows = (
-        items.values("mission__skill")
-        .annotate(
-            total=Count("id"),
-            correct=Count("id", filter=Q(user_answer_correct=True)),
-            wrong=Count("id", filter=Q(user_answer_correct=False) | Q(user_answer_correct__isnull=True)),
+    if exam.status == "waiting":
+        return redirect("exam_result", exam_id=exam.previous_sitting_id)
+    if exam.status == "in_progress":
+        if timezone.now() >= exam.started_at + timedelta(minutes=exam.time_limit_min):
+            finish_exam_session(exam)
+        else:
+            resume_order = _resume_exam_order(exam)
+            if resume_order:
+                return redirect("exam_take", exam_id=exam.pk, order_no=resume_order)
+    related_sessions = result_sessions(exam)
+    items = []
+    for sitting_number, related_exam in enumerate(related_sessions, 1):
+        sitting_items = list(
+            related_exam.items.select_related("mission")
+            .filter(mission__subject=current_subject)
+            .order_by("order_no")
         )
-        .order_by("mission__skill")
-    )
+        for result_item in sitting_items:
+            result_item.sitting_number = sitting_number if len(related_sessions) > 1 else None
+        items.extend(sitting_items)
+    access = get_user_access(request.user)
+    has_full_access = has_full_learning_access(request.user)
+    result = mode_result(exam)
 
-    skill_rows = list(skill_rows)
+    answered_items = [item for item in items if item.submitted_at is not None]
+    unanswered_items = [item for item in items if item.submitted_at is None]
+    skill_totals = {}
+    for item in answered_items:
+        label = item.mission.chapter_name or get_skill_label(item.mission.skill)
+        row = skill_totals.setdefault(item.mission.skill, {
+            "mission__skill": item.mission.skill, "skill_label": label,
+            "total": 0, "correct": 0, "wrong": 0,
+        })
+        row["total"] += 1
+        if item.user_answer_correct is True:
+            row["correct"] += 1
+        else:
+            row["wrong"] += 1
+    skill_rows = list(skill_totals.values())
     for row in skill_rows:
-        total = row["total"] or 0
-        correct = row["correct"] or 0
-        row["accuracy"] = round((correct / total) * 100, 1) if total else 0.0
-        row["skill_label"] = get_skill_label(row["mission__skill"])
+        row["accuracy"] = round((row["correct"] / row["total"]) * 100, 1)
 
-    wrong_items = [item for item in items if item.user_answer_correct is not True]
+    wrong_items = [item for item in answered_items if item.user_answer_correct is False]
     
     for item in wrong_items:
         item.mission.skill_label = get_skill_label(item.mission.skill)
 
+    analysis_exam = SimpleNamespace(
+        score=result["average"] if result["average"] is not None else result["sitting_score"],
+        total_questions=len(items),
+        correct_count=sum(item.user_answer_correct is True for item in items),
+    )
     analysis = build_exam_analysis(
-        exam=exam,
+        exam=analysis_exam,
         skill_rows=skill_rows,
         wrong_items=wrong_items,
     )
+    representative_wrong = representative_wrong_items(
+        wrong_items, analysis["weak_skills"], limit=5,
+    )
+    is_combined_result = len(related_sessions) > 1
     # 추천 문제 5개
     recommend_missions = []
 
@@ -343,6 +454,7 @@ def exam_result(request, exam_id):
                 is_usable_for_set=True,
                 subject=current_subject,
             )
+            .exclude(review_status=Mission.REVIEW_CONFIRMED_ERROR)
             .exclude(
                 id__in=[item.mission.id for item in items]
             )
@@ -354,12 +466,60 @@ def exam_result(request, exam_id):
     return render(request, "core/exam_result.html", {
         "exam": exam,
         "items": items,
+        "mode_result": result,
         "skill_rows": skill_rows,
-        "wrong_items": wrong_items,
+        "wrong_items": representative_wrong,
+        "total_wrong_count": len(wrong_items),
+        "result_title": "실전 모의고사 1·2교시 종합" if is_combined_result else exam.title,
+        "result_score": result["average"] if is_combined_result else result["sitting_score"],
+        "result_correct_count": sum(item.user_answer_correct is True for item in items),
+        "result_total_questions": len(items),
+        "unanswered_items": unanswered_items,
+        "answered_count": len(answered_items),
+        "unanswered_count": len(unanswered_items),
         "analysis": analysis,
         "is_premium": access.is_premium,
+        "has_full_access": has_full_access,
         "recommend_missions": recommend_missions,
     })
+
+
+@login_required
+def exam_wrong_answers(request, exam_id):
+    """Paginated wrong answers for one exam or one linked full-exam attempt."""
+    current_subject, _ = get_current_subject(request)
+    exam = get_object_or_404(
+        ExamSession.objects.filter(items__mission__subject=current_subject).distinct(),
+        id=exam_id,
+        user=request.user,
+    )
+    if exam.status == "waiting":
+        exam = exam.previous_sitting
+
+    sessions = result_sessions(exam)
+    wrong_items = (
+        ExamSessionMission.objects
+        .filter(
+            exam_session__in=sessions,
+            mission__subject=current_subject,
+            submitted_at__isnull=False,
+            user_answer_correct=False,
+        )
+        .select_related("mission", "exam_session")
+        .order_by("exam_session__started_at", "order_no")
+    )
+    page_obj = Paginator(wrong_items, 20).get_page(request.GET.get("page"))
+    session_numbers = {session.pk: number for number, session in enumerate(sessions, 1)}
+    for item in page_obj.object_list:
+        item.mission.skill_label = item.mission.chapter_name or get_skill_label(item.mission.skill)
+        item.sitting_number = session_numbers[item.exam_session_id] if len(sessions) > 1 else None
+
+    return render(request, "core/exam_wrong_answers.html", {
+        "exam": exam,
+        "page_obj": page_obj,
+    })
+
+
 @login_required
 def exam_recommend_start(request, exam_id):
     """
@@ -373,14 +533,15 @@ def exam_recommend_start(request, exam_id):
         id=exam_id,
         user=request.user,
     )
-    items = exam.items.select_related("mission").filter(mission__subject=current_subject)
+    items = list(exam.items.select_related("mission").filter(mission__subject=current_subject))
 
     skill_rows = (
-        items.values("mission__skill")
+        exam.items.filter(mission__subject=current_subject, submitted_at__isnull=False)
+        .values("mission__skill")
         .annotate(
             total=Count("id"),
             correct=Count("id", filter=Q(user_answer_correct=True)),
-            wrong=Count("id", filter=Q(user_answer_correct=False) | Q(user_answer_correct__isnull=True)),
+            wrong=Count("id", filter=Q(user_answer_correct=False)),
         )
         .order_by("mission__skill")
     )
@@ -391,7 +552,7 @@ def exam_recommend_start(request, exam_id):
         correct = row["correct"] or 0
         row["accuracy"] = round((correct / total) * 100, 1) if total else 0.0
 
-    wrong_items = [item for item in items if item.user_answer_correct is not True]
+    wrong_items = [item for item in items if item.user_answer_correct is False]
 
     analysis = build_exam_analysis(
         exam=exam,
@@ -410,6 +571,7 @@ def exam_recommend_start(request, exam_id):
                 is_usable_for_set=True,
                 subject=current_subject,
             )
+            .exclude(review_status=Mission.REVIEW_CONFIRMED_ERROR)
             .exclude(id__in=[item.mission.id for item in items])
             .order_by("?")[:5]
         )
@@ -430,53 +592,15 @@ def exam_history(request):
     """
     사용자의 시험 히스토리 목록
     """
+    current_subject, _ = get_current_subject(request)
     exams = (
         ExamSession.objects
-        .filter(user=request.user, items__mission__subject=get_current_subject(request)[0])
+        .filter(user=request.user, items__mission__subject=current_subject)
         .distinct()
+        .prefetch_related("items__mission")
         .order_by("-started_at")
     )
-
-    recent_exams = list(exams[:5])
-
-    avg_score = 0
-    if recent_exams:
-        avg_score = round(sum(e.score for e in recent_exams) / len(recent_exams), 1)
-
-    passed_count = sum(1 for e in recent_exams if e.score >= 60)
-    total_count = len(recent_exams)
-    pass_rate = round((passed_count / total_count) * 100, 1) if total_count else 0.0
-
-    # 최근 5회 점수 목록 (오래된 것 → 최근 순으로 뒤집어서 표시)
-    recent_scores = [e.score for e in reversed(recent_exams)]
-
-    # 최고 점수
-    best_score = max(recent_scores) if recent_scores else 0
-
-    # 최근 점수 변화량
-    score_change = 0
-    if len(recent_scores) >= 2:
-        score_change = recent_scores[-1] - recent_scores[-2]
-
-    # 추이 판정
-    trend_label = "데이터 부족"
-    if len(recent_scores) >= 2:
-        if recent_scores[-1] > recent_scores[0]:
-            trend_label = "상승 중"
-        elif recent_scores[-1] < recent_scores[0]:
-            trend_label = "하락 중"
-        else:
-            trend_label = "변동 없음"
-
     return render(request, "core/exam_history.html", {
         "exams": exams,
-        "recent_exams": recent_exams,
-        "avg_score": avg_score,
-        "passed_count": passed_count,
-        "total_count": total_count,
-        "pass_rate": pass_rate,
-        "recent_scores": recent_scores,
-        "best_score": best_score,
-        "score_change": score_change,
-        "trend_label": trend_label,
+        "history_cards": build_exam_history_cards(exams),
     })

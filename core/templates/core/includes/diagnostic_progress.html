@@ -1,0 +1,17 @@
+{% if diagnostic.total %}
+<section class="card">
+  <h2>가볍게 확인한 나의 출발점</h2>
+  <p>{{ diagnostic.done }} / {{ diagnostic.total }}문제 확인</p>
+  {% if diagnostic.next %}
+    <a href="{% url 'mission_detail' diagnostic.next.id %}" class="main-button">다음 확인 문제</a>
+  {% elif diagnostic.complete %}
+    {% if diagnostic.weak_names %}
+      <p>이번에 확인한 범위에서는 {% for name in diagnostic.weak_names %}{{ name }}{% if not forloop.last %}, {% endif %}{% endfor %} 복습부터 추천해요.</p>
+    {% else %}
+      <p>이번 문제들은 잘 풀었어요. 아직 전체 범위의 실력을 판단할 근거는 부족해요.</p>
+    {% endif %}
+    <a href="{% url 'wrong_notes' %}" class="sub-button">확인한 오답 복습</a>
+  {% endif %}
+  <p class="meta-text">일부 범위의 짧은 확인이며 합격 예측이 아닙니다.</p>
+</section>
+{% endif %}

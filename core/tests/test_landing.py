@@ -17,7 +17,8 @@ class LandingPageTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "원하는 자격증을 선택하여")
         self.assertContains(response, "과목 선택")
-        self.assertContains(response, "컴활 2급")
+        self.assertContains(response, "물류관리사")
+        self.assertNotContains(response, "컴활 2급")
         self.assertContains(response, "학습 시작")
         self.assertContains(response, reverse("signup"))
         self.assertContains(response, reverse("login"))
@@ -69,6 +70,15 @@ class LandingPageTests(TestCase):
         self.assertContains(response, "물류관리사")
         self.assertContains(response, LOGISTICS_SUBJECT_CODE)
         self.assertContains(response, reverse("select_subject", args=[LOGISTICS_SUBJECT_CODE]))
+
+    def test_new_active_certificate_is_listed_without_changing_logistics(self):
+        from core.models import Subject
+        Subject.objects.create(code="new-cert", name="새 자격증", is_active=True)
+
+        response = self.client.get(reverse("landing"))
+
+        self.assertContains(response, "물류관리사")
+        self.assertContains(response, "새 자격증")
 
     def test_mission_list_still_requires_login(self):
         response = self.client.get(reverse("mission_list"))

@@ -68,7 +68,7 @@ class SubjectPlatformTests(TestCase):
             subject=subject,
             course="물류관리론",
             chapter_code=chapter_code,
-            chapter_name="물류관리 일반",
+            chapter_name="물류관리총론",
             difficulty="하",
             title=f"{chapter_code} 테스트 문제",
             skill=chapter_code,
@@ -103,16 +103,16 @@ class SubjectPlatformTests(TestCase):
         self.assertTrue(all(row["subject_code"] == LOGISTICS_SUBJECT_CODE for row in rows))
         self.assertTrue(all(row["external_id"].startswith("LOG-") for row in rows))
 
-    def test_ensure_default_subject_command_assigns_legacy_missions(self):
+    def test_seed_subjects_does_not_recreate_retired_comhwal_subject(self):
         mission = self.create_mission("SUBJECT_LEGACY", subject=None)
         out = StringIO()
 
-        call_command("ensure_default_subject", stdout=out)
+        call_command("seed_subjects", stdout=out)
         mission.refresh_from_db()
 
-        self.assertEqual(mission.subject.code, DEFAULT_SUBJECT_CODE)
-        self.assertTrue(Subject.objects.filter(code=DEFAULT_SUBJECT_CODE).exists())
-        self.assertIn("Default subject ready", out.getvalue())
+        self.assertIsNone(mission.subject)
+        self.assertFalse(Subject.objects.filter(code="comhwal2", is_active=True).exists())
+        self.assertIn(LOGISTICS_SUBJECT_CODE, out.getvalue())
 
     def test_usable_missions_filters_by_default_subject(self):
         default_subject = get_default_subject()
@@ -171,20 +171,20 @@ class SubjectPlatformTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
 
-    def test_logistics_curriculum_has_five_courses_and_27_chapters(self):
+    def test_logistics_curriculum_has_five_courses_and_35_chapters(self):
         curriculum = get_logistics_curriculum()
 
         self.assertEqual(len(curriculum), 5)
         self.assertEqual(
             sum(len(course["chapters"]) for course in curriculum),
-            28,
+            35,
         )
         self.assertEqual(curriculum[0]["course"], "물류관리론")
         self.assertEqual(curriculum[0]["chapters"][0]["chapter_code"], "LM01")
         self.assertEqual(curriculum[0]["chapters"][0]["display_no"], "01")
-        self.assertEqual(curriculum[1]["chapters"][0]["chapter_code"], "TR01")
+        self.assertEqual(curriculum[1]["chapters"][0]["chapter_code"], "FT01")
         self.assertEqual(curriculum[1]["chapters"][0]["display_no"], "01")
-        self.assertEqual(curriculum[-1]["chapters"][-1]["chapter_code"], "LW07")
+        self.assertEqual(curriculum[-1]["chapters"][-1]["chapter_code"], "LR07")
 
     def test_logistics_roadmap_includes_empty_chapters(self):
         seed_platform_subjects()
@@ -194,15 +194,15 @@ class SubjectPlatformTests(TestCase):
         roadmap = build_logistics_chapter_roadmap(user, subject)
 
         self.assertEqual(len(roadmap), 5)
-        self.assertEqual(sum(len(course["chapters"]) for course in roadmap), 28)
+        self.assertEqual(sum(len(course["chapters"]) for course in roadmap), 35)
         lm01 = roadmap[0]["chapters"][0]
         self.assertEqual(lm01["chapter_code"], "LM01")
         self.assertEqual(lm01["display_no"], "01")
         self.assertEqual(lm01["total_count"], 0)
         self.assertEqual(lm01["status"], "문제 준비 중")
-        tr01 = roadmap[1]["chapters"][0]
-        self.assertEqual(tr01["chapter_code"], "TR01")
-        self.assertEqual(tr01["display_no"], "01")
+        ft01 = roadmap[1]["chapters"][0]
+        self.assertEqual(ft01["chapter_code"], "FT01")
+        self.assertEqual(ft01["display_no"], "01")
 
     def test_logistics_roadmap_counts_existing_chapter_missions(self):
         mission = self.create_logistics_mission()
@@ -231,19 +231,19 @@ class SubjectPlatformTests(TestCase):
         self.assertTrue(response.context["is_logistics_subject"])
         self.assertEqual(len(response.context["logistics_chapter_roadmap"]), 5)
         self.assertContains(response, "물류관리사 학습 로드맵")
-        self.assertContains(response, "01. 물류관리 일반")
-        self.assertContains(response, "02. 물류시스템 구축")
-        self.assertNotContains(response, "LM01 물류관리 일반")
-        self.assertNotContains(response, "TR03")
-        self.assertNotContains(response, "IL02")
+        self.assertContains(response, "01. 물류관리총론")
+        self.assertContains(response, "02. 물류경영")
+        self.assertNotContains(response, "LM01 물류관리총론")
+        self.assertNotContains(response, "FT03")
+        self.assertNotContains(response, "IT02")
 
-    def test_mission_list_keeps_learning_type_roadmap_for_default_subject(self):
-        subject = get_default_subject()
+    def test_mission_list_keeps_generic_roadmap_for_future_subject(self):
+        subject = Subject.objects.create(code="future-cert", name="향후 자격증")
         self.create_mission("DEFAULT_ROADMAP_001", subject=subject)
         user = User.objects.create_user(username="default_roadmap", password="pass12345")
         self.client.force_login(user)
         session = self.client.session
-        session[CURRENT_SUBJECT_SESSION_KEY] = DEFAULT_SUBJECT_CODE
+        session[CURRENT_SUBJECT_SESSION_KEY] = subject.code
         session.save()
 
         response = self.client.get(reverse("mission_list"))
@@ -255,8 +255,8 @@ class SubjectPlatformTests(TestCase):
 
     def test_logistics_subject_does_not_show_default_subject_mission(self):
         seed_platform_subjects()
-        default_subject = get_default_subject()
-        self.create_mission("SUBJECT_DEFAULT_ONLY", subject=default_subject)
+        another_subject = Subject.objects.create(code="another-cert", name="다른 자격증")
+        self.create_mission("SUBJECT_DEFAULT_ONLY", subject=another_subject)
         user = User.objects.create_user(username="logistics_only", password="pass12345")
         self.client.force_login(user)
         session = self.client.session
@@ -283,10 +283,10 @@ class SubjectPlatformTests(TestCase):
         mission = Mission.objects.get(external_id="LOG-IL02-0001")
         self.assertEqual(mission.subject.code, LOGISTICS_SUBJECT_CODE)
         self.assertEqual(mission.course, "국제물류론")
-        self.assertEqual(mission.chapter_code, "IL02")
-        self.assertEqual(mission.chapter_name, "무역실무")
+        self.assertEqual(mission.chapter_code, "IT02")
+        self.assertEqual(mission.chapter_name, "국제해상운송")
         self.assertEqual(mission.difficulty, "중")
-        self.assertEqual(mission.skill, "IL02")
+        self.assertEqual(mission.skill, "IT02")
         self.assertEqual(mission.learning_type, "result")
         self.assertEqual(mission.question_type, "choice_one")
         self.assertEqual(mission.answer_input_type, "none")
@@ -314,22 +314,18 @@ class SubjectPlatformTests(TestCase):
         self.assertEqual(mission.title, "수정된 제목")
         self.assertIn("updated=1", out.getvalue())
 
-    def test_import_missions_without_subject_code_uses_default_subject(self):
-        default_subject = get_default_subject()
-
+    def test_import_missions_without_subject_code_is_skipped(self):
         with TemporaryDirectory() as tmpdir:
             csv_path = self.write_csv(tmpdir, [
                 "id,title,skill_auto,level,prompt,correct_answer,explanation",
                 "LEGACY_IMPORT_001,기존 CSV 확인,COUNT,1,기존 CSV도 동작해야 합니다,1,기존 CSV 설명",
             ])
 
-            call_command("import_missions", str(csv_path), stdout=StringIO())
+            out = StringIO()
+            call_command("import_missions", str(csv_path), stdout=out)
 
-        mission = Mission.objects.get(external_id="LEGACY_IMPORT_001")
-        self.assertEqual(mission.subject_id, default_subject.id)
-        self.assertEqual(mission.course, "")
-        self.assertEqual(mission.chapter_code, "")
-        self.assertEqual(mission.difficulty, "")
+        self.assertFalse(Mission.objects.filter(external_id="LEGACY_IMPORT_001").exists())
+        self.assertIn("missing subject_code", out.getvalue())
 
     def test_import_missions_skips_invalid_difficulty(self):
         seed_platform_subjects()
@@ -366,7 +362,8 @@ class SubjectPlatformTests(TestCase):
         logistics_response = self.client.get(reverse("mission_list"))
 
         session = self.client.session
-        session[CURRENT_SUBJECT_SESSION_KEY] = DEFAULT_SUBJECT_CODE
+        other_subject = Subject.objects.create(code="other-screen", name="다른 자격증")
+        session[CURRENT_SUBJECT_SESSION_KEY] = other_subject.code
         session.save()
         default_response = self.client.get(reverse("mission_list"))
 

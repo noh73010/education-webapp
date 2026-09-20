@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from urllib.parse import urlsplit
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -30,6 +31,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 import os
 
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
+from dotenv import load_dotenv
+
+
+load_dotenv(BASE_DIR / ".env", override=False)
 
 
 def env_bool(name, default=False):
@@ -49,10 +55,70 @@ def env_list(name, default=""):
     ]
 
 
+def env_positive_int(name, default):
+    raw_value = os.environ.get(name, str(default)).strip()
+    try:
+        value = int(raw_value)
+    except ValueError as exc:
+        raise ImproperlyConfigured(f"{name} must be a positive integer") from exc
+    if value <= 0:
+        raise ImproperlyConfigured(f"{name} must be a positive integer")
+    return value
+
+
+def add_tunnel_host(allowed_hosts, csrf_origins, debug, raw_host):
+    """Add one explicit development tunnel host without weakening production."""
+    hosts = list(allowed_hosts)
+    origins = list(csrf_origins)
+    raw_host = raw_host.strip()
+    if not debug or not raw_host:
+        return hosts, origins
+
+    parsed = urlsplit(f"//{raw_host}")
+    host = parsed.hostname
+    try:
+        port = parsed.port
+    except ValueError as exc:
+        raise ImproperlyConfigured(
+            "DJANGO_TUNNEL_HOST must be one lowercase hostname without a scheme, "
+            "port, path, or wildcard"
+        ) from exc
+    if (
+        host is None
+        or port is not None
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.path
+        or parsed.query
+        or parsed.fragment
+        or host != raw_host.rstrip(".").lower()
+        or "*" in host
+        or "." not in host
+    ):
+        raise ImproperlyConfigured(
+            "DJANGO_TUNNEL_HOST must be one lowercase hostname without a scheme, "
+            "port, path, or wildcard"
+        )
+
+    if host not in hosts:
+        hosts.append(host)
+    origin = f"https://{host}"
+    if origin not in origins:
+        origins.append(origin)
+    return hosts, origins
+
+
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-secret")
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost")
 CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
+TUNNEL_HOST = os.environ.get("DJANGO_TUNNEL_HOST", "")
+ALLOWED_HOSTS, CSRF_TRUSTED_ORIGINS = add_tunnel_host(
+    ALLOWED_HOSTS,
+    CSRF_TRUSTED_ORIGINS,
+    DEBUG,
+    TUNNEL_HOST,
+)
 
 if not DEBUG and SECRET_KEY == "dev-only-secret":
     raise RuntimeError("DJANGO_SECRET_KEY is not set for production")
@@ -61,7 +127,14 @@ SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", False)
 SESSION_COOKIE_SECURE = env_bool("DJANGO_SESSION_COOKIE_SECURE", False)
 CSRF_COOKIE_SECURE = env_bool("DJANGO_CSRF_COOKIE_SECURE", False)
 
-if env_bool("DJANGO_SECURE_PROXY_SSL_HEADER", False):
+# Launch policy: keep every learning feature open while the service grows.
+# Set this to true later to reactivate the existing free/premium limits.
+PREMIUM_GATING_ENABLED = env_bool("DJANGO_PREMIUM_GATING_ENABLED", False)
+GENERATED_MISSION_WATCH_INTERVAL_SECONDS = env_positive_int(
+    "DJANGO_GENERATED_MISSION_WATCH_INTERVAL_SECONDS", 30
+)
+
+if env_bool("DJANGO_SECURE_PROXY_SSL_HEADER", False) or (DEBUG and TUNNEL_HOST):
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Application definition
@@ -73,6 +146,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.naver',
+    'allauth.socialaccount.providers.kakao',
     'core',
 ]
 
@@ -83,6 +162,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -141,7 +221,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "ko"
 
 TIME_ZONE = 'Asia/Seoul'
 
@@ -174,6 +254,50 @@ STORAGES = {
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
+
+
+def social_app(provider):
+    prefix = provider.upper()
+    client_id = os.environ.get(f"{prefix}_OAUTH_CLIENT_ID", "").strip()
+    secret = os.environ.get(f"{prefix}_OAUTH_CLIENT_SECRET", "").strip()
+    if not client_id or not secret:
+        return {}
+    return {
+        "APP": {
+            "client_id": client_id,
+            "secret": secret,
+            "key": "",
+        }
+    }
+
+
+SOCIALACCOUNT_ADAPTER = "core.adapters.SocialAccountAdapter"
+SOCIALACCOUNT_FORMS = {"signup": "core.forms.SocialSignupForm"}
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_REQUIRED = True
+SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
+SOCIALACCOUNT_EMAIL_AUTHENTICATION = False
+SOCIALACCOUNT_LOGIN_ON_GET = False
+SOCIALACCOUNT_PROVIDERS = {
+    "google": {
+        **social_app("google"),
+        "SCOPE": ["profile", "email"],
+        "AUTH_PARAMS": {"access_type": "online"},
+        "OAUTH_PKCE_ENABLED": True,
+    },
+    "naver": social_app("naver"),
+    "kakao": social_app("kakao"),
+}
+SOCIAL_LOGIN_PROVIDERS = tuple(
+    provider
+    for provider, config in SOCIALACCOUNT_PROVIDERS.items()
+    if config.get("APP")
+)
 
 LOGIN_URL = "/login/"
 LOGIN_REDIRECT_URL = "/missions/"

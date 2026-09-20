@@ -1,5 +1,4 @@
 {% extends 'core/base.html' %}
-
 {% block title %}로그인{% endblock %}
 
 {% block content %}
@@ -8,6 +7,8 @@
   <h1 class="section-title">로그인</h1>
   <p>학습 기록, 오답노트, 통계를 이어서 확인하려면 로그인하세요.</p>
 </section>
+
+{% include "registration/includes/social_login_buttons.html" with social_login_mode="login" %}
 
 <section class="card">
   {% if form.errors %}
@@ -34,11 +35,9 @@
   </form>
 </section>
 
-<section class="card">
-  <p>
-    아직 계정이 없나요?
-    <a href="{% url 'signup' %}" class="sub-link">회원가입하기</a>
-  </p>
+<section class="card signup-callout">
+  <p class="signup-callout-text">아직 계정이 없나요?</p>
+  <a href="{% url 'signup' %}" class="main-button signup-callout-button">회원가입하기</a>
 </section>
 
 {% endblock %}

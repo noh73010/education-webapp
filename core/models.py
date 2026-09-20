@@ -1,5 +1,8 @@
+import uuid
+
 from django.conf import settings
-from django.db import models
+from django.core.exceptions import ValidationError
+from django.db import models, transaction
 
 
 class Subject(models.Model):
@@ -17,6 +20,32 @@ class Subject(models.Model):
 
 
 class Mission(models.Model):
+    SOURCE_TYPES = [("unknown", "출처 미등록"), ("past", "기출"),
+                    ("adapted", "기출 변형"), ("original", "자체 제작")]
+    REVIEW_UNREVIEWED = "unreviewed"
+    REVIEW_VERIFIED = "verified"
+    REVIEW_CONFIRMED_ERROR = "confirmed_error"
+    REVIEW_STATUS_CHOICES = [
+        (REVIEW_UNREVIEWED, "검수 전"),
+        (REVIEW_VERIFIED, "검수 완료"),
+        (REVIEW_CONFIRMED_ERROR, "오류 확인 · 출제 중지"),
+    ]
+    source_type = models.CharField(max_length=12, choices=SOURCE_TYPES, default="unknown")
+    source_reference = models.CharField(max_length=300, blank=True, default="")
+    reviewed_on = models.DateField(null=True, blank=True)
+    review_status = models.CharField(
+        max_length=24,
+        choices=REVIEW_STATUS_CHOICES,
+        default=REVIEW_UNREVIEWED,
+        db_index=True,
+    )
+    concept_unit = models.ForeignKey("ConceptUnit", on_delete=models.SET_NULL, null=True, blank=True)
+
+    def clean(self):
+        super().clean()
+        if self.concept_unit_id and self.concept_unit.subject_id != self.subject_id:
+            raise ValidationError({"concept_unit": "같은 자격증의 개념만 연결할 수 있습니다."})
+
     QUESTION_TYPE_CHOICES = [
         ("manual", "수동 확인형"),
         ("short_answer", "단답 입력형"),
@@ -121,12 +150,73 @@ class Mission(models.Model):
     is_usable_for_set = models.BooleanField(default=True)
     quality_note = models.TextField(blank=True, default="")
 
+    content_version = models.PositiveIntegerField(default=1)
+    content_fingerprint = models.CharField(max_length=64, blank=True, default="", db_index=True)
+    grading_fingerprint = models.CharField(max_length=64, blank=True, default="", db_index=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     class Meta:
         indexes = [
             models.Index(fields=["skill", "level"]),
             models.Index(fields=["subject", "course", "chapter_code"]),
         ]
+
+    def save(self, *args, **kwargs):
+        from core.services.mission_versioning import (
+            invalidate_attempts_for_grading_change,
+            mission_content_fingerprint,
+            mission_grading_fingerprint,
+        )
+
+        previous = None
+        if self.pk:
+            previous = type(self).objects.filter(pk=self.pk).values(
+                "content_version", "content_fingerprint", "grading_fingerprint"
+            ).first()
+
+        new_content_fingerprint = mission_content_fingerprint(self)
+        new_grading_fingerprint = mission_grading_fingerprint(self)
+        previous_version = previous["content_version"] if previous else 1
+        content_changed = bool(
+            previous
+            and previous["content_fingerprint"]
+            and previous["content_fingerprint"] != new_content_fingerprint
+        )
+        grading_changed = bool(
+            previous
+            and previous["grading_fingerprint"]
+            and previous["grading_fingerprint"] != new_grading_fingerprint
+        )
+
+        self.content_version = previous_version + 1 if content_changed else max(previous_version, 1)
+        self.content_fingerprint = new_content_fingerprint
+        self.grading_fingerprint = new_grading_fingerprint
+
+        # A confirmed error is an editorial decision. Imports cannot silently
+        # make it eligible again.
+        if self.review_status == self.REVIEW_CONFIRMED_ERROR:
+            self.is_usable_for_set = False
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None:
+            required = {"content_version", "content_fingerprint", "grading_fingerprint"}
+            if self.review_status == self.REVIEW_CONFIRMED_ERROR:
+                required.add("is_usable_for_set")
+            kwargs["update_fields"] = set(update_fields) | required
+
+        self._grading_change_impact = {"attempts": 0, "users": 0, "user_ids": ()}
+        with transaction.atomic():
+            result = super().save(*args, **kwargs)
+            if grading_changed:
+                impact = invalidate_attempts_for_grading_change(
+                    mission=self,
+                    previous_version=previous_version,
+                )
+                self._grading_change_impact = {
+                    "attempts": impact.attempts,
+                    "users": impact.users,
+                    "user_ids": impact.user_ids,
+                }
+            return result
 
     def __str__(self):
         return f"[{self.skill}] {self.title}"
@@ -166,17 +256,28 @@ class WrongPattern(models.Model):
     - IF 조건 반대로 작성
     """
 
-    code = models.CharField(max_length=100, unique=True)
+    subject = models.ForeignKey(
+        Subject, on_delete=models.CASCADE, null=True, blank=True,
+        related_name="wrong_patterns",
+    )
+    code = models.CharField(max_length=100)
     name = models.CharField(max_length=200)
 
     skill = models.CharField(max_length=100, blank=True, default="")
 
     description = models.TextField(blank=True, default="")
+    minimum_evidence = models.PositiveSmallIntegerField(default=2)
+    remediation_message = models.TextField(blank=True, default="")
 
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["skill", "name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["subject", "code"], name="unique_wrong_pattern_per_subject"
+            ),
+        ]
 
     def __str__(self):
         return f"{self.skill} - {self.name}"
@@ -205,15 +306,105 @@ class AttemptWrongPattern(models.Model):
         unique_together = [("attempt", "wrong_pattern")]
 
 
+class UserWeakness(models.Model):
+    STATUS_SUSPECTED = "suspected"
+    STATUS_ACTIVE = "active"
+    STATUS_TRAINING = "training"
+    STATUS_REVIEW_DUE = "review_due"
+    STATUS_MASTERED = "mastered"
+    STATUS_RELAPSED = "relapsed"
+    STATUS_CHOICES = [
+        (STATUS_SUSPECTED, "의심"), (STATUS_ACTIVE, "약점 확정"),
+        (STATUS_TRAINING, "집중 훈련 중"), (STATUS_REVIEW_DUE, "재평가 대기"),
+        (STATUS_MASTERED, "극복"), (STATUS_RELAPSED, "재발"),
+    ]
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="weaknesses")
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="user_weaknesses")
+    wrong_pattern = models.ForeignKey(WrongPattern, on_delete=models.CASCADE, related_name="user_weaknesses")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_SUSPECTED)
+    severity = models.PositiveSmallIntegerField(default=0)
+    confidence = models.PositiveSmallIntegerField(default=0)
+    recent_failure_count = models.PositiveIntegerField(default=0)
+    consecutive_successes = models.PositiveIntegerField(default=0)
+    first_detected_at = models.DateTimeField(auto_now_add=True)
+    last_detected_at = models.DateTimeField(auto_now=True)
+    last_trained_at = models.DateTimeField(null=True, blank=True)
+    next_review_at = models.DateTimeField(null=True, blank=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(
+            fields=["user", "subject", "wrong_pattern"], name="unique_user_subject_weakness"
+        )]
+        indexes = [
+            models.Index(fields=["user", "subject", "status"]),
+            models.Index(fields=["user", "next_review_at"]),
+        ]
+
+
+class CertificationPolicy(models.Model):
+    subject = models.OneToOneField(Subject, on_delete=models.CASCADE, related_name="certification_policy")
+    passing_score = models.PositiveSmallIntegerField(default=60)
+    minimum_area_score = models.PositiveSmallIntegerField(default=40)
+    exam_question_count = models.PositiveIntegerField(default=0)
+    exam_duration_minutes = models.PositiveIntegerField(default=0)
+    readiness_min_attempts = models.PositiveIntegerField(default=30)
+    recent_attempt_window = models.PositiveIntegerField(default=100)
+    required_mock_exam_count = models.PositiveSmallIntegerField(default=1)
+    source_note = models.TextField(blank=True, default="")
+
+
+class CertificationArea(models.Model):
+    policy = models.ForeignKey(CertificationPolicy, on_delete=models.CASCADE, related_name="areas")
+    code = models.CharField(max_length=50)
+    name = models.CharField(max_length=100)
+    course = models.CharField(max_length=100, blank=True, default="")
+    chapter_prefix = models.CharField(max_length=20, blank=True, default="")
+    weight = models.PositiveSmallIntegerField(default=20)
+    passing_floor = models.PositiveSmallIntegerField(null=True, blank=True)
+    order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["order", "code"]
+        constraints = [models.UniqueConstraint(
+            fields=["policy", "code"], name="unique_certification_area"
+        )]
+
+
+class AttemptQuerySet(models.QuerySet):
+    def valid_for_learning(self):
+        return self.filter(grading_valid=True)
+
+
 class Attempt(models.Model):
+    CONFIDENCE_GUESSED = "guessed"
+    CONFIDENCE_UNSURE = "unsure"
+    CONFIDENCE_CERTAIN = "certain"
+    CONFIDENCE_CHOICES = [
+        (CONFIDENCE_GUESSED, "찍었어요"),
+        (CONFIDENCE_UNSURE, "헷갈렸어요"),
+        (CONFIDENCE_CERTAIN, "확실했어요"),
+    ]
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     mission = models.ForeignKey(Mission, on_delete=models.PROTECT)
 
     is_correct = models.BooleanField(default=False)
     time_spent_sec = models.PositiveIntegerField(null=True, blank=True)
     submitted_answer = models.TextField(blank=True, default="")
+    confidence_level = models.CharField(
+        max_length=12, choices=CONFIDENCE_CHOICES, blank=True, default=""
+    )
+    mission_content_version = models.PositiveIntegerField(default=1)
+    mission_content_fingerprint = models.CharField(max_length=64, blank=True, default="")
+    mission_grading_fingerprint = models.CharField(max_length=64, blank=True, default="")
+    mission_snapshot = models.JSONField(default=dict, blank=True)
+    grading_valid = models.BooleanField(default=True, db_index=True)
+    grading_invalidated_at = models.DateTimeField(null=True, blank=True)
+    grading_invalidation_reason = models.CharField(max_length=300, blank=True, default="")
     daily_date = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    objects = AttemptQuerySet.as_manager()
 
     class Meta:
         indexes = [
@@ -224,6 +415,22 @@ class Attempt(models.Model):
 
     def __str__(self):
         return f"{self.user} / {self.mission} / {'O' if self.is_correct else 'X'}"
+
+    def save(self, *args, **kwargs):
+        if self.mission_id and not self.mission_content_fingerprint:
+            from core.services.mission_versioning import attempt_snapshot_defaults
+
+            for field, value in attempt_snapshot_defaults(self.mission).items():
+                setattr(self, field, value)
+            update_fields = kwargs.get("update_fields")
+            if update_fields is not None:
+                kwargs["update_fields"] = set(update_fields) | {
+                    "mission_content_version",
+                    "mission_content_fingerprint",
+                    "mission_grading_fingerprint",
+                    "mission_snapshot",
+                }
+        return super().save(*args, **kwargs)
 
 
 class AttemptWrongReason(models.Model):
@@ -262,6 +469,36 @@ class UserStreak(models.Model):
         )
 
 
+class StudyProfile(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="study_profile"
+    )
+    target_exam_date = models.DateField(null=True, blank=True)
+    daily_minutes = models.PositiveSmallIntegerField(default=10)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class ConfusionCard(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="confusion_cards"
+    )
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="confusion_cards")
+    mission = models.ForeignKey(Mission, on_delete=models.CASCADE, related_name="confusion_cards")
+    selected_answer = models.TextField(blank=True, default="")
+    correct_answer = models.TextField(blank=True, default="")
+    times_seen = models.PositiveIntegerField(default=1)
+    mastered = models.BooleanField(default=False)
+    next_review_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(
+            fields=["user", "mission", "selected_answer"], name="unique_user_confusion_choice"
+        )]
+        indexes = [models.Index(fields=["user", "subject", "mastered", "next_review_at"])]
+
+
 class UserAccess(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     is_premium = models.BooleanField(default=False)
@@ -296,6 +533,8 @@ class UserEvent(models.Model):
 
 
 class Inquiry(models.Model):
+    mission = models.ForeignKey(Mission, on_delete=models.SET_NULL, null=True, blank=True,
+                                related_name="error_reports")
     INQUIRY_TYPE_CHOICES = [
         ("premium", "프리미엄 신청"),
         ("bug", "오류 제보"),
@@ -350,6 +589,7 @@ class ProblemSet(models.Model):
     ]
 
     title = models.CharField(max_length=200)
+    generation_key = models.CharField(max_length=200, blank=True, default="", db_index=True)
     skill_group = models.CharField(max_length=100, blank=True, default="")
     level = models.PositiveSmallIntegerField(default=1)
     set_type = models.CharField(
@@ -367,6 +607,13 @@ class ProblemSet(models.Model):
             models.Index(fields=["set_type", "is_active"]),
         ]
         ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["generation_key"],
+                condition=~models.Q(generation_key=""),
+                name="unique_generated_problem_set_key",
+            ),
+        ]
 
     def __str__(self):
         return f"[{self.get_set_type_display()}] {self.title}"
@@ -480,7 +727,11 @@ class ProblemSetSessionItem(models.Model):
 
 
 class ExamSession(models.Model):
+    mode_config = models.JSONField(default=dict, blank=True)
+    previous_sitting = models.OneToOneField("self", null=True, blank=True,
+        on_delete=models.CASCADE, related_name="next_sitting")
     STATUS_CHOICES = [
+        ("waiting", "시작 대기"),
         ("in_progress", "진행중"),
         ("submitted", "제출완료"),
         ("expired", "시간종료"),
@@ -500,7 +751,7 @@ class ExamSession(models.Model):
         default="in_progress",
     )
 
-    score = models.PositiveIntegerField(default=0)
+    score = models.FloatField(default=0)
     correct_count = models.PositiveIntegerField(default=0)
     wrong_count = models.PositiveIntegerField(default=0)
     attempts_synced = models.BooleanField(default=False)
@@ -516,6 +767,10 @@ class ExamSession(models.Model):
 
 
 class ExamSessionMission(models.Model):
+    draft_answers = models.JSONField(default=dict, blank=True)
+    draft_updated_at = models.DateTimeField(null=True, blank=True)
+    submitted_answer = models.TextField(blank=True, default="")
+    is_marked_for_review = models.BooleanField(default=False)
     exam_session = models.ForeignKey(
         ExamSession,
         on_delete=models.CASCADE,
@@ -563,3 +818,44 @@ class PatternTrainingSession(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.wrong_pattern.name} - {self.score}점"
+
+
+class ConceptUnit(models.Model):
+    """Editor-curated concept group, never inferred from a chapter code."""
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    title = models.CharField(max_length=160)
+    comparison = models.TextField(help_text="헷갈리는 개념의 차이")
+    example = models.TextField(blank=True)
+    references = models.JSONField(default=list, blank=True, help_text="개념 검수 근거 URL 목록. 문제 원출처와 구분합니다.")
+    reviewed_on = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.subject} / {self.title}"
+
+
+class LearningStart(models.Model):
+    EXPERIENCE_CHOICES = [("new", "처음 공부해요"), ("review", "이론을 한 번 봤어요"),
+                          ("retry", "시험에 다시 도전해요")]
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    experience = models.CharField(max_length=12, choices=EXPERIENCE_CHOICES)
+    diagnostic_ids = models.JSONField(default=list, blank=True)
+    started_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["user", "subject"], name="unique_learning_start")]
+
+
+class MissionWork(models.Model):
+    """An unfinished draft becomes a submission receipt, retained for safe retries."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    mission = models.ForeignKey(Mission, on_delete=models.CASCADE)
+    answers = models.JSONField(default=dict, blank=True)
+    attempt = models.ForeignKey(Attempt, on_delete=models.CASCADE, null=True, blank=True)
+    return_url = models.CharField(max_length=500, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["user", "mission"],
+                       condition=models.Q(attempt__isnull=True), name="unique_pending_mission_work")]

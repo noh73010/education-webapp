@@ -1,0 +1,19 @@
+{% extends 'core/base.html' %}
+{% block title %}학습 목표 설정{% endblock %}
+{% block content %}
+<main class="page-shell compact-page">
+  <section class="card">
+    <p class="eyebrow">개인 학습 설정</p>
+    <h1 class="section-title">시험일 설정</h1>
+    <p><a href="{% url 'account_settings' %}">계정 및 학습 기록 관리</a></p>
+    <p>시험일까지 남은 기간에 맞춰 오늘의 처방과 복습 우선순위를 안내합니다.</p>
+    {% if error %}<div class="info-box">{{ error }}</div>{% endif %}
+    <form method="post">
+      {% csrf_token %}
+      <label for="target_exam_date"><b>목표 시험일</b></label>
+      <input id="target_exam_date" type="date" name="target_exam_date" value="{{ profile.target_exam_date|date:'Y-m-d' }}">
+      <div class="cbt-submit-row"><button class="main-button" type="submit">저장</button></div>
+    </form>
+  </section>
+</main>
+{% endblock %}

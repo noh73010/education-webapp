@@ -3,17 +3,22 @@ from math import ceil
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Count, Q
+from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 
 from core.models import Attempt, Mission, ProblemSet, ProblemSetSession
 from core.services.analytics import record_event
 from core.services.problem_sets import create_problem_set_session
-from core.services.problem_set_recommendations import get_problem_set_recommendations
+from core.services.problem_set_recommendations import (
+    eligible_problem_sets,
+    get_problem_set_recommendations,
+)
 from core.services.mission_cards import prepare_mission_cards, with_user_learning_state
 from core.services.skill_labels import get_skill_label
 from core.services.subjects import get_current_subject
 from core.services.learning_concepts import get_answer_display
 from core.services.learning_feedback import build_mission_feedback
+from core.services.learning_experience import summarize_attempt_evidence
 from core.services.theory import (
     THEORY_SET_PREFIX,
     get_theory_chapter_context,
@@ -24,46 +29,35 @@ from core.services.theory import (
 @login_required
 def problem_set_list(request):
     current_subject, _ = get_current_subject(request)
-    problem_sets = (
-        ProblemSet.objects
-        .filter(is_active=True)
-        .exclude(title__startswith=THEORY_SET_PREFIX)
-        .exclude(title__startswith=THEORY_SET_PREFIX)
-        .annotate(
-            usable_item_count=Count(
-                "items",
-                filter=Q(
-                    items__mission__is_usable_for_set=True,
-                    items__mission__subject=current_subject,
-                ),
-            ),
-            unusable_item_count=Count(
-                "items",
-                filter=Q(
-                    items__mission__is_usable_for_set=False,
-                    items__mission__subject=current_subject,
-                ),
-            ),
-        )
-        .filter(usable_item_count__gt=0, unusable_item_count=0)
-        .filter(items__mission__subject=current_subject)
-        .distinct()
+    problem_sets = list(
+        eligible_problem_sets(current_subject)
+        .prefetch_related("items__mission")
         .order_by("-created_at")[:10]
     )
 
     recommendation_data = get_problem_set_recommendations(request.user, subject=current_subject)
     
+    def decorate(ps, reason):
+        missions = [item.mission for item in ps.items.all()]
+        first = missions[0] if missions else None
+        ps.learner_title = (
+            f"{first.chapter_name or first.course} 핵심 확인"
+            if first and ps.title.startswith("[자동]")
+            else ps.title.removeprefix("[자동] ")
+        )
+        ps.skill_label = get_skill_label(ps.skill_group)
+        ps.question_count = len(missions)
+        ps.estimated_minutes = ceil(len(missions) * 0.8) if missions else 0
+        ps.recommendation_reason = reason.format(skill=ps.skill_label)
+
     for ps in problem_sets:
-        ps.skill_label = get_skill_label(ps.skill_group)
-
+        decorate(ps, "현재 학습 범위에서 이어서 풀 수 있는 세트입니다.")
     for ps in recommendation_data["today_sets"]:
-        ps.skill_label = get_skill_label(ps.skill_group)
-
+        decorate(ps, "현재 학습 단계에 맞는 문제를 모았습니다.")
     for ps in recommendation_data["review_sets"]:
-        ps.skill_label = get_skill_label(ps.skill_group)
-
+        decorate(ps, "이전에 푼 범위를 다시 확인할 차례입니다.")
     for ps in recommendation_data["weak_sets"]:
-        ps.skill_label = get_skill_label(ps.skill_group)
+        decorate(ps, "최근 {skill}에서 틀린 기록이 있어 추천합니다.")
 
     return render(request, "core/problem_set_list.html", {
         "problem_sets": problem_sets,
@@ -77,9 +71,7 @@ def problem_set_list(request):
 def problem_set_detail(request, set_id):
     current_subject, _ = get_current_subject(request)
     problem_set = get_object_or_404(
-        ProblemSet.objects.prefetch_related("items__mission")
-        .filter(items__mission__subject=current_subject)
-        .distinct(),
+        eligible_problem_sets(current_subject, include_theory=True).prefetch_related("items__mission"),
         id=set_id,
         is_active=True,
     )
@@ -115,6 +107,11 @@ def problem_set_detail(request, set_id):
         if item.mission.chapter_name
     ))
     estimated_minutes = ceil(len(items) * 0.8) if items else 0
+    problem_set.learner_title = (
+        f"{chapter_labels[0]} 핵심 확인"
+        if chapter_labels and problem_set.title.startswith("[자동]")
+        else problem_set.title.removeprefix("[자동] ")
+    )
 
     recent_sessions = (
         ProblemSetSession.objects
@@ -140,6 +137,11 @@ def problem_set_start(request, set_id):
         id=set_id,
         is_active=True,
     )
+    if (
+        not problem_set.title.startswith(THEORY_SET_PREFIX)
+        and not eligible_problem_sets(current_subject).filter(pk=problem_set.pk).exists()
+    ):
+        raise Http404("현재 과목에서 사용할 수 없는 문제 세트입니다.")
 
     items = list(problem_set.items.filter(
         mission__is_usable_for_set=True,
@@ -244,18 +246,9 @@ def problem_set_result(request, session_id):
         .order_by("order_no")
     )
 
-    if session.score >= 90:
-        result_message = "핵심 내용을 안정적으로 이해하고 있습니다."
-    elif session.score >= 70:
-        result_message = "기본기는 좋습니다. 틀린 개념만 정리하면 더 안정적입니다."
-    elif session.score >= 50:
-        result_message = "알고 있는 내용과 헷갈리는 개념이 함께 있습니다. 오답부터 정리해보세요."
-    else:
-        result_message = "괜찮습니다. 틀린 문제의 개념을 짧게 복습하고 다시 풀어보세요."
-
     theory_chapter_map = get_theory_chapter_map(request.user, current_subject)
     legacy_attempts = (
-        Attempt.objects
+        Attempt.objects.valid_for_learning()
         .filter(
             user=request.user,
             mission_id__in=[item.mission_id for item in items],
@@ -279,6 +272,12 @@ def problem_set_result(request, session_id):
         item.learning_feedback = build_mission_feedback(mission, item.submitted_answer)
         item.learning_concept = item.learning_feedback["learning_concept"]
         mission.related_theory_chapter = theory_chapter_map.get(mission.chapter_code)
+        item.evidence_attempt = item.attempt or legacy_attempt_map.get(item.mission_id)
+
+    learning_evidence = summarize_attempt_evidence(
+        [item.evidence_attempt for item in items if item.evidence_attempt]
+    )
+    result_message = learning_evidence["message"]
 
     wrong_items = [
         item for item in items
@@ -327,10 +326,7 @@ def problem_set_result(request, session_id):
         next_action_id = "complete"
     else:
         next_set = (
-            ProblemSet.objects
-            .filter(is_active=True, items__mission__subject=current_subject)
-            .exclude(title__startswith=THEORY_SET_PREFIX)
-            .exclude(title__startswith=THEORY_SET_PREFIX)
+            eligible_problem_sets(current_subject)
             .exclude(id=session.problem_set.id)
             .distinct()
             .order_by("?")
@@ -345,6 +341,7 @@ def problem_set_result(request, session_id):
         "session": session,
         "items": items,
         "result_message": result_message,
+        "learning_evidence": learning_evidence,
         "next_set": next_set,
         "wrong_items": wrong_items,
         "correct_items": correct_items,

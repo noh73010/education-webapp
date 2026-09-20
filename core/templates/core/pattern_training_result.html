@@ -18,32 +18,53 @@
       오답 {{ wrong }}개 /
       점수 {{ score }}점
     </div>
+    <p><b>{{ learning_evidence.label }}</b> · {{ learning_evidence.message }}</p>
   </section>
 
   <section class="card">
     <h2 class="card-title">문제별 결과</h2>
 
-    <ul class="clean-list">
+    <div class="result-question-list">
     {% for row in results %}
-      <li>
-        {{ row.mission_title }} -
-        {% if row.is_correct %}
-          <span class="text-success">정답</span>
+      {% if row.is_correct %}<details class="card"><summary>맞힌 문제 · {{ row.question|truncatechars:55 }}</summary>{% endif %}
+      <article class="{% if not row.is_correct %}card result-question-card is-wrong{% endif %}">
+        {% if not row.is_correct %}<p class="eyebrow">먼저 확인할 오답</p>{% endif %}
+        <p class="pre-line"><b>{{ row.question }}</b></p>
+        <div class="answer-comparison">
+          <div class="answer-box {% if not row.is_correct %}is-user-wrong{% endif %}"><span>내가 선택한 답</span><b>{{ row.submitted_answer }}</b></div>
+          <div class="answer-box is-correct"><span>정답</span><b>{{ row.correct_answer }}</b></div>
+        </div>
+        <h3>해설</h3>
+        <p class="pre-line">{{ row.explanation|default:"등록된 해설이 없습니다." }}</p>
+        {% if row.concept %}
+          <section class="result-concept-card">
+            <p class="eyebrow">검수된 관련 개념</p>
+            <h3>{{ row.concept.title }}</h3>
+            <p>{{ row.concept.comparison }}</p>
+          </section>
         {% else %}
-          <span class="text-danger">오답</span>
+          <p class="meta-text">개념 비교 자료는 준비 중입니다. 현재는 등록된 해설을 기준으로 복습하세요.</p>
         {% endif %}
-      </li>
+        <a href="{% url 'mission_detail' row.mission_id %}" class="sub-button">이 문제 다시 풀기</a>
+      </article>
+      {% if row.is_correct %}</details>{% endif %}
     {% empty %}
-      <li>결과가 없습니다.</li>
+      <p>확인할 수 있는 결과가 없습니다.</p>
     {% endfor %}
-    </ul>
+    </div>
   </section>
 
   <section class="card">
+      {% if wrong %}
+      <form method="post" action="{% url 'pattern_training_retry_wrong' wrong_pattern.code %}">
+        {% csrf_token %}
+        <button type="submit" class="main-button">틀린 {{ wrong }}문제만 다시 풀기</button>
+      </form>
+      {% endif %}
       <p>
         <a href="{% url 'pattern_training_start' wrong_pattern.code %}"
-          class="main-button">
-          🔁 다시 훈련하기
+          class="sub-button">
+          전체 다시 훈련하기
         </a>
       </p>
 

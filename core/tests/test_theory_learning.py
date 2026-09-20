@@ -21,6 +21,7 @@ from core.services.theory import (
     THEORY_SET_PREFIX,
     build_chapter_practice_plan,
     render_theory_markdown,
+    build_subject_theory_roadmap,
 )
 
 
@@ -31,7 +32,7 @@ class TheoryLearningPathTests(TestCase):
         from core.models import Subject
 
         cls.subject = Subject.objects.get(code=LOGISTICS_SUBJECT_CODE)
-        cls.other_subject = Subject.objects.exclude(id=cls.subject.id).first()
+        cls.other_subject = Subject.objects.create(code="other-cert", name="다른 자격증")
         cls.user = User.objects.create_user(username="theory_learner", password="pass12345")
         cls.lm01 = [
             Mission.objects.create(
@@ -75,6 +76,19 @@ class TheoryLearningPathTests(TestCase):
         session = self.client.session
         session[CURRENT_SUBJECT_SESSION_KEY] = LOGISTICS_SUBJECT_CODE
         session.save()
+
+    def test_roadmap_chapter_numbers_restart_for_each_course(self):
+        roadmap = build_subject_theory_roadmap(self.user, self.subject)
+
+        self.assertEqual([course["chapters"][0]["display_no"] for course in roadmap], ["01"] * 5)
+        self.assertEqual(roadmap[0]["chapters"][-1]["display_no"], "08")
+        self.assertEqual(roadmap[1]["chapters"][-1]["display_no"], "08")
+        self.assertEqual(roadmap[2]["chapters"][-1]["display_no"], "04")
+        self.assertEqual(roadmap[3]["chapters"][-1]["display_no"], "08")
+        self.assertEqual(roadmap[4]["chapters"][-1]["display_no"], "07")
+        self.assertTrue(roadmap[0]["is_recommended"])
+        self.assertEqual(roadmap[0]["total_count"], 4)
+        self.assertEqual(roadmap[0]["attempted_count"], 0)
 
     def test_chapter_theory_renders_internal_markdown(self):
         response = self.client.get(reverse("theory_chapter", args=["LM01"]))

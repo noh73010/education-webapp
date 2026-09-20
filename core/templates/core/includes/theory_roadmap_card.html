@@ -14,17 +14,17 @@
     <span class="theory-roadmap-body">
       <strong class="theory-roadmap-title">{{ chapter.display_no }}. {{ chapter.chapter_name }}</strong>
       <span class="theory-roadmap-meta">
-        {{ chapter.attempted_count }}/{{ chapter.total_count }}문제 풀이
-        {% if chapter.review_count %} · 복습 {{ chapter.review_count }}문제{% endif %}
+        {{ chapter.status }}
+        {% if chapter.review_count %} · 복습할 내용 있음{% endif %}
       </span>
     </span>
 
     <span class="theory-roadmap-progress-group">
       <span class="theory-roadmap-progress-label">
-        <span>문제 풀이 진행률</span>
-        <b>{{ chapter.progress_pct }}%</b>
+        <span>학습 상태</span>
+        <b>{{ chapter.status }}</b>
       </span>
-      <span class="roadmap-progress" aria-label="연습문제 진행률 {{ chapter.progress_pct }}%">
+      <span class="roadmap-progress" aria-label="{{ chapter.chapter_name }} 학습 상태">
         <span class="roadmap-progress-fill" style="width: {{ chapter.progress_pct }}%;"></span>
       </span>
     </span>

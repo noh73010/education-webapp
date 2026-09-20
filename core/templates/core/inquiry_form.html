@@ -1,13 +1,13 @@
 {% extends 'core/base.html' %}
 
-{% block title %}프리미엄 신청/문의{% endblock %}
+{% block title %}{% if premium_gating_enabled %}프리미엄 신청/문의{% else %}문의·오류 제보{% endif %}{% endblock %}
 
 {% block content %}
 
 <section class="card">
-  <h1 class="section-title">프리미엄 신청/문의</h1>
+  <h1 class="section-title">{% if premium_gating_enabled %}프리미엄 신청/문의{% else %}문의·오류 제보{% endif %}</h1>
   <p>
-    현재는 신청 후 운영자가 확인하여 프리미엄을 수동 활성화합니다.
+    {% if premium_gating_enabled %}현재는 신청 후 운영자가 확인하여 프리미엄을 수동 활성화합니다.{% else %}현재 모든 학습 기능은 무료로 이용할 수 있습니다.{% endif %}
     오류 제보나 일반 문의도 이곳에 남길 수 있습니다.
   </p>
   <div class="info-box">
@@ -37,7 +37,7 @@
     {% endfor %}
 
     <button type="submit">문의 보내기</button>
-    <a href="{% url 'premium_info' %}" class="sub-button">프리미엄 안내 보기</a>
+    {% if premium_gating_enabled %}<a href="{% url 'premium_info' %}" class="sub-button">프리미엄 안내 보기</a>{% endif %}
   </form>
 </section>
 

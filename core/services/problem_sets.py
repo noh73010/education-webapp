@@ -1,13 +1,13 @@
 from django.db import transaction
 from django.utils import timezone
 
-from core.models import ProblemSet, ProblemSetSession, ProblemSetSessionItem
+from core.models import Mission, ProblemSet, ProblemSetSession, ProblemSetSessionItem
 
 @transaction.atomic
 def create_problem_set_session(*, user, problem_set: ProblemSet, subject=None) -> ProblemSetSession:
     item_qs = problem_set.items.select_related("mission").filter(
         mission__is_usable_for_set=True,
-    )
+    ).exclude(mission__review_status=Mission.REVIEW_CONFIRMED_ERROR)
     if subject is not None:
         item_qs = item_qs.filter(mission__subject=subject)
 

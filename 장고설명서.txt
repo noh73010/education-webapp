@@ -7,7 +7,10 @@ django-admin startproject myproject (프로젝트): 프로젝트 폴더에 mypro
 
 py manage.py runserver (8888): 런서버만듬 (8888번 포트)
 
+
 django-admin startapp myapp : 앱만들기 
+
+github 토큰: 실제 값은 .env 또는 안전한 비밀 저장소에만 보관
 
 Chat-GPT 채팅 옮기는 법
 1. 지정된 프로젝트 에서 'tree /f > structure.txt'
@@ -42,3 +45,9 @@ git clone https://github.com/noh73010/education-webapp.git
 
 업데이트 하기
 git pull
+
+py automation/codex_worker.py
+py automation/issue_watcher.py
+
+py -3 manage.py runserver 127.0.0.1:8000
+cloudflared tunnel --url http://127.0.0.1:8000

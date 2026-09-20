@@ -4,7 +4,7 @@ from typing import List
 
 from django.db.models import Count, Q
 
-from core.models import Attempt, Mission
+from core.models import Attempt, Mission, UserWeakness
 from core.services.logistics_curriculum import LOGISTICS_CURRICULUM
 from core.services.review_schedule import decorate_missions_with_review_state
 
@@ -14,6 +14,8 @@ def _chapter_progression_recommendations(
     level: int,
     stable_key,
     subject=None,
+    priority_pattern_codes=None,
+    recommendation_limit: int = 5,
 ) -> list[Mission] | None:
     """Build a textbook-like daily flow when chapter metadata is available.
 
@@ -22,6 +24,7 @@ def _chapter_progression_recommendations(
     the same chapter, then one previously missed/weak question for review.
     """
     all_candidates = candidates
+    priority_pattern_codes = set(priority_pattern_codes or [])
     level_candidates = [mission for mission in candidates if mission.level == level]
     if level_candidates:
         candidates = level_candidates
@@ -77,13 +80,13 @@ def _chapter_progression_recommendations(
             [mission for mission in current_missions if (mission.my_total or 0) == 0],
             key=lambda mission: study_rank(mission, "current-new"),
         )
-        add(current_untried, 3)
+        add(current_untried, min(3, recommendation_limit))
 
         current_remaining = sorted(
             [mission for mission in current_missions if mission.id not in selected_ids],
             key=lambda mission: study_rank(mission, "current-fill"),
         )
-        add(current_remaining, 4)
+        add(current_remaining, min(4, recommendation_limit))
 
     chapter_position = {code: index for index, code in enumerate(ordered_codes)}
     current_position = chapter_position.get(current_code, 0)
@@ -99,7 +102,7 @@ def _chapter_progression_recommendations(
             stable_key("untried-chapter-fill", mission.id),
         )
     )
-    add(untried_fill, 4)
+    add(untried_fill, min(4, recommendation_limit))
 
     weak_pool = [
         mission
@@ -110,6 +113,7 @@ def _chapter_progression_recommendations(
     ]
     weak_pool.sort(
         key=lambda mission: (
+            0 if mission.variation_group in priority_pattern_codes else 1,
             0 if getattr(mission, "my_review_is_due", False) else 1,
             0 if mission.my_last_is_correct is False else 1,
             mission.my_accuracy,
@@ -117,8 +121,8 @@ def _chapter_progression_recommendations(
             stable_key("weak-review", mission.id),
         )
     )
-    if weak_pool:
-        add(weak_pool, len(selected) + 1)
+    if weak_pool and len(selected) < recommendation_limit:
+        add(weak_pool, min(len(selected) + 1, recommendation_limit))
 
     remaining = [mission for mission in candidates if mission.id not in selected_ids]
     remaining.sort(
@@ -130,12 +134,12 @@ def _chapter_progression_recommendations(
             stable_key("chapter-fill", mission.id),
         )
     )
-    add(remaining, 5)
-    return selected[:5]
+    add(remaining, recommendation_limit)
+    return selected[:recommendation_limit]
 
 
 def get_user_level(user, subject=None):
-    attempt_qs = Attempt.objects.filter(user=user)
+    attempt_qs = Attempt.objects.valid_for_learning().filter(user=user)
     if subject is not None:
         attempt_qs = attempt_qs.filter(mission__subject=subject)
     attempts = list(attempt_qs.order_by("-created_at")[:20])
@@ -155,7 +159,7 @@ def get_user_level(user, subject=None):
 
 
 def get_weak_skills(user, limit=3, subject=None):
-    attempt_qs = Attempt.objects.filter(user=user)
+    attempt_qs = Attempt.objects.valid_for_learning().filter(user=user)
     if subject is not None:
         attempt_qs = attempt_qs.filter(mission__subject=subject)
     rows = (
@@ -199,6 +203,7 @@ def get_recommended_missions(
     candidate_limit: int = 300,
     extra_seed: str = "",
     subject=None,
+    recommendation_limit: int = 5,
 ) -> tuple[list[Mission], str]:
     """
     annotate된 qs를 받아서
@@ -207,7 +212,10 @@ def get_recommended_missions(
     - 미풀이3 + 약점2
     - extra_seed가 있으면 같은 날에도 다른 추천 생성 가능
     """
-    annotated_qs = annotated_qs.filter(is_usable_for_set=True)
+    recommendation_limit = max(1, min(int(recommendation_limit), 10))
+    annotated_qs = annotated_qs.filter(is_usable_for_set=True).exclude(
+        review_status=Mission.REVIEW_CONFIRMED_ERROR,
+    )
 
     today = date.today().isoformat()
     seed = f"{user.id}:{today}:{extra_seed}"
@@ -218,6 +226,22 @@ def get_recommended_missions(
 
     level = get_user_level(user, subject=subject)
     weak_skills = get_weak_skills(user, subject=subject)
+    priority_pattern_codes = []
+    if subject is not None:
+        priority_pattern_codes = list(
+            UserWeakness.objects.filter(
+                user=user,
+                subject=subject,
+                status__in=[
+                    UserWeakness.STATUS_REVIEW_DUE,
+                    UserWeakness.STATUS_RELAPSED,
+                    UserWeakness.STATUS_ACTIVE,
+                    UserWeakness.STATUS_TRAINING,
+                ],
+            )
+            .order_by("-severity", "next_review_at")
+            .values_list("wrong_pattern__code", flat=True)
+        )
 
     chapter_candidates = list(annotated_qs[:candidate_limit])
     decorate_missions_for_display(chapter_candidates)
@@ -227,6 +251,8 @@ def get_recommended_missions(
         level,
         stable_key,
         subject=subject,
+        priority_pattern_codes=priority_pattern_codes,
+        recommendation_limit=recommendation_limit,
     )
     if chapter_selection is not None:
         return chapter_selection, today
@@ -248,7 +274,7 @@ def get_recommended_missions(
     decorate_missions_with_review_state(user, candidates)
 
     # -------- 약점 스킬 계산 --------
-    skill_attempt_qs = Attempt.objects.filter(user=user)
+    skill_attempt_qs = Attempt.objects.valid_for_learning().filter(user=user)
     if subject is not None:
         skill_attempt_qs = skill_attempt_qs.filter(mission__subject=subject)
     skill_rows = (
@@ -286,12 +312,13 @@ def get_recommended_missions(
     weak_pool = [m for m in candidates if (m.my_total or 0) > 0 and m not in untried_pick]
 
     def weak_rank(m):
+        pattern_flag = 0 if m.variation_group in priority_pattern_codes else 1
         review_due_flag = 0 if getattr(m, "my_review_is_due", False) else 1
         weak_skill_flag = 0 if m.skill in weak_skills else 1
         recent_wrong_flag = 0 if m.my_last == "오답" else 1
         acc = m.my_accuracy
         total = m.my_total or 0
-        return (review_due_flag, weak_skill_flag, recent_wrong_flag, acc, total, stable_key("weak", m.id))
+        return (pattern_flag, review_due_flag, weak_skill_flag, recent_wrong_flag, acc, total, stable_key("weak", m.id))
 
     weak_pool.sort(key=weak_rank)
     weak_pick = weak_pool[:2]
@@ -301,7 +328,7 @@ def get_recommended_missions(
     remaining = [mission for mission in candidates if mission.id not in selected_ids]
     remaining.sort(key=lambda mission: stable_key("fill", mission.id))
 
-    return (selected + remaining)[:5], today
+    return (selected + remaining)[:recommendation_limit], today
 
 def get_recommendations_from_annotated_qs(
     user,
@@ -309,6 +336,7 @@ def get_recommendations_from_annotated_qs(
     candidate_limit: int = 300,
     extra_seed: str = "",
     subject=None,
+    recommendation_limit: int = 5,
 ):
     """
     views.py / service가 기대하는 wrapper.
@@ -319,4 +347,5 @@ def get_recommendations_from_annotated_qs(
         candidate_limit=candidate_limit,
         extra_seed=extra_seed,
         subject=subject,
+        recommendation_limit=recommendation_limit,
     )

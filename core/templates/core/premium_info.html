@@ -1,13 +1,19 @@
 {% extends 'core/base.html' %}
 
-{% block title %}프리미엄 안내{% endblock %}
+{% block title %}이용 안내{% endblock %}
 
 {% block content %}
 
 <section class="card">
-  <h1 class="section-title">프리미엄 안내</h1>
+  <h1 class="section-title">이용 안내</h1>
 
-  {% if is_premium %}
+  {% if not premium_gating_enabled %}
+    <div class="info-box">
+      <p><b>현재 운영 정책:</b> 모든 기능 무료</p>
+      <p>지금은 가입한 모든 회원이 오답노트, 집중 훈련, 모의고사와 상세 분석을 제한 없이 이용할 수 있습니다.</p>
+      <p>향후 유료 플랜을 도입할 때에는 적용 범위와 일정을 미리 안내하겠습니다.</p>
+    </div>
+  {% elif is_premium %}
     <div class="info-box">
       <p><b>현재 상태:</b> 프리미엄 회원</p>
       {% if premium_ended_at %}
@@ -27,6 +33,7 @@
   {% endif %}
 </section>
 
+{% if premium_gating_enabled %}
 <section class="card">
   <h2 class="card-title">무료 회원</h2>
   <ul class="clean-list">
@@ -57,6 +64,18 @@
     </div>
     <p><a href="{% url 'inquiry' %}" class="main-button">프리미엄 신청/문의하기</a></p>
   </section>
+{% endif %}
+{% else %}
+<section class="card">
+  <h2 class="card-title">지금 이용할 수 있는 기능</h2>
+  <ul class="clean-list">
+    <li>오늘의 추천 문제와 기본 학습</li>
+    <li>오답노트 전체 확인</li>
+    <li>패턴 집중 훈련 제한 없이 이용</li>
+    <li>모든 모의고사 모드 제한 없이 이용</li>
+    <li>시험 결과 상세 약점 분석과 추천 복습</li>
+  </ul>
+</section>
 {% endif %}
 
 <section class="card">

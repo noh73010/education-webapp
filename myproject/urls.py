@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 from django.contrib.auth import views as auth_views
 
 from core.views import (
@@ -21,6 +21,7 @@ from core.views import (
     exam_take,
     exam_submit,
     exam_result,
+    exam_wrong_answers,
     exam_recommend_start,
     exam_history,
 
@@ -40,10 +41,22 @@ from core.views.missions import (
     learning_type_training_start,
     learning_type_training_result,
 )
+from core.views.study_profile import study_profile
+from core.views.final_cards import final_cards
+from core.views.account_settings import account_settings
+from core.views.learning_experience import problem_report, learning_start, save_mission_draft
+from core.views.exams import exam_draft
 
 urlpatterns = [
+    path("exam/<int:exam_id>/<int:order_no>/draft/", exam_draft, name="exam_draft"),
+    path("learning-start/", learning_start, name="learning_start"),
+    path("missions/<int:mission_id>/report/", problem_report, name="problem_report"),
+    path("missions/<int:mission_id>/draft/", save_mission_draft, name="save_mission_draft"),
+    path("account-settings/", account_settings, name="account_settings"),
     path("", landing, name="landing"),
     path("service/", service_info, name="service_info"),
+    path("study-profile/", study_profile, name="study_profile"),
+    path("final-cards/", final_cards, name="final_cards"),
     path("subjects/<str:subject_code>/", select_subject, name="select_subject"),
     path("inquiry/", inquiry, name="inquiry"),
     path("inquiry/done/", inquiry_done, name="inquiry_done"),
@@ -66,6 +79,7 @@ urlpatterns = [
     ),
 
     path("signup/", signup, name="signup"),
+    path("accounts/", include("allauth.urls")),
 
     # missions
     path("missions/", mission_list, name="mission_list"),
@@ -149,6 +163,11 @@ urlpatterns = [
         pattern_training.pattern_training_result,
         name="pattern_training_result",
     ),
+    path(
+        "pattern-training/<str:pattern_code>/retry-wrong/",
+        pattern_training.pattern_training_retry_wrong,
+        name="pattern_training_retry_wrong",
+    ),
 
     # stats
     path("stats/", stats, name="stats"),
@@ -184,6 +203,12 @@ urlpatterns = [
         "exam/<int:exam_id>/result/",
         exam_result,
         name="exam_result",
+    ),
+
+    path(
+        "exam/<int:exam_id>/wrong-answers/",
+        exam_wrong_answers,
+        name="exam_wrong_answers",
     ),
 
     path(

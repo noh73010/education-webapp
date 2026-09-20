@@ -9,64 +9,76 @@ LOGISTICS_CURRICULUM = [
     {
         "course": "물류관리론",
         "chapters": [
-            ("LM01", "물류관리 일반"),
-            ("LM02", "물류시스템 구축"),
-            ("LM03", "SCM과 녹색물류"),
-            ("LM04", "국제물류"),
+            ("LM01", "물류관리총론"),
+            ("LM02", "물류경영"),
+            ("LM03", "물류표준화와 물류공동화"),
+            ("LM04", "물류정보화(정보시스템)"),
+            ("LM05", "물류비 회계"),
+            ("LM06", "공급사슬관리(SCM)"),
+            ("LM07", "친환경 녹색물류와 물류포장"),
+            ("LM08", "물류아웃소싱과 물류보안"),
         ],
     },
     {
         "course": "화물운송론",
         "chapters": [
-            ("TR01", "화물운송의 기초이론"),
-            ("TR02", "화물자동차운송"),
-            ("TR03", "수·배송시스템의 합리화"),
-            ("TR04", "철도운송"),
-            ("TR05", "항공운송"),
-            ("TR06", "해상운송(국제 및 연안운송)"),
-            ("TR07", "국제복합운송"),
-            ("TR08", "택배·생활물류 및 단위적재운송시스템(ULS)"),
+            ("FT01", "화물운송의 기초"),
+            ("FT02", "공로운송"),
+            ("FT03", "철도운송"),
+            ("FT04", "해상운송"),
+            ("FT05", "항공운송"),
+            ("FT06", "국제복합운송"),
+            ("FT07", "유닛로드시스템(ULS)"),
+            ("FT08", "수·배송시스템의 합리화"),
         ],
     },
     {
         "course": "국제물류론",
         "chapters": [
-            ("IL01", "국제물류관리"),
-            ("IL02", "무역실무"),
-            ("IL03", "해상운송"),
-            ("IL04", "해상보험"),
-            ("IL05", "항공운송"),
-            ("IL06", "컨테이너 운송"),
-            ("IL07", "복합운송"),
+            ("IT01", "국제물류 총론"),
+            ("IT02", "국제해상운송"),
+            ("IT03", "국제항공운송"),
+            ("IT04", "국제복합운송 및 국제물류보안"),
         ],
     },
     {
         "course": "보관하역론",
         "chapters": [
-            ("WH01", "보관론"),
-            ("WH02", "하역론"),
+            ("BH01", "보관 및 창고의 기초개념"),
+            ("BH02", "물류시설과 창고관리시스템"),
+            ("BH03", "물류시설의 계획 및 운영"),
+            ("BH04", "재고관리시스템"),
+            ("BH05", "하역의 이해"),
+            ("BH06", "하역운반장비"),
+            ("BH07", "유닛로드시스템과 포장"),
+            ("BH08", "운송수단별 하역방식"),
         ],
     },
     {
         "course": "물류관련법규",
         "chapters": [
-            ("LW01", "물류정책기본법"),
-            ("LW02", "물류시설의 개발 및 운영에 관한 법률"),
-            ("LW03", "유통산업발전법"),
-            ("LW04", "화물자동차 운수사업법"),
-            ("LW05", "철도사업법"),
-            ("LW06", "항만운송사업법"),
-            ("LW07", "농수산물 유통 및 가격안정에 관한 법률"),
+            ("LR01", "물류정책기본법"),
+            ("LR02", "물류시설의 개발 및 운영에 관한 법률"),
+            ("LR03", "화물자동차 운수사업법"),
+            ("LR04", "철도사업법"),
+            ("LR05", "항만운송사업법"),
+            ("LR06", "유통산업발전법"),
+            ("LR07", "농수산물 유통 및 가격안정에 관한 법률"),
         ],
     },
 ]
 
 
 LOGISTICS_SOURCE_PREFIX_ALIASES = {
-    "BH": "WH",
-    "FT": "TR",
-    "IT": "IL",
-    "LR": "LW",
+    "WH": "BH",
+    "TR": "FT",
+    "IL": "IT",
+    "LW": "LR",
+}
+LOGISTICS_CHAPTER_NAMES = {
+    code: name
+    for course in LOGISTICS_CURRICULUM
+    for code, name in course["chapters"]
 }
 
 
@@ -74,15 +86,12 @@ def normalize_logistics_chapter(chapter_code, chapter_name):
     code = (chapter_code or "").strip().upper()
     name = (chapter_name or "").strip()
 
-    if code == "FT07" and "택배" in name:
-        return "TR08", name
-
     match = re.fullmatch(r"([A-Z]{2})(\d{2})", code)
     if match:
         prefix, number = match.groups()
         code = f"{LOGISTICS_SOURCE_PREFIX_ALIASES.get(prefix, prefix)}{number}"
 
-    return code, name
+    return code, LOGISTICS_CHAPTER_NAMES.get(code, name)
 
 
 def get_logistics_curriculum():
@@ -104,7 +113,7 @@ def get_logistics_curriculum():
 
 def build_logistics_chapter_roadmap(user, subject):
     latest_attempt_qs = (
-        Attempt.objects
+        Attempt.objects.valid_for_learning()
         .filter(user=user, mission=OuterRef("pk"))
         .order_by("-created_at")
     )

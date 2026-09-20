@@ -1,11 +1,11 @@
 {% extends 'core/base.html' %}
 
-{% block title %}{{ problem_set.title }}{% endblock %}
+{% block title %}{{ problem_set.learner_title }}{% endblock %}
 
 {% block content %}
 
 <section class="card">
-  <h1 class="section-title">{{ problem_set.title }}</h1>
+  <h1 class="section-title">{{ problem_set.learner_title }}</h1>
 
   <div class="problem-set-summary" aria-label="문제 세트 안내">
     <span><b>총 {{ items|length }}문제</b></span>
@@ -13,10 +13,6 @@
     {% if course_label %}<span>과목: {{ course_label }}</span>{% endif %}
     {% if chapter_label %}<span>단원: {{ chapter_label }}</span>{% endif %}
   </div>
-
-  {% if problem_set.description %}
-    <p class="pre-line">{{ problem_set.description }}</p>
-  {% endif %}
 
   {% if items %}
     <p class="mt-medium">

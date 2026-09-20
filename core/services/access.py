@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.utils import timezone
 
 from core.models import UserAccess
@@ -18,3 +19,13 @@ def get_user_access(user):
 def is_user_premium(user):
     access = get_user_access(user)
     return access.is_premium
+
+
+def premium_gating_enabled():
+    """Return whether paid-plan usage limits are currently enforced."""
+    return settings.PREMIUM_GATING_ENABLED
+
+
+def has_full_learning_access(user):
+    """Grant launch access without changing the member's stored plan."""
+    return not premium_gating_enabled() or is_user_premium(user)

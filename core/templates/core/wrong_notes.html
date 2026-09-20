@@ -58,8 +58,8 @@
                 <option value="">전체</option>
 
                 {% for s in skill_choices %}
-                    <option value="{{ s }}" {% if s == skill %}selected{% endif %}>
-                        {{ s }}
+                    <option value="{{ s.value }}" {% if s.value == skill %}selected{% endif %}>
+                        {{ s.label }}
                     </option>
                 {% endfor %}
             </select>
@@ -78,7 +78,7 @@
     {% endif %}
 </section>
 
-<section class="card">
+<section class="card" id="wrong-note-list">
 
     <h2 class="card-title">
         오답 목록
@@ -102,15 +102,16 @@
         <div class="info-box mb-medium">
 
             <p>
-                <a href="{% url 'mission_detail' item.attempt.mission.id %}">
-                    <b>{{ item.attempt.mission.title }}</b>
-                </a>
+                <b>{{ item.attempt.mission.course|default:current_subject.name }} · {{ item.skill_label }}</b>
+            </p>
+
+            <p class="result-card-actions">
+                <a href="{% url 'mission_detail' item.attempt.mission.id %}?attempt={{ item.attempt.id }}" class="main-button">해설 확인</a>
+                <a href="{% url 'mission_detail' item.attempt.mission.id %}" class="sub-button">다시 풀기</a>
             </p>
 
             <p class="meta-text">
-                {{ item.attempt.mission.skill }}
-                /
-                Lv {{ item.attempt.mission.level }}
+                {{ item.attempt.mission.prompt|truncatechars:70 }}
             </p>
 
             <p>
@@ -136,6 +137,26 @@
         </div>
 
     {% endfor %}
+
+    {% if page_obj.has_other_pages %}
+        <nav class="result-card-actions mt-medium" aria-label="오답 목록 페이지">
+            {% if page_obj.has_previous %}
+                <a href="?{{ filter_query }}&amp;page={{ page_obj.previous_page_number }}#wrong-note-list" class="sub-button">
+                    이전 오답
+                </a>
+            {% endif %}
+
+            <span aria-current="page">
+                {{ page_obj.number }} / {{ page_obj.paginator.num_pages }} 페이지
+            </span>
+
+            {% if page_obj.has_next %}
+                <a href="?{{ filter_query }}&amp;page={{ page_obj.next_page_number }}#wrong-note-list" class="sub-button">
+                    다음 오답
+                </a>
+            {% endif %}
+        </nav>
+    {% endif %}
 
 </section>
 

@@ -1,5 +1,6 @@
 {% extends 'core/base.html' %}
 {% load mission_tags %}
+{% load static %}
 
 {% block title %}
 {% if mission.course %}{{ mission.course }}{% else %}{{ mission.subject.name }}{% endif %} 문제 풀이
@@ -7,6 +8,26 @@
 
 {% block content %}
 <main class="cbt-page">
+
+{% if pattern_training %}
+<section class="card pattern-training-banner" aria-label="약점 집중 훈련 진행 상황">
+  <div class="pattern-training-heading">
+    <div>
+      <p class="eyebrow">약점 집중 훈련</p>
+      <h1>{{ pattern_training.title }}</h1>
+    </div>
+    <strong>{{ pattern_training.position }} / {{ pattern_training.total }}</strong>
+  </div>
+  <p>{{ pattern_training.reason }}</p>
+  <div class="pattern-training-meta">
+    <span>현재 문제 포함 {{ pattern_training.remaining }}문제</span>
+    <span>예상 약 {{ pattern_training.estimated_minutes }}분</span>
+  </div>
+  <div class="roadmap-progress pattern-training-progress" aria-label="집중 훈련 진행률">
+    <div class="roadmap-progress-fill" style="width: {{ pattern_training.progress_percent }}%;"></div>
+  </div>
+</section>
+{% endif %}
 
 <section class="card cbt-question-card">
   <p class="cbt-subject-name">
@@ -22,12 +43,34 @@
   {% endfor %}
 
   {% include "core/includes/mission_image.html" with mission=mission %}
+  <details class="question-trust">
+    <summary>문제 출처 및 검수 정보</summary>
+    <p>구분: {{ mission.get_source_type_display }}</p>
+    <p>출처: {{ mission.source_reference|default:"아직 등록되지 않았습니다." }}</p>
+    <p>내용 상태: <b>{{ mission.get_review_status_display }}</b></p>
+    <p>내용 검수 기준일: {% if mission.reviewed_on %}{{ mission.reviewed_on|date:"Y년 m월 d일" }}{% else %}미등록{% endif %}</p>
+      <p class="meta-text">검수일이 없는 문제는 최신 내용 검수가 확인되지 않은 상태입니다.</p>
+      {% if mission.concept_unit.references %}
+        <p>개념 검토 참고 자료 (문제 원출처와는 별도)</p>
+        <ul>{% for reference in mission.concept_unit.references %}<li><a href="{{ reference }}">참고 자료 {{ forloop.counter }}</a></li>{% endfor %}</ul>
+      {% endif %}
+      {% if not mission.is_usable_for_set %}<p>이 문항은 현재 검토를 위해 자동 출제에서 제외되어 있습니다. 정답·해설을 확정된 자료로 사용하지 마세요.</p>{% endif %}
+  </details>
+  <a href="{% url 'problem_report' mission.id %}" class="sub-link">이 문제 오류 신고</a>
 </section>
 
 {% if saved %}
+  {% if progress_evidence %}
+    <section class="card"><h2>{{ progress_evidence.label }}</h2><p>{{ progress_evidence.message }}</p></section>
+  {% endif %}
   {% if saved_is_correct %}
     <section class="card result-correct">
       <b>정답입니다.</b>
+      {% if mission.explanation %}
+        <p class="pre-line"><b>해설:</b> {{ mission.explanation }}</p>
+      {% else %}
+        <p>등록된 해설이 없습니다.</p>
+      {% endif %}
     </section>
   {% else %}
     <section class="card result-wrong">
@@ -52,10 +95,11 @@
         {% endif %}
       {% endif %}
 
-      {% if mission_feedback.has_choice_explanations %}
+      {% if mission_feedback.correction_rows %}
         <div class="choice-feedback-list">
-          <h3>선택지별 해설</h3>
-          {% for row in mission_feedback.choice_rows %}
+          <h3>30초 오답 교정</h3>
+          <p>내가 고른 답과 정답의 차이만 먼저 확인하세요.</p>
+          {% for row in mission_feedback.correction_rows %}
             <div class="choice-feedback-row {% if row.is_correct %}is-correct{% elif row.is_selected %}is-selected-wrong{% endif %}">
               <div>
                 <b>{{ row.key }}번</b>
@@ -85,11 +129,31 @@
           {% endif %}
         </div>
       {% endif %}
+      {% if repetition_guidance %}
+        <div class="related-theory-callout">
+          <h3>반복하기 전에 잠깐 이해하기</h3>
+          <p>{{ repetition_guidance.message }}</p>
+          {% if repetition_guidance.unit %}
+            <b>{{ repetition_guidance.unit.title }}</b>
+            <p class="pre-line">{{ repetition_guidance.unit.comparison }}</p>
+            {% if repetition_guidance.unit.example %}<p class="pre-line">예시: {{ repetition_guidance.unit.example }}</p>{% endif %}
+          {% endif %}
+          {% if repetition_guidance.alternative %}
+            <a href="{% url 'mission_detail' repetition_guidance.alternative.id %}" class="main-button">같은 개념의 다른 문제로 확인</a>
+          {% endif %}
+        </div>
+      {% elif correction_mission %}
+        <a href="{% url 'mission_detail' correction_mission.id %}" class="main-button">
+          바로 유사 문제 1개로 확인
+        </a>
+      {% endif %}
     </section>
   {% endif %}
 {% endif %}
 
-{% if saved and next_daily_mission %}
+{% if saved %}{% include 'core/includes/diagnostic_progress.html' %}{% endif %}
+
+{% if saved and next_daily_mission and not diagnostic.next %}
   <section class="card">
     <p>해설을 확인했다면 다음 추천 문제로 넘어가세요.</p>
 
@@ -98,7 +162,7 @@
       다음 추천 문제 풀기
     </a>
   </section>
-{% elif saved %}
+{% elif saved and not diagnostic.next %}
   <section class="card">
     {% if daily_completion %}
       <p><b>오늘 학습을 완료했습니다.</b></p>
@@ -106,14 +170,42 @@
         {{ daily_completion.done }}문제 풀이 · 정답률 {{ daily_completion.accuracy }}%
         {% if daily_completion.wrong %} · 내일 복습 예정 {{ daily_completion.wrong }}문제{% endif %}
       </p>
+      {% if daily_completion.weak_skill %}
+        <div class="info-box">
+          <b>오늘의 취약 영역: {{ daily_completion.weak_skill.label }}</b>
+          <p class="mt-small">
+            이 영역에서 {{ daily_completion.weak_skill.total }}문제 중
+            {{ daily_completion.weak_skill.wrong }}문제를 틀렸습니다.
+          </p>
+        </div>
+      {% endif %}
+      {% if daily_completion.weakness_signal %}
+        <div class="daily-weakness-result">
+          <span class="eyebrow">오늘 발견한 학습 신호</span>
+          <b>{{ daily_completion.weakness_signal.name }}</b>
+          <p>{{ daily_completion.weakness_signal.status_label }}</p>
+          {% if daily_completion.weakness_signal.remediation_message %}
+            <p class="meta-text">{{ daily_completion.weakness_signal.remediation_message }}</p>
+          {% endif %}
+          {% if daily_completion.weakness_signal.next_review_date %}
+            <p class="meta-text">다음 확인일: {{ daily_completion.weakness_signal.next_review_date|date:"m월 d일" }}</p>
+          {% endif %}
+          {% if daily_completion.weakness_signal.can_train %}
+            <a href="{% url 'pattern_training_start' daily_completion.weakness_signal.code %}" class="main-button">
+              약점 문제 더 풀기
+            </a>
+          {% endif %}
+        </div>
+      {% endif %}
+      <p><b>다음 학습 안내</b> {{ daily_completion.next_action }}</p>
     {% else %}
       <p>문제 풀이를 완료했습니다.</p>
     {% endif %}
 
-    <a href="{% url 'mission_list' %}"
-       class="main-button">
-      학습 홈으로 돌아가기
-    </a>
+    <a href="{% url 'mission_list' %}" class="sub-button">오늘 학습 종료</a>
+    {% if daily_completion.wrong %}
+      <a href="{% url 'wrong_notes' %}" class="sub-button">오답노트 확인하기</a>
+    {% endif %}
   </section>
 {% endif %}
 
@@ -138,14 +230,17 @@
 {% endif %}
 
 {% if error %}
-  <section class="card result-wrong">
+  <section class="card result-wrong" id="submission-error">
     {{ error }}
   </section>
 {% endif %}
 
+{% if not saved %}
 <section class="card cbt-answer-card">
-  <form method="POST">
+  <p id="draft-status" role="status" aria-live="polite">답안을 선택하면 임시 저장합니다. 제출 전에는 풀이 기록에 반영되지 않습니다.</p>
+  <form method="POST" id="mission-answer-form" data-draft-url="{% url 'save_mission_draft' mission.id %}" data-server-updated="{{ work.updated_at|date:'c' }}">
     {% csrf_token %}
+    <input type="hidden" name="work_token" value="{{ work.pk }}">
 
     <h2 class="cbt-answer-title">
       {% if mission.question_type == "manual" %}학습 결과를 선택하세요.{% else %}답안을 선택하세요.{% endif %}
@@ -222,13 +317,35 @@
 
     {% endif %}
 
+    {% if mission.question_type != "manual" and wrong_reasons %}
+      <details class="quick-wrong-reasons">
+        <summary>틀렸다면 원인을 한 번에 기록하기</summary>
+        {% for wr in wrong_reasons %}
+          <label><input type="checkbox" name="wrong_reason_ids" value="{{ wr.id }}"> {{ wr.name }}</label>
+        {% endfor %}
+      </details>
+    {% endif %}
+
+    <fieldset class="confidence-picker">
+      <legend>이 답에 얼마나 확신하나요?</legend>
+      <label><input type="radio" name="confidence_level" value="guessed"> 찍었어요</label>
+      <label><input type="radio" name="confidence_level" value="unsure"> 헷갈려요</label>
+      <label><input type="radio" name="confidence_level" value="certain"> 확실해요</label>
+    </fieldset>
+
     <div class="cbt-submit-row">
       <button type="submit" class="cbt-submit-button">
         {{ submit_button_label }}
       </button>
     </div>
   </form>
+  <a href="?work={{ work.pk }}" class="sub-link">저장·제출 여부 확인</a>
 </section>
+{{ draft_answers|json_script:"draft-answers" }}
+<script src="{% static 'core/mission_draft.js' %}?v=20260909-1" defer></script>
+{% else %}
+<section class="card"><a href="{% url 'mission_detail' mission.id %}" class="sub-button">다시 풀기</a></section>
+{% endif %}
 
 <section class="card">
   <a href="{% url 'mission_list' %}" class="sub-link">← 목록으로</a>
