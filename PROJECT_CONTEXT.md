@@ -3,7 +3,7 @@
 ## Render 초기 공개 운영 구성 (2026-09-14)
 
 - 초기 무료 사용자 모집 단계의 배포는 Render Blueprint(`render.yaml`)를 사용한다.
-- 웹은 `free`, PostgreSQL은 기록 보존을 위해 유료 최소 플랜 `0.1c-256mb`와 1GB 저장공간을 사용한다. 2026-09 기준 예상 비용은 월 $6.30부터이며 환율·세금·초과 사용량은 별도다.
+- 웹은 `free`, PostgreSQL은 기록 보존을 위해 유료 최소 플랜 `0.1c-256mb`와 1GB 저장공간을 사용한다. 2026-09 공식 가격 기준 예상 비용은 월 $6.25부터이며 환율·세금·초과 사용량은 별도다.
 - 무료 PostgreSQL은 30일 만료 정책 때문에 실제 회원 데이터 저장에 사용하지 않는다. 웹의 15분 유휴 절전이 사용자 경험을 해치기 시작하면 웹만 `0.5c-512mb`로 올린다.
 - 운영 비밀값은 Render Environment에만 저장한다. `DJANGO_SECRET_KEY`는 Blueprint가 생성하고 Google/Naver OAuth 값은 `sync: false`로 입력받는다.
 - `DATABASE_URL`은 Blueprint가 `comhal-study-db`의 내부 연결 문자열을 주입한다. 시작 시 migration과 생성 문제 동기화 후 Gunicorn을 실행한다.
