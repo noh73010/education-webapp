@@ -43,19 +43,9 @@
   {% endfor %}
 
   {% include "core/includes/mission_image.html" with mission=mission %}
-  <details class="question-trust">
-    <summary>문제 출처 및 검수 정보</summary>
-    <p>구분: {{ mission.get_source_type_display }}</p>
-    <p>출처: {{ mission.source_reference|default:"아직 등록되지 않았습니다." }}</p>
-    <p>내용 상태: <b>{{ mission.get_review_status_display }}</b></p>
-    <p>내용 검수 기준일: {% if mission.reviewed_on %}{{ mission.reviewed_on|date:"Y년 m월 d일" }}{% else %}미등록{% endif %}</p>
-      <p class="meta-text">검수일이 없는 문제는 최신 내용 검수가 확인되지 않은 상태입니다.</p>
-      {% if mission.concept_unit.references %}
-        <p>개념 검토 참고 자료 (문제 원출처와는 별도)</p>
-        <ul>{% for reference in mission.concept_unit.references %}<li><a href="{{ reference }}">참고 자료 {{ forloop.counter }}</a></li>{% endfor %}</ul>
-      {% endif %}
-      {% if not mission.is_usable_for_set %}<p>이 문항은 현재 검토를 위해 자동 출제에서 제외되어 있습니다. 정답·해설을 확정된 자료로 사용하지 마세요.</p>{% endif %}
-  </details>
+  {% if not mission.is_usable_for_set %}
+    <p class="meta-text">이 문항은 현재 자동 출제에서 제외되어 있습니다. 정답·해설을 확정된 자료로 사용하지 마세요.</p>
+  {% endif %}
   <a href="{% url 'problem_report' mission.id %}" class="sub-link">이 문제 오류 신고</a>
 </section>
 
