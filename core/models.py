@@ -846,6 +846,17 @@ class LearningStart(models.Model):
         constraints = [models.UniqueConstraint(fields=["user", "subject"], name="unique_learning_start")]
 
 
+class CourseFocus(models.Model):
+    """The learner's chosen course within a qualification, not a new Subject."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    course = models.CharField(max_length=100)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["user", "subject"], name="unique_course_focus")]
+
+
 class MissionWork(models.Model):
     """An unfinished draft becomes a submission receipt, retained for safe retries."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

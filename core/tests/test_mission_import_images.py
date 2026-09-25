@@ -9,7 +9,7 @@ from django.test import TestCase
 from django.templatetags.static import static
 from django.urls import reverse
 
-from core.models import Attempt, DailyMission, ExamSession, ExamSessionMission, Mission, MissionImage, ProblemSet, Subject
+from core.models import Attempt, CourseFocus, DailyMission, ExamSession, ExamSessionMission, Mission, MissionImage, ProblemSet, Subject
 from core.services.subjects import CURRENT_SUBJECT_SESSION_KEY, LOGISTICS_SUBJECT_CODE, seed_platform_subjects
 from core.services.exams import create_exam_session
 from core.services.logistics_curriculum import build_logistics_chapter_roadmap
@@ -227,6 +227,11 @@ class LogisticsDatasetIntegrationTests(TestCase):
         session = self.client.session
         session[CURRENT_SUBJECT_SESSION_KEY] = LOGISTICS_SUBJECT_CODE
         session.save()
+        CourseFocus.objects.update_or_create(
+            user=self.user,
+            subject=Subject.objects.get(code=LOGISTICS_SUBJECT_CODE),
+            defaults={"course": "물류관리론"},
+        )
 
     def test_full_dataset_is_imported_and_subject_isolated(self):
         logistics_missions = Mission.objects.filter(subject__code=LOGISTICS_SUBJECT_CODE)
@@ -241,7 +246,10 @@ class LogisticsDatasetIntegrationTests(TestCase):
         response = self.client.get(reverse("mission_list"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["subject_mission_count"], self.expected_mission_count)
+        self.assertEqual(
+            response.context["subject_mission_count"],
+            Mission.objects.filter(subject__code=LOGISTICS_SUBJECT_CODE, course="물류관리론").count(),
+        )
         self.assertEqual(len(response.context["recommended"]), 5)
         self.assertEqual(response.context["recommended"][0].chapter_code, "LM01")
         self.assertEqual(

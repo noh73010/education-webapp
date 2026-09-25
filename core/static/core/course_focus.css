@@ -1,0 +1,29 @@
+.course-focus-page { max-width: 1120px; margin: 0 auto; }
+.course-focus-intro { margin-bottom: 20px; padding: clamp(24px, 4vw, 42px); }
+.course-focus-intro h1 { margin: 8px 0 12px; font-size: clamp(1.55rem, 3vw, 2.2rem); }
+.course-focus-intro p { max-width: 65ch; }
+.course-focus-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.course-focus-choice { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; padding: 24px; }
+.course-focus-choice h2 { margin: 8px 0; font-size: 1.3rem; }
+.course-focus-choice p { flex: 1; color: #52647d; }
+.course-focus-choice button { width: 100%; min-height: 46px; }
+.selected-course-banner { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 20px; }
+.selected-course-banner h1 { margin: 6px 0 8px; font-size: clamp(1.45rem, 3vw, 2rem); }
+.selected-course-banner p { margin-bottom: 0; }
+.course-switcher { min-width: 180px; }
+.course-switcher summary { min-height: 44px; padding: 10px 16px; border: 1px solid #cbd8eb; border-radius: 999px; cursor: pointer; font-weight: 700; text-align: center; }
+.course-switcher-options { display: grid; gap: 8px; margin-top: 10px; }
+.course-switcher-options form, .course-switcher-options button { width: 100%; }
+.selected-course-contents { margin: 20px 0; }
+.course-chapter-list { display: grid; gap: 10px; margin-top: 16px; }
+.course-chapter-row { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid #dbe5f3; border-radius: 16px; background: #f8fbff; }
+.course-chapter-row > div { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; align-items: center; min-width: 0; }
+.course-chapter-row b { overflow-wrap: anywhere; }
+.course-chapter-row small { grid-column: 2; color: #64748b; }
+.course-chapter-number { display: inline-grid; grid-row: span 2; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #e8f0ff; color: #1d4ed8; font-weight: 800; }
+@media (max-width: 768px) {
+  .course-focus-grid { grid-template-columns: 1fr; }
+  .selected-course-banner, .course-chapter-row { align-items: stretch; flex-direction: column; }
+  .course-switcher { width: 100%; }
+  .course-chapter-row .sub-button { text-align: center; }
+}

@@ -60,7 +60,7 @@ def build_daily_study_plan(user, missions, *, done_ids=None, today=None):
 
 
 def get_or_create_daily_recommendations(
-    user, annotated_qs, reset_daily=False, subject=None, recommendation_limit=5,
+    user, annotated_qs, reset_daily=False, subject=None, recommendation_limit=5, course=None,
 ):
     """
     오늘의 데일리 추천 5문제를 반환한다.
@@ -77,6 +77,8 @@ def get_or_create_daily_recommendations(
         reset_qs = DailyMission.objects.filter(user=user, date=today_date)
         if subject is not None:
             reset_qs = reset_qs.filter(mission__subject=subject)
+        if course is not None:
+            reset_qs = reset_qs.filter(mission__course=course)
         reset_qs.delete()
 
     existing_qs = DailyMission.objects.filter(
@@ -86,6 +88,8 @@ def get_or_create_daily_recommendations(
     ).exclude(mission__review_status=Mission.REVIEW_CONFIRMED_ERROR)
     if subject is not None:
         existing_qs = existing_qs.filter(mission__subject=subject)
+    if course is not None:
+        existing_qs = existing_qs.filter(mission__course=course)
 
     recommendation_limit = max(1, min(int(recommendation_limit), 10))
     existing_ids = list(
@@ -141,17 +145,19 @@ def get_or_create_daily_recommendations(
     return recommended, today_str, today_date
 
 
-def get_daily_done_ids(user, today_date, subject=None):
+def get_daily_done_ids(user, today_date, subject=None, course=None):
     """
     오늘 데일리 미션 중 이미 푼 mission id 집합 반환
     """
     qs = Attempt.objects.valid_for_learning().filter(user=user, daily_date=today_date)
     if subject is not None:
         qs = qs.filter(mission__subject=subject)
+    if course is not None:
+        qs = qs.filter(mission__course=course)
     return set(qs.values_list("mission_id", flat=True))
 
 
-def get_daily_progress(user, today_date, subject=None):
+def get_daily_progress(user, today_date, subject=None, course=None):
     """
     오늘 데일리 진행률 반환
     """
@@ -162,6 +168,8 @@ def get_daily_progress(user, today_date, subject=None):
     ).exclude(mission__review_status=Mission.REVIEW_CONFIRMED_ERROR)
     if subject is not None:
         daily_qs = daily_qs.filter(mission__subject=subject)
+    if course is not None:
+        daily_qs = daily_qs.filter(mission__course=course)
     daily_total = daily_qs.count()
 
     done_qs = Attempt.objects.valid_for_learning().filter(
@@ -171,6 +179,9 @@ def get_daily_progress(user, today_date, subject=None):
     )
     if subject is not None:
         done_qs = done_qs.filter(mission__subject=subject)
+    if course is not None:
+        done_qs = done_qs.filter(mission__course=course)
+    done_qs = done_qs.filter(mission_id__in=daily_qs.values("mission_id"))
     latest_results = {}
     for attempt in done_qs.order_by("mission_id", "-created_at"):
         latest_results.setdefault(attempt.mission_id, attempt.is_correct)

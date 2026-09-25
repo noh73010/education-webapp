@@ -5,11 +5,35 @@
 
 {% block content %}
 
+{% if selected_course %}
+<section class="card selected-course-banner" aria-label="현재 공부 중인 과목">
+  <div>
+    <p class="eyebrow">물류관리사 · 오늘의 집중 과목</p>
+    <h1>{{ selected_course }}</h1>
+    <p>이 과목의 약점과 오늘의 문제를 먼저 보여드려요. 다른 과목은 언제든 선택할 수 있습니다.</p>
+  </div>
+  <details class="course-switcher">
+    <summary>과목 바꾸기</summary>
+    <div class="course-switcher-options">
+      {% for option in course_options %}
+        {% if option.name != selected_course %}
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="course" value="{{ option.name }}">
+            <button type="submit" class="sub-button">{{ option.name }}</button>
+          </form>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </details>
+</section>
+{% endif %}
+
 <div class="home-primary-grid">
 <section class="card daily-focus-card coach-summary-card coach-summary-action {% if daily_progress.total and daily_progress.done == daily_progress.total %}is-complete{% endif %}">
   <p class="eyebrow">오늘 학습</p>
   <h1 class="section-title">오늘 {{ selected_daily_minutes }}분만 공부해요</h1>
-  <p class="subject-label">현재 과목: <b>{{ current_subject.name }}</b></p>
+  <p class="subject-label">{% if selected_course %}집중 과목: <b>{{ selected_course }}</b>{% else %}현재 과목: <b>{{ current_subject.name }}</b>{% endif %}</p>
   {% if ongoing_exam %}
     <div class="coach-inline-notice">
       <b>{{ ongoing_exam.exam.title }} · {{ ongoing_exam.answered }}/{{ ongoing_exam.total }}문제 저장</b>
@@ -112,8 +136,20 @@
 </section>
 
 <section class="card coach-summary-card coach-summary-warning">
-  <p class="eyebrow">지금 가장 위험한 약점</p>
-  {% if personal_coach.priority_weakness %}
+  <p class="eyebrow">{% if selected_course %}{{ selected_course }}의 약점{% else %}지금 가장 위험한 약점{% endif %}</p>
+  {% if selected_course and selected_course_weakness.state == 'found' %}
+    <h2 class="section-title">{{ selected_course_weakness.label }}</h2>
+    <span class="coach-status-chip">{{ selected_course_weakness.status }}</span>
+    <p>이 과목에서 다시 확인할 영역이에요. 짧은 훈련으로 먼저 점검해 보세요.</p>
+    <a href="{% url 'pattern_training_start' selected_course_weakness.pattern_code %}" class="main-button coach-warning-button">3문제 복습 시작</a>
+  {% elif selected_course and selected_course_weakness.state == 'new' %}
+    <h2 class="section-title">아직 풀이 기록이 없어요</h2>
+    <p>이 과목의 문제를 몇 개 풀면 실제 오답을 바탕으로 약점을 알려드릴게요.</p>
+    {% if today_start_mission %}<a href="{% url 'mission_detail' today_start_mission.id %}" class="sub-button">{{ selected_course }} 첫 문제 풀기</a>{% endif %}
+  {% elif selected_course %}
+    <h2 class="section-title">확인된 약점이 없어요</h2>
+    <p>지금까지의 풀이에서는 반복 약점이 확인되지 않았어요. 다른 단원도 풀며 계속 확인해 보세요.</p>
+  {% elif personal_coach.priority_weakness %}
     <h2 class="section-title">{{ personal_coach.priority_weakness.label }}</h2>
     <span class="coach-status-chip">{{ personal_coach.priority_weakness.status_label }}</span>
     <p>{{ personal_coach.priority_weakness.message }}</p>
@@ -128,7 +164,7 @@
 </section>
 
 <section class="card coach-summary-card coach-summary-success">
-  <p class="eyebrow">최근 좋아진 점</p>
+  <p class="eyebrow">전체 학습에서 최근 좋아진 점</p>
   {% if personal_coach.recent_improvement %}
     <h2 class="section-title">{{ personal_coach.recent_improvement.label }}</h2>
     <p><b>{{ personal_coach.recent_improvement.message }}</b></p>
@@ -141,7 +177,27 @@
 </section>
 </div>
 
-<details class="home-learning-more">
+{% if focus_roadmap %}
+<section class="card selected-course-contents" aria-label="{{ selected_course }} 목차">
+  <p class="eyebrow">원하는 단원부터 시작하세요</p>
+  <h2 class="section-title">{{ selected_course }} 목차</h2>
+  <p>번호 순서대로 풀지 않아도 됩니다. 이론이 준비된 단원은 이론부터, 그렇지 않은 단원은 문제부터 시작할 수 있어요.</p>
+  <div class="course-chapter-list">
+    {% for chapter in focus_roadmap.chapters %}
+      <div class="course-chapter-row">
+        <div><span class="course-chapter-number">{{ chapter.display_no }}</span><b>{{ chapter.chapter_name }}</b><small>{{ chapter.status }}{% if chapter.review_count %} · 복습할 내용 있음{% endif %}</small></div>
+        {% if chapter.has_theory %}
+          <a href="{% url 'theory_chapter' chapter.slug %}" class="sub-button">이론과 문제 보기</a>
+        {% elif chapter.total_count %}
+          <a href="?chapter={{ chapter.chapter_code }}#search-section" class="sub-button">문제 풀기</a>
+        {% else %}<span class="meta-text">학습 자료 준비 중</span>{% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<details class="home-learning-more" {% if chapter %}open{% endif %}>
 <summary><b>로드맵·모의고사·상세 학습 도구</b><span>필요할 때 펼쳐보기</span></summary>
 
 <section class="card mobile-coach-strip">
@@ -587,9 +643,11 @@
 </section>
 
 <section class="card" id="search-section">
-  <h2 class="section-title">문제 찾아보기</h2>
+  <h2 class="section-title">{% if chapter %}선택한 단원의 문제{% else %}{{ selected_course|default:'전체' }} 문제 찾아보기{% endif %}</h2>
+  {% if chapter %}<a href="{% url 'mission_list' %}#search-section" class="sub-link">{{ selected_course }} 전체 문제 보기</a>{% endif %}
 
   <form method="get" class="mb-medium filter-form" action="#search-section">
+    {% if chapter %}<input type="hidden" name="chapter" value="{{ chapter }}">{% endif %}
     <input type="text" name="q" placeholder="문제 내용으로 검색" value="{{ q }}" />
 
     <select name="sort">
@@ -613,13 +671,13 @@
 
   <div class="mt-medium">
     {% if page_obj.has_previous %}
-      <a href="?page={{ page_obj.previous_page_number }}&q={{ q|urlencode }}&skill={{ skill|urlencode }}&level={{ level|urlencode }}&sort={{ sort|urlencode }}#search-section">이전</a>
+      <a href="?page={{ page_obj.previous_page_number }}&chapter={{ chapter|urlencode }}&q={{ q|urlencode }}&skill={{ skill|urlencode }}&level={{ level|urlencode }}&sort={{ sort|urlencode }}#search-section">이전</a>
     {% endif %}
 
     <span> {{ page_obj.number }} / {{ page_obj.paginator.num_pages }} </span>
 
     {% if page_obj.has_next %}
-      <a href="?page={{ page_obj.next_page_number }}&q={{ q|urlencode }}&skill={{ skill|urlencode }}&level={{ level|urlencode }}&sort={{ sort|urlencode }}#search-section">다음</a>
+      <a href="?page={{ page_obj.next_page_number }}&chapter={{ chapter|urlencode }}&q={{ q|urlencode }}&skill={{ skill|urlencode }}&level={{ level|urlencode }}&sort={{ sort|urlencode }}#search-section">다음</a>
     {% endif %}
   </div>
 </section>

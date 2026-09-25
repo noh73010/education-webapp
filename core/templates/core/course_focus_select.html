@@ -1,0 +1,29 @@
+{% extends 'core/base.html' %}
+
+{% block title %}공부할 과목 선택{% endblock %}
+
+{% block content %}
+<main class="course-focus-page">
+  <header class="card course-focus-intro">
+    <p class="eyebrow">{{ current_subject.name }} 학습 시작</p>
+    <h1>오늘 공부하고 싶은 과목을 골라주세요</h1>
+    <p>순서대로 시작하지 않아도 됩니다. 선택한 과목의 문제·약점·목차를 먼저 보여드리고, 과목은 언제든 바꿀 수 있어요.</p>
+    <p class="meta-text">실전 모의고사와 합격 기준은 계속 5과목 전체를 함께 확인합니다.</p>
+  </header>
+  <div class="course-focus-grid" aria-label="공부할 과목">
+    {% for option in course_options %}
+      <form method="post" class="card course-focus-choice">
+        {% csrf_token %}
+        <input type="hidden" name="course" value="{{ option.name }}">
+        {% if request.GET.minutes == '5' or request.GET.minutes == '10' or request.GET.minutes == '20' %}
+          <input type="hidden" name="minutes" value="{{ request.GET.minutes }}">
+        {% endif %}
+        <span class="eyebrow">과목 {{ forloop.counter }}</span>
+        <h2>{{ option.name }}</h2>
+        <p>{{ option.chapter_codes|length }}개 단원에서 원하는 부분부터 시작하세요.</p>
+        <button type="submit" class="main-button">{{ option.name }} 공부하기</button>
+      </form>
+    {% endfor %}
+  </div>
+</main>
+{% endblock %}

@@ -1,16 +1,18 @@
 from datetime import timedelta
 
 from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Count, Q, OuterRef, Subquery
 from django.core.paginator import Paginator
 from django.utils import timezone
-from django.http import Http404
+from django.http import Http404, HttpResponseBadRequest
 from uuid import UUID
 
 from core.models import (
     Attempt,
+    CourseFocus,
     DailyMission,
     ExamSession,
     Mission,
@@ -48,6 +50,7 @@ from core.services.learning_feedback import build_mission_feedback
 from core.services.logistics_curriculum import build_logistics_chapter_roadmap
 from core.services.mission_cards import load_mission_cards, prepare_mission_cards, with_user_learning_state
 from core.services.personal_coach import build_personal_coach_context
+from core.services.course_focus import available_courses, chosen_course, course_weakness
 from core.services.pattern_training_context import build_pattern_training_context
 from core.services.subjects import LOGISTICS_SUBJECT_CODE, get_current_subject, get_default_subject
 from core.services.theory import build_subject_theory_roadmap, get_theory_chapter_context
@@ -391,13 +394,37 @@ def learning_type_training_result(request, skill, learning_type):
 
 @login_required
 def mission_list(request):
+    current_subject, subject_needs_selection = get_current_subject(request)
+    course_options = available_courses(current_subject) if current_subject.code == LOGISTICS_SUBJECT_CODE else []
+    if request.method == "POST":
+        course_name = request.POST.get("course", "")
+        if course_name not in {row["name"] for row in course_options}:
+            return HttpResponseBadRequest("선택할 수 없는 과목입니다.")
+        CourseFocus.objects.update_or_create(
+            user=request.user, subject=current_subject, defaults={"course": course_name},
+        )
+        requested_minutes = request.POST.get("minutes", "")
+        if requested_minutes in {"5", "10", "20"}:
+            return redirect(f"{reverse('mission_list')}?minutes={requested_minutes}")
+        return redirect("mission_list")
+    populated_courses = set(
+        Mission.objects.filter(subject=current_subject).exclude(course="")
+        .values_list("course", flat=True).distinct()
+    ) if course_options else set()
+    selected_course = chosen_course(request.user, current_subject, course_options) if course_options else None
+    if course_options and len(populated_courses) > 1 and selected_course is None:
+        return render(request, "core/course_focus_select.html", {
+            "current_subject": current_subject,
+            "course_options": course_options,
+        })
+
     q = request.GET.get("q", "").strip()
+    chapter = request.GET.get("chapter", "").strip()
     skill = request.GET.get("skill", "").strip()
     level = request.GET.get("level", "").strip()
     sort = request.GET.get("sort", "new").strip()
 
-    current_subject, subject_needs_selection = get_current_subject(request)
-    subject_mission_count = Mission.objects.filter(subject=current_subject).count()
+    subject_mission_count = Mission.objects.filter(subject=current_subject, **({"course": selected_course} if selected_course else {})).count()
     qs = Mission.objects.filter(subject=current_subject)
     recommendation_qs = with_user_learning_state(
         Mission.objects.filter(subject=current_subject, is_usable_for_set=True).exclude(
@@ -405,6 +432,14 @@ def mission_list(request):
         ),
         request.user,
     ).order_by("id")
+    if selected_course:
+        qs = qs.filter(course=selected_course)
+        recommendation_qs = recommendation_qs.filter(course=selected_course)
+    selected_chapter_codes = next((set(row["chapter_codes"]) for row in course_options if row["name"] == selected_course), set())
+    if chapter and chapter in selected_chapter_codes:
+        qs = qs.filter(chapter_code=chapter)
+    else:
+        chapter = ""
 
     if q:
         qs = qs.filter(
@@ -448,11 +483,12 @@ def mission_list(request):
         reset_daily=reset_daily,
         subject=current_subject,
         recommendation_limit=daily_question_limit,
+        course=selected_course,
     )
 
     prepare_mission_cards(recommended)
 
-    done_ids = get_daily_done_ids(request.user, today_date, subject=current_subject)
+    done_ids = get_daily_done_ids(request.user, today_date, subject=current_subject, course=selected_course)
 
     for m in recommended:
         m.today_done = (m.id in done_ids)
@@ -470,7 +506,7 @@ def mission_list(request):
         .order_by("skill")
     )
 
-    daily_progress = get_daily_progress(request.user, today_date, subject=current_subject)
+    daily_progress = get_daily_progress(request.user, today_date, subject=current_subject, course=selected_course)
     daily_study_plan = build_daily_study_plan(
         request.user,
         recommended,
@@ -480,6 +516,7 @@ def mission_list(request):
     streak, _ = UserStreak.objects.get_or_create(user=request.user)
     dashboard = build_learning_dashboard(request.user, streak=streak, subject=current_subject)
     personal_coach = build_personal_coach_context(request.user, current_subject, streak=streak)
+    selected_course_weakness = course_weakness(request.user, current_subject, selected_course) if selected_course else None
 
     recommendation_data = get_problem_set_recommendations(request.user, subject=current_subject)
     recommendation_data["pattern_missions"] = load_mission_cards(
@@ -554,6 +591,7 @@ def mission_list(request):
     learning_roadmap = []
     logistics_chapter_roadmap = []
     theory_roadmap = build_subject_theory_roadmap(request.user, current_subject)
+    focus_roadmap = next((row for row in theory_roadmap if row["course"] == selected_course), None)
 
     if is_logistics_subject:
         logistics_chapter_roadmap = build_logistics_chapter_roadmap(
@@ -634,6 +672,11 @@ def mission_list(request):
         "missions": page_obj,
         "page_obj": page_obj,
         "q": q,
+        "chapter": chapter,
+        "course_options": course_options,
+        "selected_course": selected_course,
+        "selected_course_weakness": selected_course_weakness,
+        "focus_roadmap": focus_roadmap,
         "skill": skill,
         "level": level,
         "sort": sort,
