@@ -1494,3 +1494,10 @@ py -3 manage.py seed_subjects
 - `watch_generated_missions`는 `generated/<subject>` CSV 및 해당 정적 이미지 파일의 이름과 바이트 fingerprint를 별도 프로세스에서 감시한다. 변경 시 기존 멱등 동기화를 실행하고 실패하면 다음 주기에 재시도한다. 웹 요청과 `AppConfig.ready()`에서는 DB를 쓰지 않는다.
 - 로컬 자동 감시는 `python manage.py watch_generated_missions --subject-code logistics`를 별도 터미널에서 실행한다. 주기는 `.env`의 `DJANGO_GENERATED_MISSION_WATCH_INTERVAL_SECONDS`로 설정한다. Render는 기존 `scripts/render_start.sh`의 migration 후 1회 동기화를 유지한다.
 - 2026-09-12 최초 실제 감시 실행에서 `logistics_27-1.csv`와 DB가 달랐던 66문항을 갱신했고, 정답이 변경된 문항을 과거에 푼 사용자 1명의 Attempt 4건을 보존 상태로 무효화했다.
+
+## 물류관리사 챕터 이론 자료 (2026-09-26)
+
+- 현재 목차 `LOGISTICS_CURRICULUM`의 5과목 35챕터 각각에 `theory/logistics/<챕터 코드>.md`를 둔다. 이론 화면은 챕터 코드로 파일을 읽으므로 예전 분류 코드(`TR`, `IL`, `WH`, `LW`) 파일은 현재 목차에서 사용되지 않는다. 예전 파일은 기존 자료 보존을 위해 삭제하지 않았다.
+- 기존 `LM02`~`LM04`는 현재 목차와 다른 주제였기에 현재 챕터명·핵심 개념에 맞춰 교체했다. `LM01`의 표제도 현재 목차인 ‘물류관리총론’으로 맞췄다. 나머지 31챕터에 새 학습 자료를 추가했다.
+- 새 자료는 개념 설명, 구분, 사례, 자주 틀리는 함정, 확인 질문을 포함한다. `core.tests.test_theory_content`는 35개 파일의 존재·표제·기본 학습 구성·렌더링을 확인한다. 파일이 있다는 것과 전문가 내용 검수가 끝났다는 것은 다르며, 공개 후에도 문제·해설과 교차 검토를 이어가야 한다.
+- 물류관련법규 7챕터는 법령이 변경될 수 있어 조문 번호·기한·금액 등 세부 수치를 고정하지 않고 법률별 규율 대상과 제도 구분에 집중했다. 2026-09-26 기준 법제처 [국가법령정보센터](https://www.law.go.kr/lsSc.do)와 [물류관리사 법규 시험범위](https://law.go.kr/flDownload.do?bylClsCd=110201&flSeq=141842909&gubun=)를 대조했다. 시험 전에는 반드시 해당 법령의 최신 시행본을 다시 확인해야 한다.
