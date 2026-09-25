@@ -1215,6 +1215,7 @@ def mission_detail(request, mission_id):
         "saved": saved,
         "error": error,
         "saved_is_correct": saved_is_correct,
+        "saved_attempt": saved_attempt,
         "schema_items": schema_items,
         "choice_items": choice_items,
         "grading_rows": grading_rows,

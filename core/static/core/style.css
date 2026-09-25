@@ -2269,14 +2269,23 @@ button:hover {
 }
 .confidence-picker {
   margin: 20px 0 6px;
+  min-width: 0;
   padding: 14px;
   border: 1px solid #dbe5f3;
   border-radius: 14px;
 }
 .confidence-picker legend { font-weight: 800; padding: 0 6px; }
+.confidence-help { margin: 4px 0 12px; color: #52647d; font-size: .88rem; line-height: 1.5; }
+.confidence-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.confidence-picker .confidence-option { position: relative; display: block; min-width: 0; margin: 0; cursor: pointer; }
+.confidence-option input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.confidence-option span { display: flex; min-height: 44px; align-items: center; justify-content: center; padding: 8px 4px; border: 1px solid #cbd8eb; border-radius: 12px; color: #334155; font-size: .88rem; font-weight: 700; text-align: center; }
+.confidence-option input:checked + span { border-color: #2563eb; background: #eff6ff; color: #1d4ed8; }
+.confidence-option input:focus-visible + span { outline: 3px solid #1d4ed8; outline-offset: 2px; }
+.confidence-result h2 { margin: 0 0 8px; font-size: 1rem; }
+.confidence-result p { margin: 0; color: #475569; }
 .quick-wrong-reasons { margin-top: 18px; padding: 12px; border-radius: 12px; background: #f6f8fc; }
 .quick-wrong-reasons label { display: block; padding: 7px 0; }
-.confidence-picker label { display: inline-flex; gap: 6px; margin: 6px 14px 4px 0; }
 .mobile-coach-strip { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .confusion-card-list { display: grid; gap: 10px; }
 .confusion-card { display: grid; gap: 5px; padding: 14px; border: 1px solid #dbe5f3; border-radius: 14px; text-decoration: none; color: inherit; }
@@ -2288,7 +2297,6 @@ button:hover {
 .weakness-status-training, .weakness-status-review_due { background: #fff8e6; }
 .weakness-status-mastered { background: #ecf9f1; }
 @media (max-width: 768px) {
-  .confidence-picker label { display: flex; min-height: 40px; align-items: center; }
   .mobile-coach-strip { align-items: flex-start; flex-direction: column; }
   .weakness-map-row { font-size: .88rem; }
 }

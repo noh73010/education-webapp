@@ -45,15 +45,19 @@ class LearningExperienceTests(TestCase):
         return self.client.post(self.url, {"work_token": str(work.pk), "submitted_answer": answer,
                                            "confidence_level": "certain"})
 
-    def test_provenance_unknown_not_claimed_as_reviewed(self):
-        self.assertContains(self.client.get(self.url), "출처 미등록")
+    def test_provenance_and_review_details_are_not_shown_to_learners(self):
+        initial = self.client.get(self.url)
+        self.assertNotContains(initial, "출처 미등록")
+        self.assertNotContains(initial, "출처·검수 자세히")
         self.mission.source_type = "adapted"
         self.mission.source_reference = "제공된 출처"
         self.mission.reviewed_on = timezone.localdate()
+        self.mission.review_status = Mission.REVIEW_VERIFIED
         self.mission.save()
         response = self.client.get(self.url)
-        self.assertContains(response, "기출 변형")
-        self.assertContains(response, "제공된 출처")
+        for detail in ("기출 변형", "제공된 출처", "내용 검수 완료", "내용 검수 기준일", "출처·검수 자세히"):
+            self.assertNotContains(response, detail)
+        self.assertContains(response, "이 문제 오류 신고")
 
     def test_optional_import_preserves_absent_provenance(self):
         self.assertNotIn("source_type", optional_learning_feedback({}))
@@ -99,10 +103,39 @@ class LearningExperienceTests(TestCase):
     def test_correct_result_shows_explanation_and_confidence_has_no_default(self):
         initial = self.client.get(self.url)
         self.assertNotContains(initial, 'value="unsure" checked')
+        self.assertContains(initial, "맞혔어도 찍거나 헷갈린 문제는 다시 복습해요.")
+        self.assertContains(initial, "점수는 바뀌지 않으며, 선택하지 않아도 제출할 수 있어요.")
+        for option in ("찍었어요", "헷갈려요", "확실해요"):
+            self.assertContains(initial, option)
         work = initial.context["work"]
         response = self.submit(work)
         result = self.client.get(response.url)
         self.assertContains(result, "테스트 해설")
+        self.assertContains(result, "확실하게 맞힌 답으로 기록했어요.")
+
+    def test_guessed_correct_answer_explains_why_it_will_be_reviewed(self):
+        work = self.work()
+        response = self.client.post(self.url, {
+            "work_token": str(work.pk), "submitted_answer": "2", "confidence_level": "guessed",
+        })
+        attempt = Attempt.objects.get(user=self.user, mission=self.mission)
+        self.assertTrue(attempt.is_correct)
+        self.assertEqual(attempt.confidence_level, "guessed")
+        for result in (self.client.get(response.url), self.client.get(f"{self.url}?attempt={attempt.pk}")):
+            self.assertContains(result, "찍어서 맞힌 문제라 내일 다시 복습할게요.")
+
+    def test_wrong_answer_and_unspecified_confidence_have_clear_feedback(self):
+        work = self.work()
+        wrong = self.client.post(self.url, {
+            "work_token": str(work.pk), "submitted_answer": "1", "confidence_level": "certain",
+        })
+        self.assertContains(self.client.get(wrong.url), "틀린 문제라 오답 복습 대상으로 기록했어요.")
+
+        work = self.work()
+        without_confidence = self.client.post(self.url, {
+            "work_token": str(work.pk), "submitted_answer": "2",
+        })
+        self.assertContains(self.client.get(without_confidence.url), "확신도를 고르지 않았어요.")
 
     def test_validation_error_does_not_consume_receipt(self):
         work = self.work()

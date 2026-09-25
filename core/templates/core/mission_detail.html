@@ -141,6 +141,23 @@
   {% endif %}
 {% endif %}
 
+{% if saved_attempt %}
+  <section class="card confidence-result" aria-label="확신도에 따른 복습 안내">
+    <h2>이제 어떻게 복습하나요?</h2>
+    {% if not saved_attempt.is_correct %}
+      <p>틀린 문제라 오답 복습 대상으로 기록했어요. 확신도와 관계없이 해설을 확인하고 다시 풀어보세요.</p>
+    {% elif saved_attempt.confidence_level == "guessed" %}
+      <p>찍어서 맞힌 문제라 내일 다시 복습할게요. 정답이어도 아직 아는 문제로 보지 않습니다.</p>
+    {% elif saved_attempt.confidence_level == "unsure" %}
+      <p>헷갈렸지만 맞힌 문제예요. 확실히 아는 문제로 보지 않고 내일 다시 확인할 문제로 봅니다.</p>
+    {% elif saved_attempt.confidence_level == "certain" %}
+      <p>확실하게 맞힌 답으로 기록했어요. 시간이 지난 뒤에도 다시 맞혀야 안정된 실력으로 판단합니다.</p>
+    {% else %}
+      <p>확신도를 고르지 않았어요. 정답은 기록하되 확실히 아는 문제라고 판단하지 않습니다.</p>
+    {% endif %}
+  </section>
+{% endif %}
+
 {% if saved %}{% include 'core/includes/diagnostic_progress.html' %}{% endif %}
 
 {% if saved and next_daily_mission and not diagnostic.next %}
@@ -316,11 +333,14 @@
       </details>
     {% endif %}
 
-    <fieldset class="confidence-picker">
-      <legend>이 답에 얼마나 확신하나요?</legend>
-      <label><input type="radio" name="confidence_level" value="guessed"> 찍었어요</label>
-      <label><input type="radio" name="confidence_level" value="unsure"> 헷갈려요</label>
-      <label><input type="radio" name="confidence_level" value="certain"> 확실해요</label>
+    <fieldset class="confidence-picker" aria-describedby="confidence-help">
+      <legend>이 답, 알고 골랐나요?</legend>
+      <p id="confidence-help" class="confidence-help">맞혔어도 찍거나 헷갈린 문제는 다시 복습해요. 점수는 바뀌지 않으며, 선택하지 않아도 제출할 수 있어요.</p>
+      <div class="confidence-options">
+        <label class="confidence-option"><input type="radio" name="confidence_level" value="guessed"><span>찍었어요</span></label>
+        <label class="confidence-option"><input type="radio" name="confidence_level" value="unsure"><span>헷갈려요</span></label>
+        <label class="confidence-option"><input type="radio" name="confidence_level" value="certain"><span>확실해요</span></label>
+      </div>
     </fieldset>
 
     <div class="cbt-submit-row">
