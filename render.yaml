@@ -2,7 +2,7 @@ services:
   - type: web
     name: comhal-study
     runtime: python
-    plan: free
+    plan: 0.5c-512mb
     buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput"
     startCommand: "sh scripts/render_start.sh"
     healthCheckPath: /
