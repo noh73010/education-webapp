@@ -102,6 +102,13 @@ class TheoryLearningPathTests(TestCase):
         self.assertContains(response, "10문제 시작하기")
         self.assertEqual(response.context["chapter"]["total_count"], 3)
 
+    def test_single_check_in_real_chapter_has_no_redundant_number(self):
+        response = self.client.get(reverse("theory_chapter", args=["FT01"]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "동일 운임 인상에 대한 수요 반응")
+        self.assertNotContains(response, "확인 1.")
+
     def test_chapter_practice_reuses_only_current_subject_chapter_missions(self):
         response = self.client.get(reverse("chapter_practice_start", args=["LM01"]))
 
@@ -378,7 +385,37 @@ class TheoryLearningPathTests(TestCase):
             )
         )
 
+        self.assertNotIn("<h3>확인</h3>", rendered)
+        self.assertIn("<p>질문입니다.</p>", rendered)
         self.assertIn('class="theory-check-answer"', rendered)
         self.assertIn("정답과 설명 확인", rendered)
         self.assertIn("&lt;b&gt;정답&lt;/b&gt;과 이유", rendered)
         self.assertNotIn("<b>정답</b>", rendered)
+
+    def test_single_concept_check_shows_question_without_number(self):
+        rendered = str(render_theory_markdown(
+            "## 개념 확인\n### 확인 1. 운송수요가 왜 달라질까요?\n"
+            "정답: 대체 수단의 유무에 따라 달라집니다."
+        ))
+
+        self.assertIn("<h3>운송수요가 왜 달라질까요?</h3>", rendered)
+        self.assertNotIn("확인 1.", rendered)
+        self.assertIn("대체 수단의 유무", rendered)
+
+    def test_multiple_concept_checks_keep_their_numbers(self):
+        rendered = str(render_theory_markdown(
+            "## 개념 확인\n### 확인 1. 첫 질문\n정답: 첫 답\n"
+            "### 확인 2. 둘째 질문\n정답: 둘째 답"
+        ))
+
+        self.assertIn("<h3>확인 1. 첫 질문</h3>", rendered)
+        self.assertIn("<h3>확인 2. 둘째 질문</h3>", rendered)
+
+    def test_single_check_label_outside_concept_section_is_unchanged(self):
+        rendered = str(render_theory_markdown(
+            "## 다른 단락\n### 확인 1. 다른 제목\n"
+            "## 개념 확인\n### 확인 1. 질문\n정답: 답"
+        ))
+
+        self.assertIn("<h3>확인 1. 다른 제목</h3>", rendered)
+        self.assertIn("<h3>질문</h3>", rendered)

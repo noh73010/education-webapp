@@ -46,9 +46,22 @@ def _inline_markdown(text: str) -> str:
 def render_theory_markdown(source: str):
     """Render the small, trusted Markdown subset used by chapter theory files."""
     source = (source or "").lstrip("\ufeff")
+    concept_check_count = 0
+    in_concept_check = False
+    for raw_line in source.splitlines():
+        heading = re.match(r"^(#{1,3})\s+(.+)$", raw_line.strip())
+        if not heading:
+            continue
+        level = len(heading.group(1))
+        if level <= 2:
+            in_concept_check = level == 2 and heading.group(2).strip() == "개념 확인"
+        elif in_concept_check:
+            concept_check_count += 1
+
     output = []
     paragraph = []
     list_type = None
+    in_concept_check = False
 
     def flush_paragraph():
         if paragraph:
@@ -73,7 +86,15 @@ def render_theory_markdown(source: str):
             flush_paragraph()
             close_list()
             level = len(heading.group(1))
-            output.append(f"<h{level}>{_inline_markdown(heading.group(2))}</h{level}>")
+            title = heading.group(2).strip()
+            if level <= 2:
+                in_concept_check = level == 2 and title == "개념 확인"
+            elif in_concept_check and concept_check_count == 1:
+                title = re.sub(r"^확인\s*\d+[.)]?\s*", "", title).strip()
+                if title == "확인":
+                    title = ""
+            if title:
+                output.append(f"<h{level}>{_inline_markdown(title)}</h{level}>")
             continue
 
         if re.fullmatch(r"-{3,}", line):
