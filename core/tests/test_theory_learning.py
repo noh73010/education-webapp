@@ -21,6 +21,7 @@ from core.services.theory import (
     THEORY_SET_PREFIX,
     build_chapter_practice_plan,
     render_theory_markdown,
+    split_theory_sections,
     build_subject_theory_roadmap,
 )
 
@@ -99,7 +100,7 @@ class TheoryLearningPathTests(TestCase):
         self.assertContains(response, "생활 속 사례")
         self.assertContains(response, "개념 확인")
         self.assertContains(response, "정답과 설명 확인")
-        self.assertContains(response, "10문제 시작하기")
+        self.assertContains(response, "문제 풀기 시작")
         self.assertEqual(response.context["chapter"]["total_count"], 3)
 
     def test_single_check_in_real_chapter_has_no_redundant_number(self):
@@ -108,6 +109,51 @@ class TheoryLearningPathTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "동일 운임 인상에 대한 수요 반응")
         self.assertNotContains(response, "확인 1.")
+
+    def test_card_layout_keeps_all_theory_sections_and_practice(self):
+        response = self.client.get(reverse("theory_chapter", args=["FT02"]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="theory-page theory-page--cards"')
+        self.assertContains(response, "core/theory_cards.css")
+        self.assertContains(response, "집하")
+        self.assertContains(response, "차량의 정격 적재량")
+        self.assertContains(response, "정답과 설명 확인")
+        self.assertContains(response, "연습문제는 준비 중이에요")
+        self.assertNotContains(response, "문제 풀기 시작")
+        self.assertNotContains(response, "확인 1.")
+
+    def test_other_chapter_uses_the_same_layout_with_its_own_content(self):
+        response = self.client.get(reverse("theory_chapter", args=["LM01"]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "theory-page--cards")
+        self.assertContains(response, "core/theory_cards.css")
+        self.assertContains(response, "물류관리 일반")
+        self.assertNotContains(response, "트럭이 짐을 싣고")
+        self.assertContains(response, reverse("chapter_practice_start", args=[response.context["chapter"]["slug"]]))
+
+    def test_all_available_logistics_chapters_render_their_sections(self):
+        roadmap = build_subject_theory_roadmap(self.user, self.subject)
+        chapters = [chapter for course in roadmap for chapter in course["chapters"] if chapter["has_theory"]]
+
+        for chapter in chapters:
+            with self.subTest(chapter=chapter["chapter_code"]):
+                response = self.client.get(reverse("theory_chapter", args=[chapter["slug"]]))
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, "theory-page--cards")
+                self.assertContains(response, "핵심부터 읽기")
+                self.assertContains(response, chapter["chapter_name"])
+
+    def test_card_sections_are_read_from_markdown(self):
+        sections = split_theory_sections(
+            "# 문서\n## 먼저 이해하기\n첫 내용\n## 개념 확인\n### 확인 1. 질문인가요?\n정답: 네"
+        )
+
+        self.assertEqual([section["title"] for section in sections], ["먼저 이해하기", "개념 확인"])
+        self.assertIn("첫 내용", sections[0]["html"])
+        self.assertIn("질문인가요?", sections[1]["html"])
+        self.assertNotIn("확인 1.", sections[1]["html"])
 
     def test_chapter_practice_reuses_only_current_subject_chapter_missions(self):
         response = self.client.get(reverse("chapter_practice_start", args=["LM01"]))

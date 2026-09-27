@@ -1,0 +1,359 @@
+/* Shared chapter reading layout; the Markdown remains the content source. */
+.theory-page--cards {
+    width: min(100%, 1080px);
+    color: #20314d;
+}
+
+.theory-page--cards .theory-breadcrumb {
+    margin-bottom: 14px;
+}
+
+.theory-lesson-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(230px, .9fr);
+    align-items: center;
+    gap: clamp(8px, 2vw, 26px);
+    min-height: 360px;
+    padding: clamp(26px, 5vw, 52px);
+    overflow: hidden;
+    border: 1px solid #d7e5f5;
+    border-radius: 34px 34px 105px 34px;
+    background: radial-gradient(circle at 85% 12%, #fff4dd 0, transparent 35%),
+                linear-gradient(125deg, #edf6ff, #f7fbff 70%);
+    box-shadow: 0 22px 50px rgba(32, 63, 114, .08);
+}
+
+.theory-lesson-kicker,
+.theory-lesson-step {
+    margin: 0;
+    color: #2b61b4;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .04em;
+}
+
+.theory-lesson-hero h1 {
+    margin: 12px 0;
+    color: #182b49;
+    font-size: clamp(38px, 5vw, 60px);
+    letter-spacing: -.055em;
+    line-height: 1.12;
+}
+
+.theory-lesson-lead {
+    max-width: 34rem;
+    margin: 0;
+    color: #485d77;
+    font-size: clamp(17px, 2vw, 20px);
+    line-height: 1.65;
+}
+
+.theory-lesson-hero-actions,
+.theory-lesson-finish-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 24px;
+}
+
+.theory-lesson-primary,
+.theory-lesson-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    min-height: 48px;
+    padding: 11px 21px;
+    border-radius: 999px;
+    font-size: 15px;
+    font-weight: 800;
+    text-align: center;
+    text-decoration: none !important;
+    transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.theory-lesson-primary {
+    background: #2559b7;
+    color: #fff !important;
+    box-shadow: 0 9px 20px rgba(37, 89, 183, .2);
+}
+
+.theory-lesson-secondary {
+    border: 1px solid #bed1e9;
+    background: rgba(255, 255, 255, .83);
+    color: #285694 !important;
+}
+
+.theory-lesson-primary:hover,
+.theory-lesson-secondary:hover {
+    transform: translateY(-2px);
+}
+
+.theory-lesson-primary:focus-visible,
+.theory-lesson-secondary:focus-visible {
+    outline: 3px solid #edae54;
+    outline-offset: 3px;
+}
+
+.theory-lesson-status {
+    margin: 20px 0 0;
+    color: #61728c;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.theory-lesson-art {
+    display: block;
+    width: min(100%, 380px);
+    height: auto;
+    justify-self: center;
+    filter: drop-shadow(0 20px 16px rgba(49, 86, 142, .11));
+}
+
+.theory-lesson-path {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin: 24px 0;
+    color: #586b84;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.theory-lesson-path span:not([aria-hidden]) {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.theory-lesson-path b {
+    display: inline-grid;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    border-radius: 50%;
+    background: #dfebfb;
+    color: #2859a8;
+}
+
+.theory-lesson-lessons {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 17px;
+    scroll-margin-top: 24px;
+}
+
+.theory-page--cards .theory-lesson-card {
+    min-width: 0;
+    margin: 0;
+    padding: clamp(22px, 3vw, 34px);
+    border: 1px solid transparent;
+    border-radius: 30px 30px 58px 30px;
+    background: #f0f6ff;
+    box-shadow: 0 12px 28px rgba(32, 55, 94, .055);
+    font-size: 16px;
+    line-height: 1.75;
+}
+
+.theory-page--cards .theory-lesson-card--2 {
+    border-color: #dce9f9;
+    background: #eaf2fe;
+}
+
+.theory-page--cards .theory-lesson-card--3 {
+    background: #ebf6ef;
+}
+
+.theory-page--cards .theory-lesson-card--4 {
+    background: #fff4e7;
+}
+
+.theory-page--cards .theory-lesson-card--5 {
+    grid-column: 1 / -1;
+    background: #f2effb;
+}
+
+.theory-page--cards .theory-lesson-card h2 {
+    margin: 5px 0 15px;
+    color: #192f4d;
+    font-size: clamp(22px, 2.5vw, 28px);
+    line-height: 1.3;
+}
+
+.theory-page--cards .theory-lesson-card h3 {
+    color: #243f71;
+    font-size: 18px;
+}
+
+.theory-page--cards .theory-lesson-card p:last-child {
+    margin-bottom: 0;
+}
+
+.theory-page--cards .theory-lesson-card ul {
+    display: grid;
+    gap: 9px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.theory-page--cards .theory-lesson-card li {
+    padding: 11px 14px;
+    margin: 0;
+    border-radius: 15px;
+    background: rgba(255, 255, 255, .78);
+}
+
+.theory-page--cards .theory-check-answer {
+    max-width: 740px;
+    margin-bottom: 0;
+    border-color: #ddd2f2;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, .8);
+}
+
+.theory-page--cards .theory-check-answer summary {
+    color: #65449b;
+}
+
+.theory-lesson-reference {
+    padding: 26px;
+    margin-top: 17px;
+    border-radius: 28px;
+    background: #fff;
+}
+
+.theory-lesson-reference img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: min(100%, 720px);
+    max-height: 420px;
+    margin: 18px auto 0;
+    object-fit: contain;
+}
+
+.theory-lesson-focus {
+    padding: clamp(24px, 4vw, 38px);
+    margin: 18px 0;
+    border: 1px solid #c9ddf6;
+    border-radius: 30px 30px 58px 30px;
+    background: #eff6ff;
+    scroll-margin-top: 24px;
+}
+
+.theory-lesson-focus h2 {
+    margin: 8px 0 13px;
+    color: #192f4d;
+}
+
+.theory-lesson-focus .theory-lesson-primary {
+    margin-top: 8px;
+}
+
+.theory-page--cards .theory-full-details {
+    padding: 0;
+    margin-top: 18px;
+    border-color: #dce6f4;
+    border-radius: 26px;
+    background: #fbfdff;
+}
+
+.theory-page--cards .theory-full-details-body {
+    padding: 22px;
+}
+
+.theory-lesson-finish {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 30px;
+    padding: clamp(26px, 4vw, 42px);
+    margin-top: 18px;
+    border-radius: 30px 30px 65px 30px;
+    background: #e9f0fc;
+    scroll-margin-top: 24px;
+}
+
+.theory-lesson-finish h2 {
+    margin: 8px 0;
+    color: #172e51;
+    font-size: clamp(23px, 3vw, 31px);
+}
+
+.theory-lesson-finish p:last-child {
+    max-width: 470px;
+    margin-bottom: 0;
+    color: #50627d;
+    line-height: 1.6;
+}
+
+.theory-lesson-finish-actions {
+    flex: 0 0 auto;
+    flex-direction: column;
+    margin: 0;
+}
+
+@media (max-width: 750px) {
+    .theory-lesson-hero {
+        grid-template-columns: 1fr;
+        border-radius: 28px 28px 65px 28px;
+    }
+
+    .theory-lesson-art {
+        width: min(76%, 260px);
+        margin-top: -16px;
+    }
+
+    .theory-lesson-lessons {
+        grid-template-columns: 1fr;
+    }
+
+    .theory-page--cards .theory-lesson-card--5 {
+        grid-column: auto;
+    }
+
+    .theory-lesson-finish {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .theory-lesson-hero {
+        padding: 24px 19px;
+    }
+
+    .theory-lesson-hero-actions,
+    .theory-lesson-finish-actions {
+        flex-direction: column;
+    }
+
+    .theory-lesson-art {
+        width: min(82%, 230px);
+    }
+
+    .theory-lesson-path {
+        justify-content: flex-start;
+        gap: 6px;
+        font-size: 11px;
+    }
+
+    .theory-lesson-path b {
+        width: 21px;
+        height: 21px;
+    }
+
+    .theory-page--cards .theory-lesson-card {
+        border-radius: 24px 24px 44px 24px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .theory-lesson-primary,
+    .theory-lesson-secondary {
+        transition: none;
+    }
+}

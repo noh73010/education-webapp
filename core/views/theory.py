@@ -13,6 +13,7 @@ from core.services.theory import (
     get_theory_chapter_context,
     load_theory_markdown,
     render_theory_markdown,
+    split_theory_sections,
     THEORY_SET_PREFIX,
     build_chapter_practice_plan,
 )
@@ -65,6 +66,7 @@ def theory_chapter(request, chapter_slug):
         **context,
         "current_subject": current_subject,
         "theory_html": render_theory_markdown(source),
+        "theory_sections": split_theory_sections(source),
         "representative_mission": representative_mission,
         "focused_mission": focused_mission,
         "focused_concept": focused_concept,

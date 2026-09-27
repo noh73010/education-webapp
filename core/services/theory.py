@@ -141,6 +141,31 @@ def render_theory_markdown(source: str):
     return mark_safe("\n".join(output))
 
 
+def split_theory_sections(source: str):
+    """Keep the Markdown file as the sole source when presenting short section cards."""
+    sections = []
+    heading = None
+    lines = []
+    for raw_line in (source or "").lstrip("\ufeff").splitlines():
+        match = re.match(r"^##\s+(.+)$", raw_line.strip())
+        if match:
+            if heading is not None:
+                sections.append({
+                    "title": heading,
+                    "html": render_theory_markdown("\n".join([f"## {heading}", *lines])),
+                })
+            heading = match.group(1).strip()
+            lines = []
+        elif heading is not None:
+            lines.append(raw_line)
+    if heading is not None:
+        sections.append({
+            "title": heading,
+            "html": render_theory_markdown("\n".join([f"## {heading}", *lines])),
+        })
+    return sections
+
+
 def build_subject_theory_roadmap(user, subject):
     rows = list(
         Mission.objects

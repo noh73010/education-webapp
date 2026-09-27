@@ -1,0 +1,105 @@
+{% load static %}
+<header class="theory-lesson-hero">
+  <div class="theory-lesson-hero-copy">
+    <p class="theory-lesson-kicker">{{ current_subject.name }} · {{ chapter.course }}</p>
+    <h1>{% if focused_concept %}오답 개념 복습{% else %}{{ chapter.chapter_name }}{% endif %}</h1>
+    <p class="theory-lesson-lead">
+      {% if focused_concept %}방금 헷갈린 개념을 짧게 확인하고, 다시 풀어보세요.
+      {% else %}{{ chapter.chapter_name }}의 핵심을 짧게 읽고, 바로 문제로 확인해 봐요.{% endif %}
+    </p>
+    <div class="theory-lesson-hero-actions">
+      <a class="theory-lesson-primary" href="{% if focused_concept %}#related-concept{% else %}#theory-lesson-lessons{% endif %}">핵심부터 읽기 <span aria-hidden="true">↗</span></a>
+      {% if focused_concept %}
+        <a class="theory-lesson-secondary" href="{% url 'mission_detail' focused_mission.id %}">이 문제 다시 풀기</a>
+      {% elif practice_plan.total_count %}
+        <a class="theory-lesson-secondary" href="#theory-lesson-practice">문제로 확인하기</a>
+      {% endif %}
+    </div>
+    <p class="theory-lesson-status">
+      {% if focused_concept %}틀린 문제에서 필요한 부분부터 볼 수 있어요.
+      {% elif practice_plan.attempted_count %}이 챕터를 공부하는 중이에요. 이어서 차근차근 살펴봐요.
+      {% elif practice_plan.total_count %}처음이라도 괜찮아요. 핵심만 읽고 바로 문제로 확인할 수 있어요.
+      {% else %}연결된 연습문제가 준비되기 전에도 핵심 개념부터 읽어볼 수 있어요.{% endif %}
+    </p>
+  </div>
+  {% include 'core/includes/theory_chapter_illustration.html' %}
+</header>
+
+{% if focused_concept %}
+<section class="theory-lesson-focus theory-content" id="related-concept" tabindex="-1">
+  <p class="theory-lesson-kicker">방금 틀린 문제의 관련 개념</p>
+  <h2>{{ focused_concept.title }}</h2>
+  <p>{{ focused_concept.summary }}</p>
+  {% if focused_concept.formula %}<p class="theory-focus-formula">{{ focused_concept.formula }}</p>{% endif %}
+  <ul>{% for point in focused_concept.points %}<li>{{ point }}</li>{% endfor %}</ul>
+  <a href="{% url 'mission_detail' focused_mission.id %}" class="theory-lesson-primary">이 문제 다시 풀기 <span aria-hidden="true">→</span></a>
+</section>
+<details class="theory-full-details" id="theory-full">
+  <summary><span>더 공부하고 싶다면</span><b>{{ chapter.chapter_name }} 전체 이론 펼쳐보기</b></summary>
+  <div class="theory-full-details-body">
+{% endif %}
+
+{% if not focused_concept %}
+<div class="theory-lesson-path" aria-label="학습 순서">
+  <span><b>1</b> 개념 익히기</span>
+  <span aria-hidden="true">→</span>
+  <span><b>2</b> 헷갈리는 점 확인</span>
+  <span aria-hidden="true">→</span>
+  <span><b>3</b> 문제로 연습하기</span>
+</div>
+{% endif %}
+
+<div id="theory-lesson-lessons" class="theory-lesson-lessons">
+  {% if theory_sections %}
+  {% for section in theory_sections %}
+    <section class="theory-lesson-card theory-lesson-card--{{ forloop.counter }} theory-content" aria-label="{{ section.title }}">
+      <p class="theory-lesson-step">STEP {{ forloop.counter|stringformat:'02d' }}</p>
+      {{ section.html }}
+    </section>
+  {% endfor %}
+  {% else %}
+    <article class="theory-lesson-card theory-content">{{ theory_html }}</article>
+  {% endif %}
+</div>
+
+{% if representative_mission %}
+  <section class="theory-lesson-reference theory-content">
+    <h2>문제 속 자료 미리 보기</h2>
+    <p>연결된 연습문제의 자료입니다. 자세한 내용은 문제를 풀면서 확인해 보세요.</p>
+    <img src="{% static representative_mission.question_image.static_path %}"
+         alt="{{ representative_mission.question_image.alt_text|default:chapter.chapter_name }} 대표 자료">
+  </section>
+{% endif %}
+
+{% if focused_concept %}
+  </div>
+</details>
+{% else %}
+
+<section class="theory-lesson-finish" id="theory-lesson-practice">
+  <div>
+    <p class="theory-lesson-kicker">읽었다면, 이제 직접 구분해 볼 차례</p>
+    {% if practice_plan.total_count %}
+      <h2>문제로 감을 잡아봐요</h2>
+      <p>처음에는 틀려도 괜찮아요. 어떤 부분이 헷갈리는지 찾아 다음 공부로 이어갑니다.</p>
+    {% else %}
+      <h2>연습문제는 준비 중이에요</h2>
+      <p>이 챕터의 개념을 읽어둔 뒤, 다른 챕터의 문제부터 풀어보세요.</p>
+    {% endif %}
+  </div>
+  <div class="theory-lesson-finish-actions">
+    {% if practice_plan.total_count %}
+    <a href="{% url 'chapter_practice_start' chapter.slug %}" class="theory-lesson-primary">
+      {% if practice_plan.attempted_count %}이어서 풀기{% else %}문제 풀기 시작{% endif %}
+      <span aria-hidden="true">→</span>
+    </a>
+    {% if practice_plan.review_count %}
+      <a href="{% url 'chapter_practice_start' chapter.slug %}?mode=wrong" class="theory-lesson-secondary">전에 틀린 문제 복습</a>
+    {% endif %}
+    <a href="{% url 'chapter_practice_start' chapter.slug %}?mode=all" class="theory-lesson-secondary">이 챕터 전체 연습</a>
+    {% else %}
+      <a href="{% url 'mission_list' %}#learning-roadmap" class="theory-lesson-secondary">다른 챕터 살펴보기</a>
+    {% endif %}
+  </div>
+</section>
+{% endif %}

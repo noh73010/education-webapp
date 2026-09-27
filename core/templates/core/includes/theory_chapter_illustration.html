@@ -1,0 +1,61 @@
+<svg class="theory-sample-art" viewBox="0 0 360 264" role="img" aria-label="{{ chapter.course }} 학습 일러스트" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="theoryRoad" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#c8d7f8"/><stop offset="1" stop-color="#a7bfed"/></linearGradient>
+    <linearGradient id="theoryBlue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#3b78df"/><stop offset="1" stop-color="#2355b4"/></linearGradient>
+  </defs>
+  <circle cx="282" cy="72" r="58" fill="#f8dca8" opacity=".57"/>
+  <circle cx="92" cy="188" r="68" fill="#b7dcd2" opacity=".5"/>
+  <path d="M34 212C108 222 107 125 179 130c54 4 46 69 129 35" fill="none" stroke="url(#theoryRoad)" stroke-width="27" stroke-linecap="round"/>
+  <path d="M34 212C108 222 107 125 179 130c54 4 46 69 129 35" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-dasharray="6 11"/>
+  <path d="M52 126v-37l30-17 30 17v37l-30 17z" fill="#fff" stroke="#9cb6dd" stroke-width="3"/>
+  <path d="M82 72v35m-30-18 30 18 30-18" fill="none" stroke="#b1c4df" stroke-width="2"/>
+  <circle cx="303" cy="117" r="19" fill="#fff" stroke="#e2a94f" stroke-width="3"/>
+  <circle cx="303" cy="117" r="6" fill="#e2a94f"/>
+
+  {% if chapter.course == '물류관련법규' %}
+  <g transform="translate(163 109) rotate(7 65 65)">
+    <rect x="7" y="6" width="116" height="132" rx="18" fill="#fff" stroke="#a7bfe4" stroke-width="3"/>
+    <rect x="25" y="26" width="63" height="11" rx="5" fill="#d6e4fa"/>
+    <rect x="25" y="51" width="78" height="7" rx="3" fill="#d6e4fa"/>
+    <rect x="25" y="69" width="68" height="7" rx="3" fill="#d6e4fa"/>
+    <circle cx="84" cy="105" r="22" fill="#e3f3e9"/>
+    <path d="m74 105 7 7 15-16" fill="none" stroke="#2f8c65" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  {% elif chapter.course == '보관하역론' %}
+  <g transform="translate(145 128)">
+    <path d="M4 25 82-19l78 44v93H4z" fill="#f8fbff" stroke="#7fa5d9" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M4 25h156M26 55h112M26 91h112" fill="none" stroke="#91accc" stroke-width="4"/>
+    <rect x="32" y="61" width="30" height="28" rx="3" fill="#eec47c"/>
+    <rect x="73" y="61" width="29" height="28" rx="3" fill="#b8d7ee"/>
+    <rect x="108" y="61" width="25" height="28" rx="3" fill="#eec47c"/>
+    <path d="M82-19v45" stroke="#91accc" stroke-width="4"/>
+  </g>
+  {% elif chapter.course == '국제물류론' %}
+  <g transform="translate(147 109)">
+    <circle cx="80" cy="73" r="62" fill="#e7f2fc" stroke="#7da9d8" stroke-width="3"/>
+    <ellipse cx="80" cy="73" rx="27" ry="62" fill="none" stroke="#a6c7e4" stroke-width="3"/>
+    <path d="M20 73h120M30 44h100M30 102h100" fill="none" stroke="#a6c7e4" stroke-width="3"/>
+    <path d="m39 99 67 0-12 23H52z" fill="url(#theoryBlue)"/>
+    <rect x="60" y="73" width="42" height="25" rx="3" fill="#fff" stroke="#9bb8db" stroke-width="2"/>
+    <path d="M43 127q14 8 28 0 14 8 28 0 14 8 28 0" fill="none" stroke="#72afd5" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  {% elif chapter.course == '화물운송론' %}
+  <g transform="translate(132 143) rotate(-7)">
+    <ellipse cx="66" cy="68" rx="77" ry="12" fill="#587bb2" opacity=".15"/>
+    <rect x="12" y="10" width="91" height="51" rx="12" fill="url(#theoryBlue)"/>
+    <rect x="20" y="19" width="37" height="29" rx="5" fill="#bcdcf2"/>
+    <path d="M103 28h28l20 23v10h-48z" fill="#f8fafc" stroke="#9bb3d9" stroke-width="3"/>
+    <path d="M115 34h12l11 13h-23z" fill="#bcdcf2"/>
+    <circle cx="42" cy="62" r="12" fill="#263b63"/><circle cx="42" cy="62" r="5" fill="#fff"/>
+    <circle cx="126" cy="62" r="12" fill="#263b63"/><circle cx="126" cy="62" r="5" fill="#fff"/>
+  </g>
+  {% else %}
+  <g transform="translate(142 120)">
+    <path d="m12 34 60-30 60 30-60 31z" fill="#d9e7fa" stroke="#8ca9d3" stroke-width="3"/>
+    <path d="M12 34v71l60 34V65z" fill="#f8fbff" stroke="#8ca9d3" stroke-width="3"/>
+    <path d="M132 34v71l-60 34V65z" fill="url(#theoryBlue)" stroke="#4878b9" stroke-width="3"/>
+    <path d="m51 15 60 31M72 65v74" fill="none" stroke="#8ca9d3" stroke-width="3"/>
+    <rect x="26" y="68" width="25" height="11" rx="5" fill="#eab960"/>
+  </g>
+  {% endif %}
+</svg>
