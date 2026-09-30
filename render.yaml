@@ -40,6 +40,63 @@ services:
           name: comhal-study-db
           property: connectionString
 
+  # Temporary parallel service for the passstep.onrender.com cutover.
+  - type: web
+    name: passstep
+    runtime: python
+    plan: 0.5c-512mb
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput"
+    startCommand: "sh scripts/render_start.sh"
+    healthCheckPath: /
+    envVars:
+      - key: DJANGO_DEBUG
+        value: "0"
+      - key: DJANGO_SECRET_KEY
+        fromService:
+          type: web
+          name: comhal-study
+          envVarKey: DJANGO_SECRET_KEY
+      - key: DJANGO_ALLOWED_HOSTS
+        value: "passstep.onrender.com"
+      - key: DJANGO_CSRF_TRUSTED_ORIGINS
+        value: "https://passstep.onrender.com"
+      - key: DJANGO_PREMIUM_GATING_ENABLED
+        value: "0"
+      - key: DJANGO_SECURE_SSL_REDIRECT
+        value: "1"
+      - key: DJANGO_SESSION_COOKIE_SECURE
+        value: "1"
+      - key: DJANGO_CSRF_COOKIE_SECURE
+        value: "1"
+      - key: DJANGO_SECURE_PROXY_SSL_HEADER
+        value: "1"
+      - key: DJANGO_WHITENOISE_MANIFEST_STRICT
+        value: "0"
+      - key: GOOGLE_OAUTH_CLIENT_ID
+        fromService:
+          type: web
+          name: comhal-study
+          envVarKey: GOOGLE_OAUTH_CLIENT_ID
+      - key: GOOGLE_OAUTH_CLIENT_SECRET
+        fromService:
+          type: web
+          name: comhal-study
+          envVarKey: GOOGLE_OAUTH_CLIENT_SECRET
+      - key: NAVER_OAUTH_CLIENT_ID
+        fromService:
+          type: web
+          name: comhal-study
+          envVarKey: NAVER_OAUTH_CLIENT_ID
+      - key: NAVER_OAUTH_CLIENT_SECRET
+        fromService:
+          type: web
+          name: comhal-study
+          envVarKey: NAVER_OAUTH_CLIENT_SECRET
+      - key: DATABASE_URL
+        fromDatabase:
+          name: comhal-study-db
+          property: connectionString
+
 databases:
   - name: comhal-study-db
     plan: 0.1c-256mb
