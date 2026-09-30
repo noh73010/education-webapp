@@ -1,5 +1,13 @@
 # PROJECT_CONTEXT.md
 
+## Render 서비스 주소 전환 (2026-09-30)
+
+- 운영 웹 주소는 `https://passstep.onrender.com`이다. 기존 `comhal-study.onrender.com` 웹은 전환 검증 후 중지하며, 사용자 기록이 저장된 `comhal-study-db` PostgreSQL은 계속 사용한다.
+- 새 `passstep` 서비스는 기존과 동일한 유료 웹 플랜 `0.5c-512mb`, 빌드·시작 명령을 사용한다. `render.yaml`은 새 웹과 기존 DB만 관리하며, 기존 웹을 Blueprint에서 제거한 다음 Render에서 별도로 중지한다. Blueprint에서 항목을 제거하는 것만으로 기존 서비스가 자동 삭제되거나 중지되지는 않는다.
+- `passstep`의 Django secret key와 Google/Naver OAuth 환경변수는 Render `fromService`로 기존 `comhal-study`의 값을 참조한다. 기존 서비스를 삭제하거나 환경변수를 지우면 향후 Blueprint 동기화가 실패할 수 있으므로 중지 상태로 보존한다. `DATABASE_URL`은 기존 PostgreSQL에서 직접 참조한다. 비밀값을 소스에 기록하지 않는다.
+- Google과 Naver의 승인된 OAuth callback에는 `https://passstep.onrender.com/accounts/<provider>/login/callback/`을 사용한다. Naver 서비스 URL은 새 주소이며, 전환 기간에 등록한 기존 callback은 필요시 관리자 점검 후 정리한다.
+- 운영 점검은 새 주소의 랜딩·로그인·기존 시험 기록, Render 배포 상태, OAuth callback 설정을 확인한다. 기존 주소를 중지한 뒤에는 이전 북마크가 새 주소로 자동 이동하지 않으므로 이용자에게 주소 변경을 안내한다.
+
 ## 이론 챕터 공통 카드 디자인 (2026-09-28)
 
 - 공로운송 `FT02` 시범에 대한 사용자 승인을 받아, 이론이 준비된 모든 챕터에 같은 카드형 읽기 화면을 적용한다. 오답에서 들어온 개념 집중 복습도 같은 헤더·색조를 쓰되, 관련 개념과 `이 문제 다시 풀기`를 먼저 보여주고 전체 이론은 기존처럼 접어 둔다.
