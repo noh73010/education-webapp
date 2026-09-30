@@ -75,8 +75,10 @@ GOOGLE_OAUTH_CLIENT_SECRET=Google_Cloud에서_발급한_Client_Secret
   등록합니다.
 - 로컬 개발의 서비스 URL은 `http://127.0.0.1:8888`, Callback URL은
   `http://127.0.0.1:8888/accounts/naver/login/callback/`입니다.
-- 현재 Render 서비스의 Callback URL은
-  `https://comhal-study.onrender.com/accounts/naver/login/callback/`입니다.
+- 현재 Render 서비스 URL은 `https://passstep.onrender.com`이고 Callback URL은
+  `https://passstep.onrender.com/accounts/naver/login/callback/`입니다.
+- 이전 `comhal-study.onrender.com` 웹 서비스는 중지 상태입니다. PostgreSQL
+  `comhal-study-db`는 새 웹이 계속 사용하므로 삭제하지 마세요.
 - 네이버 개발자센터의 애플리케이션 > API 설정에서 `PC 웹` 환경을 추가하고,
   실제로 사용할 서비스 URL과 Callback URL을 문자 단위로 동일하게 등록합니다.
   프로토콜, 호스트, 포트, 마지막 `/`가 달라지지 않게 주의합니다.
