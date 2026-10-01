@@ -1,0 +1,54 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}콘텐츠 출처 및 이용 안내 | 합격한걸음{% endblock %}
+{% block body_class %}landing-page service-info-page{% endblock %}
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'core/landing.css' %}?v=20260921-1">
+  <link rel="stylesheet" href="{% static 'core/service_info.css' %}?v=20261001-1">
+{% endblock %}
+
+{% block content %}
+<main class="service-main content-sources-main">
+  <header class="content-sources-intro">
+    <p class="service-eyebrow">콘텐츠 안내</p>
+    <h1>콘텐츠 출처 및 이용 안내</h1>
+    <p>물류관리사 연습문항 중 아래 회차의 자료는 한국산업인력공단 Q-Net에 공개된 기출문제를 참고하여 학습 목적에 맞게 재구성했습니다. 문항·보기·해설은 원자료와 다를 수 있습니다.</p>
+  </header>
+
+  <section class="service-section content-sources-section" aria-labelledby="source-list-title">
+    <h2 id="source-list-title">사용한 물류관리사 기출문제</h2>
+    {% if logistics_sources %}
+      <ul class="content-source-list">
+        {% for source in logistics_sources %}
+          <li class="content-source-card">
+            <h3>{{ source.title }}</h3>
+            <ul>
+              {% for sitting in source.sittings %}
+                <li>{{ sitting.label }} — {{ sitting.subjects }}</li>
+              {% endfor %}
+            </ul>
+            <p>제공: 한국산업인력공단 Q-Net · 이용조건: 공공누리 제1유형(출처표시)</p>
+            <a href="{{ source.qnet_url }}" target="_blank" rel="noopener noreferrer" aria-label="{{ source.title }} Q-Net 원문 새 창에서 보기">Q-Net 원문 보기</a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>현재 공개할 물류관리사 기출문제 출처가 없습니다.</p>
+    {% endif %}
+  </section>
+
+  <section class="service-section content-sources-section" aria-labelledby="license-title">
+    <h2 id="license-title">이용조건과 서비스 관계</h2>
+    <p>위 Q-Net 게시물에는 공공누리 제1유형이 표시되어 있습니다. 이 유형은 출처를 표시하는 조건으로 상업적 이용과 변경 이용을 허용합니다. 각 원자료의 이용조건은 해당 Q-Net 게시물에서 확인할 수 있습니다.</p>
+    <p><a href="https://www.kogl.or.kr/info/licenseType1.do" target="_blank" rel="noopener noreferrer">공공누리 제1유형 이용조건 보기</a></p>
+    <p>합격한걸음은 한국산업인력공단 또는 Q-Net이 운영·후원하는 공식 서비스가 아닙니다. 재구성한 문항과 해설의 내용 및 오류에 대한 책임은 합격한걸음 운영자에게 있습니다.</p>
+  </section>
+
+  <footer class="service-footer" aria-label="서비스 안내">
+    <a href="{% url 'landing' %}">첫 화면</a>
+    <a href="{% url 'service_info' %}">서비스 소개</a>
+    <a href="{% url 'inquiry' %}">문의하기</a>
+  </footer>
+</main>
+{% endblock %}

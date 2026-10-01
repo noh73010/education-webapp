@@ -7,6 +7,56 @@
     margin: 0 auto;
 }
 
+.content-sources-main {
+    padding: 48px 24px 80px;
+}
+
+.content-sources-intro {
+    max-width: 760px;
+    margin: 0 auto 56px;
+    text-align: center;
+}
+
+.content-sources-intro h1 {
+    margin: 0 0 22px;
+    color: #0f172a;
+    font-size: clamp(32px, 5vw, 48px);
+}
+
+.content-sources-intro p:last-child,
+.content-sources-section p {
+    color: #475569;
+    line-height: 1.8;
+}
+
+.content-sources-section {
+    padding: 48px 0;
+}
+
+.content-source-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+    gap: 20px;
+    padding: 0;
+    list-style: none;
+}
+
+.content-source-card {
+    padding: 24px;
+    border: 1px solid #dbeafe;
+    border-radius: 24px;
+    background: #fff;
+}
+
+.content-source-card h3 {
+    margin-top: 0;
+}
+
+.content-source-card ul {
+    padding-left: 20px;
+    line-height: 1.7;
+}
+
 .service-hero {
     display: flex;
     min-height: 560px;

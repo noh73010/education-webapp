@@ -7,6 +7,7 @@ from core.services.subjects import (
     set_current_subject,
 )
 from core.services.access import premium_gating_enabled
+from core.services.content_sources import published_logistics_sources
 
 
 def landing(request):
@@ -31,6 +32,12 @@ def landing(request):
 def service_info(request):
     return render(request, "core/service_info.html", {
         "premium_gating_enabled": premium_gating_enabled(),
+    })
+
+
+def content_sources(request):
+    return render(request, "core/content_sources.html", {
+        "logistics_sources": published_logistics_sources(),
     })
 
 
