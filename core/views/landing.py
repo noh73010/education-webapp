@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.shortcuts import redirect, render
+from django.urls import reverse
 
 from core.services.subjects import (
     CURRENT_SUBJECT_SESSION_KEY,
@@ -26,18 +27,21 @@ def landing(request):
     return render(request, "core/landing.html", {
         "subjects": subjects,
         "selected_subject_code": request.session.get(CURRENT_SUBJECT_SESSION_KEY, ""),
+        "canonical_url": request.build_absolute_uri(reverse("landing")),
     })
 
 
 def service_info(request):
     return render(request, "core/service_info.html", {
         "premium_gating_enabled": premium_gating_enabled(),
+        "canonical_url": request.build_absolute_uri(reverse("service_info")),
     })
 
 
 def content_sources(request):
     return render(request, "core/content_sources.html", {
         "logistics_sources": logistics_source_notices(),
+        "canonical_url": request.build_absolute_uri(reverse("content_sources")),
     })
 
 

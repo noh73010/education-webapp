@@ -5,7 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>{% block title %}자격증 시험 학습 플랫폼{% endblock %}</title>
+    <title>{% block title %}합격한걸음 | 자격증 맞춤 학습{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}합격한걸음에서 문제를 풀고 오답과 약점을 복습하세요.{% endblock %}">
+    <meta name="robots" content="{% block meta_robots %}noindex, nofollow{% endblock %}">
+    {% block seo_links %}{% endblock %}
 
     <link rel="stylesheet" href="{% static 'core/style.css' %}?v=20260925-1">
     <link rel="stylesheet" href="{% static 'core/course_focus.css' %}?v=20260925-1">

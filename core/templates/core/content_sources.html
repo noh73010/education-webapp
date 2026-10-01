@@ -2,9 +2,12 @@
 {% load static %}
 
 {% block title %}콘텐츠 출처 및 이용 안내 | 합격한걸음{% endblock %}
+{% block meta_description %}합격한걸음 물류관리사 학습 콘텐츠의 Q-Net 기출자료 출처, 회차별 원문 링크와 공공누리 이용조건을 확인하세요.{% endblock %}
+{% block meta_robots %}index, follow{% endblock %}
+{% block seo_links %}<link rel="canonical" href="{{ canonical_url }}">{% endblock %}
 {% block body_class %}landing-page service-info-page{% endblock %}
 {% block extra_css %}
-  <link rel="stylesheet" href="{% static 'core/landing.css' %}?v=20260921-1">
+  <link rel="stylesheet" href="{% static 'core/landing.css' %}?v=20261001-1">
   <link rel="stylesheet" href="{% static 'core/service_info.css' %}?v=20261001-1">
 {% endblock %}
 

@@ -5,7 +5,7 @@
   <h2 id="social-login-title" class="section-title">
     {% if social_login_mode == "signup" %}간편 회원가입{% else %}간편 로그인{% endif %}
   </h2>
-  <p>네이버, 카카오 또는 Google 계정으로 간편하게 시작하세요.</p>
+  <p>아래에서 이용할 로그인 방법을 선택해 간편하게 시작하세요.</p>
   <div class="social-login-buttons">
     {% if 'naver' in social_login_providers %}
       <form method="post" action="{% provider_login_url 'naver' next=next %}">

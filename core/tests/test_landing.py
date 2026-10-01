@@ -15,7 +15,9 @@ class LandingPageTests(TestCase):
         response = self.client.get(reverse("landing"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "원하는 자격증을 선택하여")
+        self.assertContains(response, "틀린 이유를 찾고")
+        self.assertContains(response, "안전재고와 재주문점을 헷갈렸어요")
+        self.assertContains(response, 'href="#subject-selection-title"')
         self.assertContains(response, "과목 선택")
         self.assertContains(response, "물류관리사")
         self.assertNotContains(response, "컴활 2급")

@@ -47,8 +47,11 @@ from core.views.final_cards import final_cards
 from core.views.account_settings import account_settings
 from core.views.learning_experience import problem_report, learning_start, save_mission_draft
 from core.views.exams import exam_draft
+from core.views.seo import robots_txt, sitemap_xml
 
 urlpatterns = [
+    path("robots.txt", robots_txt, name="robots_txt"),
+    path("sitemap.xml", sitemap_xml, name="sitemap_xml"),
     path("exam/<int:exam_id>/<int:order_no>/draft/", exam_draft, name="exam_draft"),
     path("learning-start/", learning_start, name="learning_start"),
     path("missions/<int:mission_id>/report/", problem_report, name="problem_report"),

@@ -50,6 +50,16 @@ class SocialLoginTests(TestCase):
             self.assertContains(response, reverse(f"{provider}_login"))
         self.assertContains(response, 'method="post"', count=4)
 
+    @override_settings(
+        SOCIAL_LOGIN_PROVIDERS=("google", "naver"),
+        SOCIALACCOUNT_PROVIDERS=SOCIAL_PROVIDER_SETTINGS["SOCIALACCOUNT_PROVIDERS"],
+    )
+    def test_login_copy_does_not_advertise_unavailable_kakao(self):
+        response = self.client.get(reverse("login"))
+
+        self.assertContains(response, "아래에서 이용할 로그인 방법을 선택해")
+        self.assertNotContains(response, "카카오")
+
     @override_settings(**SOCIAL_PROVIDER_SETTINGS)
     def test_signup_page_has_all_social_signup_posts(self):
         response = self.client.get(reverse("signup"))

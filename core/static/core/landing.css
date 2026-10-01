@@ -114,6 +114,50 @@
     line-height: 1.65;
 }
 
+.landing-hero-action {
+    display: inline-flex;
+    min-height: 48px;
+    align-items: center;
+    gap: 14px;
+    margin-top: 26px;
+    padding: 10px 20px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #fff;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.landing-hero-action:hover,
+.landing-hero-action:focus-visible { background: #1d4ed8; color: #fff; }
+
+.landing-proof {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin: -18px 0 26px;
+}
+
+.landing-proof article,
+.landing-example {
+    padding: 24px;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    background: #ffffff;
+}
+
+.landing-proof span { color: #2563eb; font-size: 12px; font-weight: 900; }
+.landing-proof b { display: block; margin-top: 14px; font-size: 18px; }
+.landing-proof p, .landing-example p { color: #64748b; line-height: 1.65; }
+.landing-example { margin-bottom: 64px; background: linear-gradient(145deg, #fff, #eff6ff); }
+.landing-example h2 { margin: 0 0 20px; color: #172554; font-size: clamp(20px, 3vw, 28px); line-height: 1.4; }
+.landing-example-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; counter-reset: learning-step; }
+.landing-example-steps li { padding: 18px; border-radius: 16px; background: #fff; counter-increment: learning-step; }
+.landing-example-steps li::before { content: counter(learning-step, decimal-leading-zero); display: block; margin-bottom: 12px; color: #2563eb; font-size: 12px; font-weight: 900; }
+.landing-example-steps b { color: #172554; }
+.landing-example-steps p { margin-bottom: 0; }
+.landing-example-note { margin-bottom: 0; }
+
 .subject-selection {
     padding: 0 0 72px;
 }
@@ -276,6 +320,10 @@
     .subject-selection {
         padding-bottom: 50px;
     }
+
+    .landing-proof { grid-template-columns: 1fr; margin-top: -8px; }
+    .landing-example { margin-bottom: 48px; padding: 21px; }
+    .landing-example-steps { grid-template-columns: 1fr; }
 
     .landing-page .subject-grid {
         grid-template-columns: 1fr;

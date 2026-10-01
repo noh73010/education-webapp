@@ -1,25 +1,46 @@
 {% extends 'core/base.html' %}
 {% load static %}
 
-{% block title %}자격증 학습 플랫폼{% endblock %}
+{% block title %}합격한걸음 | 물류관리사 오답·약점 맞춤 학습{% endblock %}
+{% block meta_description %}물류관리사 문제를 풀고 틀린 이유를 확인하세요. 오답 기록을 바탕으로 약점을 찾아 오늘의 복습과 모의고사까지 이어가는 무료 학습 서비스입니다.{% endblock %}
+{% block meta_robots %}index, follow{% endblock %}
+{% block seo_links %}<link rel="canonical" href="{{ canonical_url }}">{% endblock %}
 {% block body_class %}landing-page{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'core/landing.css' %}">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'core/landing.css' %}?v=20261001-1">{% endblock %}
 
 {% block content %}
 
 <main class="landing-main">
 <section class="landing-hero" aria-labelledby="landing-title">
   <div class="landing-copy">
-    <p class="landing-eyebrow">자격증 학습 플랫폼</p>
-    <h1 id="landing-title">원하는 자격증을 선택하여<br>학습을 시작하세요.</h1>
-    <p class="landing-lead">과목을 고르면 나에게 맞는 학습 화면으로 바로 이동합니다.</p>
+    <p class="landing-eyebrow">문제풀이에서 끝나지 않는 학습</p>
+    <h1 id="landing-title">틀린 이유를 찾고,<br>다시 맞힐 때까지 이어드려요.</h1>
+    <p class="landing-lead">오늘 가능한 시간만 고르면 오답 기록과 복습 시점에 맞춰 다음 학습을 안내합니다.</p>
+    <a class="landing-hero-action" href="#subject-selection-title">학습할 자격증 고르기 <span aria-hidden="true">↓</span></a>
   </div>
+</section>
+
+<section class="landing-proof" aria-label="개인화 학습 예시">
+  <article><span>01</span><b>오답 원인 확인</b><p>내 답과 정답을 가르는 기준부터 짧게 확인합니다.</p></article>
+  <article><span>02</span><b>약점은 신중하게 판정</b><p>한 번의 실수는 관찰하고, 반복 근거가 쌓일 때만 약점으로 안내합니다.</p></article>
+  <article><span>03</span><b>시간을 두고 재평가</b><p>다시 맞힌 순간이 아니라 며칠 뒤에도 기억하는지 확인합니다.</p></article>
+</section>
+
+<section class="landing-example" aria-label="학습 변화 예시">
+  <p class="landing-eyebrow">이렇게 달라집니다 · 예시</p>
+  <h2>틀린 문제에서 다음 공부까지</h2>
+  <ol class="landing-example-steps">
+    <li><b>문제를 틀렸다면</b><p>예: 재고관리에서 안전재고와 재주문점을 헷갈렸어요.</p></li>
+    <li><b>왜 틀렸는지 확인하고</b><p>두 개념을 구분하는 기준을 짧게 비교해요.</p></li>
+    <li><b>다시 확인해요</b><p>관련 문제를 복습하고, 시간이 지난 뒤에도 기억하는지 살펴봐요.</p></li>
+  </ol>
+  <p class="landing-example-note">실제 학습 안내는 나의 풀이 기록에 따라 달라집니다.</p>
 </section>
 
 <section class="subject-selection" aria-labelledby="subject-selection-title">
   <div class="subject-section-heading">
     <h2 id="subject-selection-title">과목 선택</h2>
-    <p>시작할 자격증을 선택해 주세요.</p>
+    <p>학습할 자격증을 선택하면 오늘의 개인 학습 계획으로 이동합니다.</p>
   </div>
 
   {% if subjects %}
