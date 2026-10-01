@@ -30,6 +30,20 @@ class RealtorLearningTests(TestCase):
         self.assertEqual(self.client.session["current_subject_code"], "realtor")
         self.assertTrue(self.logistics.is_active)
 
+    def test_theme_follows_subject_on_learning_screens_not_public_landing(self):
+        self.client.post(reverse("realtor_choose_path"), {"path": "first"})
+        mission = Mission.objects.create(subject=self.realtor, external_id="RE-THEME",
+            title="테마 확인 문제", course=REALTOR_COURSES[0], prompt="질문",
+            question_type="choice_one", answer_schema="1|A\n2|B\n3|C\n4|D\n5|E",
+            correct_answer="1")
+        for url_name in ("realtor_home", "mission_list", "wrong_notes", "stats", "exam_start"):
+            with self.subTest(url_name=url_name):
+                self.assertContains(self.client.get(reverse(url_name)), 'class="theme-realtor"')
+        self.assertContains(self.client.get(reverse("mission_detail", args=[mission.pk])), 'class="theme-realtor"')
+        self.assertNotContains(self.client.get(reverse("landing")), 'class="theme-realtor"')
+        self.client.post(reverse("select_subject", args=["logistics"]))
+        self.assertNotContains(self.client.get(reverse("mission_list")), 'class="theme-realtor"')
+
     def test_study_path_is_saved_per_user_and_changes_stage_order(self):
         self.assertEqual(self.client.get(reverse("realtor_choose_path")).status_code, 405)
         self.client.post(reverse("realtor_choose_path"), {"path": "second"})
