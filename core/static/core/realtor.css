@@ -1,11 +1,118 @@
-.realtor-page{max-width:1050px;margin:0 auto;padding:16px 16px 100px;display:grid;gap:18px}
-.realtor-hero{padding:clamp(28px,6vw,56px);border-radius:32px 32px 72px 32px;background:linear-gradient(135deg,#eee8fc,#fff7eb);color:#142640}
-.realtor-hero h1{font-size:clamp(1.8rem,4vw,2.8rem);line-height:1.2;margin:.5rem 0}
-.realtor-hero p{max-width:680px}.realtor-hero a{display:inline-block;margin-top:10px}
-.realtor-paths,.realtor-courses{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}
-.realtor-paths form{margin:0}body.theme-realtor .realtor-paths button{width:100%;min-height:92px;text-align:left;border:1px solid #d9cde8;border-radius:22px;background:#fcfaff;color:#182d4a;padding:18px;cursor:pointer;font:inherit;font-weight:700;box-shadow:none}
-body.theme-realtor .realtor-paths button:hover{background:#f5f0fc;box-shadow:0 8px 20px rgba(75,56,102,.1)}
-body.theme-realtor .realtor-paths button.selected{border:2px solid #6752a5;background:#eee8fc}.realtor-paths small{display:block;margin-top:6px;font-size:.85em;font-weight:400}
-.realtor-sitting{margin-top:20px}.realtor-sitting h3 small{display:block;font-weight:400;font-size:.8em;color:#536682}
-.realtor-course{border:1px solid #e1e9f2;background:#fff;border-radius:24px;padding:18px}.realtor-course h4{margin:0 0 10px}.realtor-course p{color:#52637a}.realtor-actions{display:flex;gap:12px;flex-wrap:wrap}
-.realtor-actions a,.realtor-course a{display:inline-block;border-radius:999px;padding:10px 16px;background:#e9f1ff;color:#1b53ba;text-decoration:none;font-weight:700}
+.realtor-page {
+  max-width: 1050px;
+  margin: 0 auto;
+  padding: 16px 16px 100px;
+  display: grid;
+  gap: 18px;
+}
+
+.realtor-hero {
+  padding: clamp(28px, 6vw, 56px);
+  border-radius: 32px 32px 72px 32px;
+  background: linear-gradient(135deg, #eee8fc, #fff7eb);
+  color: #142640;
+}
+.realtor-hero h1 {
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  line-height: 1.2;
+  margin: .5rem 0;
+}
+.realtor-hero p { max-width: 680px; }
+.realtor-hero a { display: inline-block; margin-top: 10px; }
+
+.realtor-paths,
+.realtor-courses {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 12px;
+}
+.realtor-paths form { margin: 0; }
+.realtor-paths form:nth-child(1) {
+  --path-bg: #f2ecfc;
+  --path-hover: #e9def9;
+  --path-border: #a98ccc;
+  --path-ink: #49316c;
+}
+.realtor-paths form:nth-child(2) {
+  --path-bg: #fff1e4;
+  --path-hover: #ffe6d1;
+  --path-border: #d49b72;
+  --path-ink: #714525;
+}
+.realtor-paths form:nth-child(3) {
+  --path-bg: #eaf6f3;
+  --path-hover: #def0eb;
+  --path-border: #75aaa0;
+  --path-ink: #25574f;
+}
+body.theme-realtor .realtor-paths button {
+  width: 100%;
+  min-height: 92px;
+  padding: 18px;
+  border: 1px solid var(--path-border);
+  border-radius: 22px;
+  background: var(--path-bg);
+  box-shadow: none;
+  color: var(--path-ink);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+body.theme-realtor .realtor-paths button:hover {
+  background: var(--path-hover);
+  box-shadow: 0 8px 20px rgba(75, 56, 102, .10);
+}
+body.theme-realtor .realtor-paths button.selected {
+  border: 2px solid var(--path-border);
+  background: var(--path-hover);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .8);
+}
+.realtor-paths small {
+  display: block;
+  margin-top: 6px;
+  font-size: .85em;
+  font-weight: 400;
+}
+
+.realtor-sitting { margin-top: 20px; }
+.realtor-sitting h3 small {
+  display: block;
+  font-weight: 400;
+  font-size: .8em;
+  color: #536682;
+}
+.realtor-course {
+  border: 1px solid #e1d9ec;
+  background: #fff;
+  border-radius: 24px;
+  padding: 18px;
+}
+.realtor-course h4 { margin: 0 0 10px; }
+.realtor-course p { color: #52637a; }
+.realtor-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.realtor-actions a,
+.realtor-course a {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 10px 16px;
+  background: #ede7f8;
+  color: #4a3774;
+  text-decoration: none;
+  font-weight: 700;
+}
+.realtor-course:nth-child(3n+2) a,
+.realtor-actions a:nth-child(2) {
+  background: #fff0df;
+  color: #735023;
+}
+.realtor-course:nth-child(3n) a,
+.realtor-actions a:nth-child(3) {
+  background: #e6f4f0;
+  color: #255b50;
+}
+body.theme-realtor .realtor-course a:hover,
+body.theme-realtor .realtor-actions a:hover {
+  filter: brightness(.96);
+  text-decoration: underline;
+}

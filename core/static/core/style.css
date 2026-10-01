@@ -2738,3 +2738,37 @@ body.theme-realtor .bottom-mobile-nav {
 body.theme-realtor .card {
   box-shadow: 0 18px 48px rgba(75, 56, 102, .09);
 }
+body.theme-realtor .sub-button {
+  border: 1px solid #d9cde9;
+  background: #eee8f8;
+  color: #49366c;
+}
+body.theme-realtor .sub-button:hover,
+body.theme-realtor .sub-button:focus-visible {
+  background: #e4daf3;
+  color: #3d2b60;
+}
+body.theme-realtor .quick-action-row .sub-button:nth-child(2) {
+  border-color: #eed8be;
+  background: #fff0df;
+  color: #735023;
+}
+body.theme-realtor .quick-action-row .sub-button:nth-child(3) {
+  border-color: #c4dfd8;
+  background: #e6f4f0;
+  color: #255b50;
+}
+body.theme-realtor .quick-action-row .sub-button:nth-child(2):hover,
+body.theme-realtor .quick-action-row .sub-button:nth-child(2):focus-visible { background: #ffe6cb; }
+body.theme-realtor .quick-action-row .sub-button:nth-child(3):hover,
+body.theme-realtor .quick-action-row .sub-button:nth-child(3):focus-visible { background: #d8eee8; }
+body.theme-realtor .selected-course-banner > a {
+  display: inline-block;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: #fff0df;
+  color: #735023;
+  font-weight: 700;
+  text-decoration: none;
+}
+body.theme-realtor .selected-course-banner > a:hover { background: #ffe6cb; }
