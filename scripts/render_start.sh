@@ -10,4 +10,10 @@ if ! python manage.py sync_generated_missions --create-problem-sets; then
   echo "WARNING: generated mission sync failed; starting the web server with the existing database content." >&2
 fi
 
+if [ -d generated/realtor ] && find generated/realtor -name '*.csv' -print -quit | grep -q .; then
+  if ! python manage.py sync_generated_missions --subject-code realtor --create-problem-sets; then
+    echo "WARNING: realtor mission sync failed; starting the web server with the existing database content." >&2
+  fi
+fi
+
 exec gunicorn myproject.wsgi:application

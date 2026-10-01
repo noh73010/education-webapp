@@ -1,6 +1,14 @@
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db.models import Count
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.views.decorators.http import require_POST
+
+from core.models import Attempt, Mission, RealtorStudyPath, Subject
+from core.services.realtor_curriculum import (
+    REALTOR_EXAM_GUIDE, REALTOR_SITTINGS, REALTOR_SUBJECT_CODE, courses_for_path,
+)
 
 from core.services.subjects import (
     CURRENT_SUBJECT_SESSION_KEY,
@@ -20,7 +28,7 @@ def landing(request):
 
         if subject:
             set_current_subject(request, subject)
-            return redirect("mission_list")
+            return redirect("realtor_home" if subject.code == REALTOR_SUBJECT_CODE else "mission_list")
 
         messages.warning(request, "선택할 수 있는 과목을 다시 확인해 주세요.")
 
@@ -54,4 +62,57 @@ def select_subject(request, subject_code):
         return redirect("landing")
 
     set_current_subject(request, subject)
-    return redirect("mission_list")
+    return redirect("realtor_home" if subject.code == REALTOR_SUBJECT_CODE else "mission_list")
+
+
+@login_required
+def realtor_home(request):
+    subject = Subject.objects.filter(code=REALTOR_SUBJECT_CODE, is_active=True).first()
+    if subject is None:
+        return redirect("landing")
+    set_current_subject(request, subject)
+    preference = RealtorStudyPath.objects.filter(user=request.user).first()
+    path = preference.path if preference else ""
+    eligible = Mission.objects.filter(subject=subject, is_usable_for_set=True).exclude(
+        review_status=Mission.REVIEW_CONFIRMED_ERROR,
+    )
+    counts = dict(eligible.values("course").annotate(total=Count("pk")).values_list("course", "total"))
+    attempts = Attempt.objects.valid_for_learning().filter(user=request.user, mission__subject=subject)
+    solved = dict(attempts.values("mission__course").annotate(total=Count("pk")).values_list("mission__course", "total"))
+    mistakes = dict(attempts.filter(is_correct=False).values("mission__course").annotate(total=Count("pk")).values_list("mission__course", "total"))
+    stages = []
+    for stage in ("first", "second"):
+        sittings = []
+        for item in REALTOR_SITTINGS:
+            if item["stage"] != stage:
+                continue
+            rows = [{"name": name, "available": counts.get(name, 0),
+                     "attempts": solved.get(name, 0), "mistakes": mistakes.get(name, 0)}
+                    for name in item["courses"]]
+            sittings.append({**item, "course_rows": rows})
+        stages.append({"code": stage, "label": "1차" if stage == "first" else "2차", "sittings": sittings})
+    if path == "second":
+        stages.reverse()
+    return render(request, "core/realtor_home.html", {
+        "current_subject": subject,
+        "study_path": path,
+        "focused_courses": courses_for_path(path) if path else (),
+        "stages": stages,
+        "exam_guide_url": REALTOR_EXAM_GUIDE,
+    })
+
+
+@login_required
+@require_POST
+def realtor_choose_path(request):
+    subject = Subject.objects.filter(code=REALTOR_SUBJECT_CODE, is_active=True).first()
+    if subject is None:
+        return redirect("landing")
+    path = request.POST.get("path", "")
+    if path not in dict(RealtorStudyPath.PATH_CHOICES):
+        messages.warning(request, "공부할 시험 단계를 다시 선택해 주세요.")
+        return redirect("realtor_home")
+    RealtorStudyPath.objects.update_or_create(user=request.user, defaults={"path": path})
+    set_current_subject(request, subject)
+    messages.success(request, "학습 목표를 저장했습니다. 언제든 이 화면에서 바꿀 수 있어요.")
+    return redirect("realtor_home")

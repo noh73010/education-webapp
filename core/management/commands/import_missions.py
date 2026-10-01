@@ -10,6 +10,7 @@ from django.db import transaction
 
 from core.models import Mission, MissionImage, ProblemSet, ProblemSetItem, Subject
 from core.services.logistics_curriculum import normalize_logistics_chapter
+from core.services.realtor_curriculum import REALTOR_COURSES, REALTOR_SUBJECT_CODE
 from core.services.mission_images import resolve_question_image
 from core.services.content_review import apply_review, load_review
 from core.services.subjects import LOGISTICS_SUBJECT_CODE
@@ -167,6 +168,11 @@ def normalize_korean_row(row, *, csv_path, subject_code):
 
     if not course or not chapter_code or not prompt:
         raise ValueError("과목, 챕터 코드 또는 문제가 비어 있습니다")
+    if subject_code == REALTOR_SUBJECT_CODE:
+        if course not in REALTOR_COURSES:
+            raise ValueError("공인중개사 과목명이 등록된 5개 과목과 다릅니다")
+        if choice_count != 5:
+            raise ValueError("공인중개사 객관식은 보기 5개가 필요합니다")
     if difficulty not in VALID_DIFFICULTIES:
         raise ValueError(f"invalid difficulty: {difficulty}")
     if not correct_answer.isdigit() or not 1 <= int(correct_answer) <= choice_count:
@@ -230,6 +236,8 @@ def normalize_standard_row(row, *, subject_code):
 
     if not external_id:
         raise ValueError("external_id/id가 비어 있습니다")
+    if subject_code == REALTOR_SUBJECT_CODE and course not in REALTOR_COURSES:
+        raise ValueError("공인중개사 과목명이 등록된 5개 과목과 다릅니다")
     if not title or not skill:
         raise ValueError("title 또는 skill이 비어 있습니다")
     if difficulty and difficulty not in VALID_DIFFICULTIES:
@@ -238,6 +246,13 @@ def normalize_standard_row(row, *, subject_code):
         learning_type = "result"
     if question_type not in VALID_QUESTION_TYPES:
         question_type = "value_answer" if answer_input_type in ("number", "date") else "short_answer"
+    if subject_code == REALTOR_SUBJECT_CODE and question_type == "choice_one":
+        answer_schema = (row.get("answer_schema") or "").strip().splitlines()
+        numbers = [line.split("|", 1)[0].strip() for line in answer_schema if "|" in line]
+        if len(answer_schema) != 5 or numbers != ["1", "2", "3", "4", "5"]:
+            raise ValueError("공인중개사 객관식 answer_schema는 1~5번 보기 5개가 필요합니다")
+        if correct_answer not in numbers:
+            raise ValueError("공인중개사 정답 번호가 보기 범위를 벗어납니다")
 
     level_text = (row.get("level") or "1").strip()
     if not level_text.isdigit():

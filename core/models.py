@@ -478,6 +478,22 @@ class StudyProfile(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 
+class RealtorStudyPath(models.Model):
+    FIRST = "first"
+    SECOND = "second"
+    BOTH = "both"
+    PATH_CHOICES = [
+        (FIRST, "1차 준비"),
+        (SECOND, "2차 준비"),
+        (BOTH, "동차 준비"),
+    ]
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="realtor_study_path"
+    )
+    path = models.CharField(max_length=10, choices=PATH_CHOICES)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
 class ConfusionCard(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="confusion_cards"

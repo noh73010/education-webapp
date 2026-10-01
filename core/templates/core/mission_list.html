@@ -8,10 +8,13 @@
 {% if selected_course %}
 <section class="card selected-course-banner" aria-label="현재 공부 중인 과목">
   <div>
-    <p class="eyebrow">물류관리사 · 오늘의 집중 과목</p>
+    <p class="eyebrow">{{ current_subject.name }} · 오늘의 집중 과목</p>
     <h1>{{ selected_course }}</h1>
     <p>이 과목의 약점과 오늘의 문제를 먼저 보여드려요. 다른 과목은 언제든 선택할 수 있습니다.</p>
   </div>
+  {% if is_realtor_subject %}
+    <a href="{% url 'realtor_home' %}">다른 과목 선택</a>
+  {% else %}
   <details class="course-switcher">
     <summary>과목 바꾸기</summary>
     <div class="course-switcher-options">
@@ -26,6 +29,7 @@
       {% endfor %}
     </div>
   </details>
+  {% endif %}
 </section>
 {% endif %}
 
@@ -34,6 +38,7 @@
   <p class="eyebrow">오늘 학습</p>
   <h1 class="section-title">오늘 {{ selected_daily_minutes }}분만 공부해요</h1>
   <p class="subject-label">{% if selected_course %}집중 과목: <b>{{ selected_course }}</b>{% else %}현재 과목: <b>{{ current_subject.name }}</b>{% endif %}</p>
+  {% if is_realtor_subject %}<p><a href="{% url 'realtor_home' %}">1차·2차 과목 목차와 학습 목표 보기</a></p>{% endif %}
   {% if ongoing_exam %}
     <div class="coach-inline-notice">
       <b>{{ ongoing_exam.exam.title }} · {{ ongoing_exam.answered }}/{{ ongoing_exam.total }}문제 저장</b>
@@ -342,7 +347,7 @@
 </section>
 </details>
 
-{% if not is_logistics_subject %}
+{% if not is_logistics_subject and not is_realtor_subject %}
 <section class="card result-wrong">
   <h2 class="section-title">현재 가장 약한 학습 단계</h2>
 
@@ -398,6 +403,10 @@
         </div>
       </details>
     {% endfor %}
+  {% elif is_realtor_subject %}
+    <h2 class="section-title">공인중개사 과목 목차</h2>
+    <p>1차·2차 과목을 별도로 확인하고 공부할 과목을 직접 고를 수 있습니다.</p>
+    <a href="{% url 'realtor_home' %}">공인중개사 목차 보기</a>
   {% else %}
     <h2 class="section-title">학습 로드맵</h2>
     <p>함수별로 기능 선택, 결과 예측, 오류 진단, 실전형 단계를 차례로 확인합니다.</p>

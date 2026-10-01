@@ -48,6 +48,7 @@ from core.services.learning_dashboard import build_learning_dashboard
 from core.services.learning_concepts import get_answer_display
 from core.services.learning_feedback import build_mission_feedback
 from core.services.logistics_curriculum import build_logistics_chapter_roadmap
+from core.services.realtor_curriculum import REALTOR_SUBJECT_CODE, REALTOR_COURSES, courses_for_path
 from core.services.mission_cards import load_mission_cards, prepare_mission_cards, with_user_learning_state
 from core.services.personal_coach import build_personal_coach_context
 from core.services.course_focus import available_courses, chosen_course, course_weakness
@@ -396,6 +397,11 @@ def learning_type_training_result(request, skill, learning_type):
 def mission_list(request):
     current_subject, subject_needs_selection = get_current_subject(request)
     course_options = available_courses(current_subject) if current_subject.code == LOGISTICS_SUBJECT_CODE else []
+    realtor_path = None
+    if current_subject.code == REALTOR_SUBJECT_CODE:
+        realtor_path = getattr(request.user, "realtor_study_path", None)
+        if realtor_path is None:
+            return redirect("realtor_home")
     if request.method == "POST":
         course_name = request.POST.get("course", "")
         if course_name not in {row["name"] for row in course_options}:
@@ -412,7 +418,17 @@ def mission_list(request):
         .values_list("course", flat=True).distinct()
     ) if course_options else set()
     selected_course = chosen_course(request.user, current_subject, course_options) if course_options else None
-    if course_options and len(populated_courses) > 1 and selected_course is None:
+    if current_subject.code == REALTOR_SUBJECT_CODE:
+        requested_course = request.GET.get("course", "").strip()
+        allowed_courses = courses_for_path(realtor_path.path) if realtor_path else ()
+        available_realtor_courses = set(Mission.objects.filter(
+            subject=current_subject, course__in=allowed_courses,
+        ).values_list("course", flat=True).distinct())
+        if requested_course in allowed_courses:
+            selected_course = requested_course
+        else:
+            selected_course = next((name for name in allowed_courses if name in available_realtor_courses), None)
+    if current_subject.code == LOGISTICS_SUBJECT_CODE and course_options and len(populated_courses) > 1 and selected_course is None:
         return render(request, "core/course_focus_select.html", {
             "current_subject": current_subject,
             "course_options": course_options,
@@ -424,7 +440,6 @@ def mission_list(request):
     level = request.GET.get("level", "").strip()
     sort = request.GET.get("sort", "new").strip()
 
-    subject_mission_count = Mission.objects.filter(subject=current_subject, **({"course": selected_course} if selected_course else {})).count()
     qs = Mission.objects.filter(subject=current_subject)
     recommendation_qs = with_user_learning_state(
         Mission.objects.filter(subject=current_subject, is_usable_for_set=True).exclude(
@@ -435,6 +450,11 @@ def mission_list(request):
     if selected_course:
         qs = qs.filter(course=selected_course)
         recommendation_qs = recommendation_qs.filter(course=selected_course)
+    elif realtor_path:
+        allowed_courses = courses_for_path(realtor_path.path)
+        qs = qs.filter(course__in=allowed_courses)
+        recommendation_qs = recommendation_qs.filter(course__in=allowed_courses)
+    subject_mission_count = qs.count()
     selected_chapter_codes = next((set(row["chapter_codes"]) for row in course_options if row["name"] == selected_course), set())
     if chapter and chapter in selected_chapter_codes:
         qs = qs.filter(chapter_code=chapter)
@@ -587,6 +607,7 @@ def mission_list(request):
         }
     today_action, today_action_obj = get_today_action(request.user, subject=current_subject)
     is_logistics_subject = current_subject.code == LOGISTICS_SUBJECT_CODE
+    is_realtor_subject = current_subject.code == REALTOR_SUBJECT_CODE
     weak_learning_type = None
     learning_roadmap = []
     logistics_chapter_roadmap = []
@@ -712,6 +733,7 @@ def mission_list(request):
         "logistics_chapter_roadmap": logistics_chapter_roadmap,
         "theory_roadmap": theory_roadmap,
         "is_logistics_subject": is_logistics_subject,
+        "is_realtor_subject": is_realtor_subject,
         "dashboard": dashboard,
         "personal_coach": personal_coach,
         "current_subject": current_subject,

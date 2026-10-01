@@ -31,6 +31,7 @@ from core.services.grading import (
     grade_multi_answer,
 )
 from core.services.subjects import get_current_subject
+from core.services.realtor_curriculum import REALTOR_SUBJECT_CODE, courses_for_path
 from core.services.exam_requests import serialized_exam_request
 from core.services.exam_results import representative_wrong_items, result_sessions
 from core.services.exam_history import build_exam_history_cards
@@ -69,11 +70,23 @@ def exam_start(request):
     access = get_user_access(request.user)
     has_full_access = has_full_learning_access(request.user)
     current_subject, _ = get_current_subject(request)
+    courses = available_courses(current_subject, request.user)
+    can_start_short = True
+    if current_subject.code == REALTOR_SUBJECT_CODE:
+        preference = getattr(request.user, "realtor_study_path", None)
+        allowed = courses_for_path(preference.path) if preference else ()
+        eligible = Mission.objects.filter(subject=current_subject, course__in=allowed,
+            is_usable_for_set=True, question_type__in=["choice_one", "true_false", "error_detect"]
+        ).exclude(review_status=Mission.REVIEW_CONFIRMED_ERROR).exclude(correct_answer="").exclude(answer_schema="")
+        can_start_short = eligible.count() >= 10
+        ready_courses = set(eligible.values("course").annotate(total=Count("pk")).filter(total__gte=40).values_list("course", flat=True))
+        courses = [course for course in courses if course in ready_courses]
     return render(request, "core/exam_start.html", {
         "is_premium": access.is_premium,
         "has_full_access": has_full_access,
         "current_subject": current_subject,
-        "courses": available_courses(current_subject),
+        "courses": courses,
+        "can_start_short": can_start_short,
         "supports_full": bool(blueprint(current_subject)),
         "missing_full_courses": missing_full_courses(current_subject),
         "open_exams": ExamSession.objects.filter(user=request.user,
@@ -162,7 +175,7 @@ def create_selected_mode(request):
             mode, course = request.POST.get("mode"), request.POST.get("course", "")
             if mode not in {"short", "course", "full"}:
                 raise ValueError("올바른 모드를 선택해 주세요.")
-            if mode == "course" and course not in available_courses(subject):
+            if mode == "course" and course not in available_courses(subject, request.user):
                 raise ValueError("올바른 과목을 선택해 주세요.")
             existing = ExamSession.objects.filter(user=request.user, items__mission__subject=subject,
                 mode_config__mode=mode, status__in=["in_progress", "waiting"])

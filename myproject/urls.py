@@ -11,6 +11,8 @@ from core.views import (
     content_sources,
     service_info,
     select_subject,
+    realtor_home,
+    realtor_choose_path,
     mission_list,
     mission_detail,
     stats,
@@ -63,6 +65,8 @@ urlpatterns = [
     path("study-profile/", study_profile, name="study_profile"),
     path("final-cards/", final_cards, name="final_cards"),
     path("subjects/<str:subject_code>/", select_subject, name="select_subject"),
+    path("realtor/", realtor_home, name="realtor_home"),
+    path("realtor/study-path/", realtor_choose_path, name="realtor_choose_path"),
     path("inquiry/", inquiry, name="inquiry"),
     path("inquiry/done/", inquiry_done, name="inquiry_done"),
 

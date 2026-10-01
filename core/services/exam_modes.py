@@ -6,6 +6,7 @@ from django.utils import timezone
 from core.models import Attempt, ExamSession, ExamSessionMission, Mission
 from core.services.exams import calculate_exam_score, exact_exam_score
 from core.services.logistics_curriculum import LOGISTICS_CURRICULUM
+from core.services.realtor_curriculum import REALTOR_SUBJECT_CODE, courses_for_path
 
 
 def blueprint(subject):
@@ -16,12 +17,19 @@ def blueprint(subject):
             "periods": [(0, 3, 120), (3, 5, 80)]}
 
 
-def available_courses(subject):
+def available_courses(subject, user=None):
     plan = blueprint(subject)
-    return plan["courses"] if plan else list(Mission.objects.filter(
+    courses = plan["courses"] if plan else list(Mission.objects.filter(
         subject=subject, is_usable_for_set=True).exclude(
         review_status=Mission.REVIEW_CONFIRMED_ERROR,
     ).exclude(course="").order_by("course").values_list("course", flat=True).distinct())
+    if subject.code == REALTOR_SUBJECT_CODE and user is not None:
+        preference = getattr(user, "realtor_study_path", None)
+        if preference is None:
+            return []
+        available = set(courses)
+        return [course for course in courses_for_path(preference.path) if course in available]
+    return courses
 
 
 def missing_full_courses(subject):
@@ -43,6 +51,11 @@ def select_questions(user, subject, count, course=None):
     ).exclude(correct_answer="").exclude(answer_schema="")
     if course:
         qs = qs.filter(course=course)
+    elif subject.code == REALTOR_SUBJECT_CODE:
+        preference = getattr(user, "realtor_study_path", None)
+        if preference is None:
+            raise ValueError("공인중개사 학습 목표를 먼저 선택해 주세요.")
+        qs = qs.filter(course__in=courses_for_path(preference.path))
     qs = qs.annotate(seen=Exists(
         Attempt.objects.valid_for_learning().filter(user=user, mission_id=OuterRef("pk"))
     ))
@@ -59,11 +72,13 @@ def create_mode_exam(user, subject, mode, course=""):
         raise ValueError("올바른 모드를 선택해 주세요.")
     if mode == "full" and not plan:
         raise ValueError("이 자격증의 실전 시험 구성이 아직 등록되지 않았습니다.")
+    if subject.code == REALTOR_SUBJECT_CODE and getattr(user, "realtor_study_path", None) is None:
+        raise ValueError("공인중개사 학습 목표를 먼저 선택해 주세요.")
     groups = []
     if mode == "short":
         groups = [("짧은 실전 연습", 10, select_questions(user, subject, 10))]
     elif mode == "course":
-        if course not in available_courses(subject):
+        if course not in available_courses(subject, user):
             raise ValueError("올바른 과목을 선택해 주세요.")
         groups = [(f"과목별 모의고사 · {course}", 40, select_questions(user, subject, 40, course))]
     else:
