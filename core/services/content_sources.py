@@ -1,8 +1,4 @@
-"""Verified public source notices for logistics practice questions."""
-
-from pathlib import Path
-
-from django.conf import settings
+"""Q-Net source notices for logistics content, independent of import state."""
 
 
 # Add a round only after checking its Q-Net page and reuse conditions.
@@ -20,25 +16,22 @@ SITTINGS = (
 )
 
 
-def published_logistics_sources():
-    """List only verified rounds with a CSV in this deployed checkout."""
-    source_dir = Path(settings.BASE_DIR) / "generated" / "logistics"
+def logistics_source_notices():
+    """List checked source publications, not currently available questions."""
     sources = []
     for round_number, title, article_id in LOGISTICS_QNET_SOURCES:
         sittings = [
             {"label": label, "subjects": subjects}
             for sitting, label, subjects in SITTINGS
-            if (source_dir / f"logistics_{round_number}-{sitting}.csv").is_file()
         ]
-        if sittings:
-            sources.append({
-                "round_number": round_number,
-                "title": title,
-                "qnet_url": (
-                    "https://www.q-net.or.kr/cst003.do"
-                    f"?artlSeq={article_id}&boardId=Q004&gId=61"
-                    "&gSite=L&id=cst00302&menuType=cst00309"
-                ),
-                "sittings": sittings,
-            })
+        sources.append({
+            "round_number": round_number,
+            "title": title,
+            "qnet_url": (
+                "https://www.q-net.or.kr/cst003.do"
+                f"?artlSeq={article_id}&boardId=Q004&gId=61"
+                "&gSite=L&id=cst00302&menuType=cst00309"
+            ),
+            "sittings": sittings,
+        })
     return sources

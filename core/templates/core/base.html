@@ -24,6 +24,7 @@
     </div>
 
     <div class="nav-links" id="primary-nav">
+        <a href="{% url 'content_sources' %}" class="sub-link">콘텐츠 출처</a>
         {% if user.is_authenticated %}
             <a href="{% url 'account_settings' %}" class="sub-link">계정 관리</a>
         {% endif %}
