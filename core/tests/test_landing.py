@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.contrib.staticfiles import finders
 from django.test import TestCase
 from django.urls import reverse
 
@@ -16,6 +17,8 @@ class LandingPageTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "틀린 이유를 찾고")
+        self.assertContains(response, "core/illustrations/learning-journey.png")
+        self.assertIsNotNone(finders.find("core/illustrations/learning-journey.png"))
         self.assertContains(response, "안전재고와 재주문점을 헷갈렸어요")
         self.assertContains(response, 'href="#subject-selection-title"')
         self.assertContains(response, "과목 선택")
@@ -37,6 +40,17 @@ class LandingPageTests(TestCase):
         self.assertNotContains(response, "오답노트")
         self.assertNotContains(response, "통계")
         self.assertContains(response, "로그아웃")
+
+    def test_empty_learning_stats_shows_start_illustration(self):
+        user = User.objects.create_user(username="new-learner", password="pass12345")
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("stats"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "아직 분석할 학습 기록이 없어요")
+        self.assertContains(response, "core/illustrations/learning-start.png")
+        self.assertIsNotNone(finders.find("core/illustrations/learning-start.png"))
 
     def test_landing_post_stores_subject_in_session(self):
         subject = get_default_subject()

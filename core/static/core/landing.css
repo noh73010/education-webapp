@@ -80,13 +80,23 @@
     display: flex;
     min-height: 330px;
     align-items: center;
-    justify-content: center;
-    padding: 72px 24px 58px;
-    text-align: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 56px 12px 54px;
+    text-align: left;
 }
 
 .landing-page .landing-copy {
-    max-width: 720px;
+    flex: 1 1 54%;
+    max-width: 560px;
+}
+
+.landing-hero-illustration {
+    display: block;
+    flex: 0 1 44%;
+    width: 44%;
+    height: auto;
+    object-fit: contain;
 }
 
 .landing-eyebrow {
@@ -303,8 +313,21 @@
     }
 
     .landing-page .landing-hero {
-        min-height: 300px;
-        padding: 58px 8px 48px;
+        min-height: 0;
+        flex-direction: column;
+        gap: 12px;
+        padding: 42px 8px 34px;
+        text-align: center;
+    }
+
+    .landing-page .landing-copy {
+        flex: none;
+    }
+
+    .landing-hero-illustration {
+        flex: none;
+        width: min(100%, 420px);
+        max-height: 230px;
     }
 
     .landing-page .landing-hero h1 {
@@ -351,10 +374,6 @@
 
 @media (max-width: 420px) {
     .landing-page .landing-hero h1 {
-        font-size: 32px;
-    }
-
-    .landing-page .landing-hero h1 br {
-        display: none;
+        font-size: 30px;
     }
 }

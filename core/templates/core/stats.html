@@ -1,4 +1,5 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block title %}
 학습 통계
@@ -66,9 +67,12 @@
       {% endif %}
     {% else %}
       <div class="dashboard-empty-guide learning-status-empty">
-        <b>아직 분석할 학습 기록이 없어요.</b>
-        <span>오늘 추천 문제를 풀면 약점, 복습 시점, 안정된 범위를 알려드릴게요.</span>
-        <a href="{% url 'mission_list' %}" class="main-button">오늘 학습 시작</a>
+        <img src="{% static 'core/illustrations/learning-start.png' %}" width="1254" height="1254" alt="" loading="lazy" decoding="async">
+        <div class="learning-status-empty-copy">
+          <b>아직 분석할 학습 기록이 없어요.</b>
+          <span>오늘 추천 문제를 풀면 약점, 복습 시점, 안정된 범위를 알려드릴게요.</span>
+          <a href="{% url 'mission_list' %}" class="main-button">오늘 학습 시작</a>
+        </div>
       </div>
     {% endif %}
   </section>

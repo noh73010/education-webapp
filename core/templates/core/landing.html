@@ -6,7 +6,7 @@
 {% block meta_robots %}index, follow{% endblock %}
 {% block seo_links %}<link rel="canonical" href="{{ canonical_url }}">{% endblock %}
 {% block body_class %}landing-page{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'core/landing.css' %}?v=20261001-1">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'core/landing.css' %}?v=20261003-1">{% endblock %}
 
 {% block content %}
 
@@ -18,6 +18,7 @@
     <p class="landing-lead">오늘 가능한 시간만 고르면 오답 기록과 복습 시점에 맞춰 다음 학습을 안내합니다.</p>
     <a class="landing-hero-action" href="#subject-selection-title">학습할 자격증 고르기 <span aria-hidden="true">↓</span></a>
   </div>
+  <img class="landing-hero-illustration" src="{% static 'core/illustrations/learning-journey.png' %}" width="1672" height="941" alt="문제를 풀며 헷갈린 개념을 익히고 다시 맞히는 학습 과정" decoding="async" fetchpriority="high">
 </section>
 
 <section class="landing-proof" aria-label="개인화 학습 예시">
