@@ -133,6 +133,8 @@ PREMIUM_GATING_ENABLED = env_bool("DJANGO_PREMIUM_GATING_ENABLED", False)
 GENERATED_MISSION_WATCH_INTERVAL_SECONDS = env_positive_int(
     "DJANGO_GENERATED_MISSION_WATCH_INTERVAL_SECONDS", 30
 )
+# Only the configured, Google-connected account can see visit statistics.
+VISITOR_STATS_OWNER_EMAIL = os.environ.get("DJANGO_VISITOR_STATS_OWNER_EMAIL", "").strip().lower()
 
 if env_bool("DJANGO_SECURE_PROXY_SSL_HEADER", False) or (DEBUG and TUNNEL_HOST):
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -162,6 +164,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'core.middleware.DailyVisitMiddleware',
     'allauth.account.middleware.AccountMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',

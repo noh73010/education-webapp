@@ -1,0 +1,35 @@
+{% extends 'core/base.html' %}
+
+{% block title %}방문 계정 통계{% endblock %}
+
+{% block content %}
+<main class="page-shell compact-page">
+  <section class="card">
+    <h1 class="section-title">방문 계정 통계</h1>
+    <p>한국 시간 기준, 로그인한 학습 계정 한 개를 하루에 한 번만 셉니다. 관리자 계정과 비로그인 방문은 제외합니다.</p>
+    <div class="feature-grid">
+      <div class="info-box"><b>오늘</b><br>{{ today.count }}명{% if not today.exact %} <small>(기록된 활동 계정만)</small>{% endif %}</div>
+      <div class="info-box"><b>어제</b><br>{{ yesterday.count }}명{% if not yesterday.exact %} <small>(기록된 활동 계정만)</small>{% endif %}</div>
+    </div>
+    <p class="meta-text">방문 집계를 시작하기 전 날짜는 로그인·학습 등 기존 행동 기록에서 확인되는 계정의 최소 수입니다. 실제 방문자는 더 많을 수 있습니다.</p>
+  </section>
+
+  <section class="card">
+    <h2 class="card-title">날짜별 방문 계정</h2>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>날짜</th><th>계정 수</th><th>기록 기준</th></tr></thead>
+        <tbody>
+          {% for row in rows %}
+            <tr><td>{{ row.day|date:"Y-m-d" }}</td><td>{{ row.count }}명</td><td>{% if row.exact %}방문 집계{% else %}기존 활동 기록 · 최소 수{% endif %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="feature-grid">
+      <a href="?before={{ older_end_day }}">이전 30일</a>
+      {% if has_newer %}<a href="?before={{ newer_end_day }}">다음 30일</a>{% endif %}
+    </div>
+  </section>
+</main>
+{% endblock %}

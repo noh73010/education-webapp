@@ -7,6 +7,7 @@
     <h1 class="section-title">계정 및 데이터 관리</h1>
     <p>현재 로그인된 회원의 학습 기록과 로그인 방법을 관리합니다.</p>
     <a href="{% url 'study_profile' %}">시험일 설정</a>
+    {% if can_view_visit_stats %}<p><a href="{% url 'visit_stats' %}">방문 계정 통계 보기</a></p>{% endif %}
     {% if needs_login %}
       <p role="alert">소셜 회원은 최근 로그인 확인이 필요합니다. 로그아웃 후 같은 소셜 계정으로 다시 로그인하고 이 화면으로 돌아오세요.</p>
       <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" class="main-button">로그아웃하고 다시 로그인</button></form>

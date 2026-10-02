@@ -548,6 +548,27 @@ class UserEvent(models.Model):
         return f"{self.event_type} / {self.user_id or 'anonymous'} / {self.created_at:%Y-%m-%d %H:%M}"
 
 
+class DailyVisit(models.Model):
+    """One authenticated learner visit per local calendar day."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    day = models.DateField(db_index=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["user", "day"], name="unique_daily_user_visit")]
+        ordering = ["-day"]
+
+
+class DailyVisitTotal(models.Model):
+    """Anonymous historical total survives an individual account deletion."""
+
+    day = models.DateField(unique=True)
+    count = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["-day"]
+
+
 class Inquiry(models.Model):
     mission = models.ForeignKey(Mission, on_delete=models.SET_NULL, null=True, blank=True,
                                 related_name="error_reports")

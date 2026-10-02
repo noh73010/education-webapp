@@ -50,6 +50,7 @@ from core.views.account_settings import account_settings
 from core.views.learning_experience import problem_report, learning_start, save_mission_draft
 from core.views.exams import exam_draft
 from core.views.seo import robots_txt, sitemap_xml
+from core.views.visit_stats import visit_stats
 
 urlpatterns = [
     path("robots.txt", robots_txt, name="robots_txt"),
@@ -59,6 +60,7 @@ urlpatterns = [
     path("missions/<int:mission_id>/report/", problem_report, name="problem_report"),
     path("missions/<int:mission_id>/draft/", save_mission_draft, name="save_mission_draft"),
     path("account-settings/", account_settings, name="account_settings"),
+    path("visit-stats/", visit_stats, name="visit_stats"),
     path("", landing, name="landing"),
     path("service/", service_info, name="service_info"),
     path("content-sources/", content_sources, name="content_sources"),
