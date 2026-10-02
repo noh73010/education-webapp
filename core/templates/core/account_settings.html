@@ -9,8 +9,12 @@
     <a href="{% url 'study_profile' %}">시험일 설정</a>
     {% if can_view_visit_stats %}<p><a href="{% url 'visit_stats' %}">방문 계정 통계 보기</a></p>{% endif %}
     {% if needs_login %}
-      <p role="alert">소셜 회원은 최근 로그인 확인이 필요합니다. 로그아웃 후 같은 소셜 계정으로 다시 로그인하고 이 화면으로 돌아오세요.</p>
-      <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" class="main-button">로그아웃하고 다시 로그인</button></form>
+      <p role="alert">학습 기록은 아직 초기화되지 않았습니다. 안전을 위해 같은 Google·네이버 계정으로 다시 로그인한 직후 진행해 주세요.</p>
+      <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{% url 'login' %}?next={% url 'account_settings' %}">
+        <button type="submit" class="main-button">다시 로그인하고 이 화면으로 돌아오기</button>
+      </form>
     {% endif %}
   </section>
   {% if social_login_options %}
@@ -52,11 +56,15 @@
     <details>
       <summary>학습 기록 초기화하기</summary>
       <p><strong>삭제한 학습 기록은 화면에서 복구할 수 없습니다.</strong></p>
+      {% if needs_login %}
+        <p>위의 재로그인 버튼으로 돌아온 뒤 초기화할 수 있습니다. 지금은 어떤 기록도 삭제되지 않았습니다.</p>
+      {% else %}
       <form method="post">
         {% csrf_token %}<input type="hidden" name="action" value="reset">
         {{ reset_form.as_p }}
         <button type="submit" class="main-button">모든 학습 기록 영구 초기화</button>
       </form>
+      {% endif %}
     </details>
   </section>
   <section class="card">
@@ -66,11 +74,15 @@
     <details>
       <summary>회원 탈퇴하기</summary>
       <p><strong>탈퇴 후 같은 계정으로 다시 가입하더라도 기존 기록은 복구되지 않습니다.</strong></p>
+      {% if needs_login %}
+        <p>위의 재로그인 버튼으로 돌아온 뒤 탈퇴할 수 있습니다. 지금은 계정과 기록이 유지됩니다.</p>
+      {% else %}
       <form method="post">
         {% csrf_token %}<input type="hidden" name="action" value="delete">
         {{ delete_form.as_p }}
         <button type="submit" class="main-button account-delete-button">회원 탈퇴 및 데이터 삭제</button>
       </form>
+      {% endif %}
     </details>
   </section>
 </main>

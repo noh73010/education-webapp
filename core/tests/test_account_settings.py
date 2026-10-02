@@ -121,7 +121,13 @@ class AccountSettingsTests(TestCase):
         self.user.set_unusable_password()
         self.user.save()
         self.client.force_login(self.user)
+        page = self.client.get(self.url)
+        self.assertContains(page, "학습 기록은 아직 초기화되지 않았습니다")
+        self.assertContains(page, f'value="{reverse("login")}?next={self.url}"')
+        self.assertNotContains(page, "모든 학습 기록 영구 초기화")
+        self.assertNotContains(page, "회원 탈퇴 및 데이터 삭제")
         self.assertEqual(self.client.post(self.url, self.payload("reset")).status_code, 400)
+        self.assertTrue(Attempt.objects.filter(pk=self.attempt.pk).exists())
         with patch("core.views.account_settings.get_authentication_records", return_value=[
             {"method": "socialaccount", "at": time.time() - 3600},
         ]):
@@ -131,6 +137,19 @@ class AccountSettingsTests(TestCase):
         ]):
             self.assertEqual(self.client.post(self.url, self.payload("reset")).status_code, 302)
         self.assertFalse(Attempt.objects.filter(user=self.user).exists())
+
+    def test_social_relogin_returns_to_account_settings(self):
+        self.user.set_unusable_password()
+        self.user.save()
+        self.client.force_login(self.user)
+        response = self.client.post(reverse("logout"), {
+            "next": f'{reverse("login")}?next={self.url}',
+        })
+        self.assertRedirects(
+            response, f'{reverse("login")}?next={self.url}',
+            fetch_redirect_response=False,
+        )
+        self.assertTrue(Attempt.objects.filter(pk=self.attempt.pk).exists())
 
     def test_reset_is_atomic(self):
         with patch("core.services.account_data._remove_sessions", side_effect=RuntimeError("failure")):
