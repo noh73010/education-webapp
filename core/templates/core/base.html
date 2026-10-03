@@ -14,9 +14,10 @@
     <link rel="stylesheet" href="{% static 'core/course_focus.css' %}?v=20261003-2">
     <link rel="stylesheet" href="{% static 'core/theory.css' %}?v=20260719-1">
     <link rel="stylesheet" href="{% static 'core/responsive.css' %}?v=20261003-2">
+    <link rel="stylesheet" href="{% static 'core/logistics.css' %}?v=20261003-1">
     {% block extra_css %}{% endblock %}
 </head>
-<body class="{% block body_class %}{% if user.is_authenticated and request.session.current_subject_code == 'realtor' %}theme-realtor{% endif %}{% endblock %}">
+<body class="{% block body_class %}{% if user.is_authenticated and request.session.current_subject_code == 'realtor' %}theme-realtor{% elif user.is_authenticated and request.session.current_subject_code == 'logistics' %}theme-logistics{% endif %}{% endblock %}">
 
 <nav class="top-nav" aria-label="주요 메뉴">
     <div class="nav-head">

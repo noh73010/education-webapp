@@ -62,6 +62,7 @@ class WrongNotesPaginationTests(TestCase):
         response = self.client.get(reverse("wrong_notes"))
 
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="theme-logistics"')
         self.assertEqual(len(response.context["wrong_items"]), WRONG_NOTES_PAGE_SIZE)
         self.assertEqual(response.context["page_obj"].paginator.count, 205)
         self.assertEqual(response.context["page_obj"].paginator.num_pages, 11)

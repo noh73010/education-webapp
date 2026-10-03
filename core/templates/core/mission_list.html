@@ -89,6 +89,18 @@
       <b>{{ today_guide_message }}</b>
     </div>
 
+    <p class="primary-action-wrap">
+      {% if today_start_mission %}
+        <a href="{% url 'mission_detail' today_start_mission.id %}" class="main-button main-button-large">오늘 {{ selected_daily_minutes }}분 학습 시작</a>
+      {% elif today_guide_url_name == "pattern_training_start" %}
+        <a href="{% url 'pattern_training_start' today_guide_pattern_code %}" class="main-button main-button-large">3문제 약점 훈련 시작</a>
+      {% elif today_guide_url_name == "learning_type_training_start" %}
+        <a href="{% url 'learning_type_training_start' today_guide_skill today_guide_learning_type %}" class="main-button main-button-large">오늘 학습 시작</a>
+      {% else %}
+        <a href="{% url 'problem_set_list' %}" class="main-button main-button-large">오늘 학습 시작</a>
+      {% endif %}
+    </p>
+
     {% if daily_study_plan.total %}
       <div class="daily-plan" aria-label="오늘의 학습 계획">
         <div class="daily-plan-heading">
@@ -122,17 +134,6 @@
 
     <p class="meta-text">{{ daily_progress.pct }}% 완료</p>
 
-    <p class="primary-action-wrap">
-      {% if today_start_mission %}
-        <a href="{% url 'mission_detail' today_start_mission.id %}" class="main-button main-button-large">오늘 {{ selected_daily_minutes }}분 학습 시작</a>
-      {% elif today_guide_url_name == "pattern_training_start" %}
-        <a href="{% url 'pattern_training_start' today_guide_pattern_code %}" class="main-button main-button-large">3문제 약점 훈련 시작</a>
-      {% elif today_guide_url_name == "learning_type_training_start" %}
-        <a href="{% url 'learning_type_training_start' today_guide_skill today_guide_learning_type %}" class="main-button main-button-large">오늘 학습 시작</a>
-      {% else %}
-        <a href="{% url 'problem_set_list' %}" class="main-button main-button-large">오늘 학습 시작</a>
-      {% endif %}
-    </p>
   {% endif %}
 
   <div class="quick-action-row">
@@ -143,6 +144,7 @@
   </div>
 </section>
 
+{% if is_logistics_subject %}<div class="home-insight-stack">{% endif %}
 <section class="card coach-summary-card coach-summary-warning {% if selected_course %}{% if selected_course_weakness.state != 'found' %}is-empty{% endif %}{% elif not personal_coach.priority_weakness %}is-empty{% endif %}">
   <p class="eyebrow">{% if selected_course %}{{ selected_course }}의 약점{% else %}지금 가장 위험한 약점{% endif %}</p>
   {% if selected_course and selected_course_weakness.state == 'found' %}
@@ -183,6 +185,7 @@
   {% endif %}
   {% if personal_coach.recent_improvement %}<a href="{% url 'stats' %}" class="sub-button">학습 변화 자세히</a>{% endif %}
 </section>
+{% if is_logistics_subject %}</div>{% endif %}
 </div>
 
 {% if focus_roadmap %}

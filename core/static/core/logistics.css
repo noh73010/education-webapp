@@ -1,0 +1,181 @@
+/* Logistics has its own quiet, connected visual language. Keep all rules scoped
+   so the realtor and future qualifications retain independent identities. */
+body.theme-logistics {
+  --log-ink: #20344b;
+  --log-muted: #51677b;
+  --log-line: #d9e5e8;
+  --log-blue: #245f9e;
+  --log-blue-dark: #174a80;
+  --log-sand: #f8f0e2;
+  --log-teal: #e6f3ef;
+  color: var(--log-ink);
+  background:
+    radial-gradient(circle at 12% 2%, rgba(188, 217, 223, .28), transparent 27rem),
+    linear-gradient(160deg, #f4f8f9 0%, #eef4f5 55%, #f7f9f8 100%);
+}
+body.theme-logistics p { color: var(--log-muted); }
+body.theme-logistics .meta-text { color: #536a7e; }
+body.theme-logistics .section-title,
+body.theme-logistics .card-title { color: var(--log-ink); }
+body.theme-logistics .eyebrow { color: #346b8d; }
+body.theme-logistics .top-nav,
+body.theme-logistics .bottom-mobile-nav {
+  border: 1px solid rgba(210, 226, 230, .8);
+  background: rgba(255, 255, 255, .88);
+  box-shadow: 0 10px 30px rgba(41, 73, 88, .07);
+}
+body.theme-logistics .card {
+  border: 1px solid rgba(217, 229, 232, .8);
+  background: rgba(255, 255, 255, .94);
+  box-shadow: 0 12px 34px rgba(36, 67, 82, .065);
+}
+body.theme-logistics .info-box {
+  background: #f0f5f6;
+  color: var(--log-ink);
+}
+body.theme-logistics .main-button,
+body.theme-logistics .cbt-submit-button {
+  background: var(--log-blue);
+  color: #fff;
+  box-shadow: 0 9px 22px rgba(36, 95, 158, .17);
+}
+body.theme-logistics .main-button:hover,
+body.theme-logistics .cbt-submit-button:hover {
+  background: var(--log-blue-dark);
+  color: #fff;
+}
+body.theme-logistics .sub-button,
+body.theme-logistics button.sub-button,
+body.theme-logistics .sub-button:hover,
+body.theme-logistics button.sub-button:hover {
+  border: 1px solid var(--log-line);
+  background: #edf4f5;
+  color: #34536c;
+  box-shadow: none;
+}
+body.theme-logistics .sub-button:hover,
+body.theme-logistics button.sub-button:hover { background: #e2eef0; }
+body.theme-logistics .roadmap-progress { background: #dce9ed; }
+body.theme-logistics .roadmap-progress-fill { background: #3984a4; }
+
+/* Home: today's action leads; evidence cards stay soft and compact. */
+body.theme-logistics .home-primary-grid { gap: 14px; }
+body.theme-logistics .home-insight-stack {
+  display: grid; gap: 14px; align-content: start;
+}
+body.theme-logistics .coach-summary-action {
+  border-color: #d6e7eb;
+  background: linear-gradient(145deg, #fff 10%, #eaf4f6 100%);
+  box-shadow: 0 16px 38px rgba(37, 91, 115, .10);
+}
+body.theme-logistics .coach-summary-warning {
+  border-color: #eedfc3;
+  background: linear-gradient(145deg, #fff 20%, var(--log-sand));
+}
+body.theme-logistics .coach-summary-warning .eyebrow { color: #875c24; }
+body.theme-logistics .coach-summary-success {
+  border-color: #cfe5dd;
+  background: linear-gradient(145deg, #fff 20%, var(--log-teal));
+}
+body.theme-logistics .coach-summary-success .eyebrow { color: #276f62; }
+body.theme-logistics .coach-summary-card.is-empty { background: #fbfcfc; }
+body.theme-logistics .daily-plan,
+body.theme-logistics .coach-inline-notice { border-color: var(--log-line); background: rgba(255,255,255,.82); }
+body.theme-logistics .study-time-picker a.is-selected { background: var(--log-blue); border-color: var(--log-blue); }
+body.theme-logistics .quick-action-row .sub-button:nth-child(n) {
+  border: 1px solid var(--log-line); background: rgba(255,255,255,.76);
+  color: #425e73; box-shadow: none;
+}
+body.theme-logistics .quick-action-row .sub-button:hover { background: #e5f0f2; }
+
+/* A light route line makes chapter order visible without imposing that order. */
+body.theme-logistics .selected-course-contents .course-chapter-list {
+  position: relative; gap: 11px; padding-left: 18px;
+  border-left: 2px solid #d3e4e8;
+}
+body.theme-logistics .course-chapter-row {
+  position: relative; border-color: var(--log-line); background: #fbfdfd;
+  box-shadow: 0 5px 16px rgba(35, 76, 94, .035);
+}
+body.theme-logistics .course-chapter-row::before {
+  position: absolute; top: 50%; left: -25px; width: 12px; height: 12px;
+  border: 2px solid #75aabd; border-radius: 50%; background: #f4f8f9;
+  transform: translateY(-50%); content: "";
+}
+body.theme-logistics .course-chapter-number {
+  background: #e7f2f4; color: #245b78;
+}
+body.theme-logistics .theory-roadmap-card,
+body.theme-logistics .roadmap-step-card {
+  border-color: var(--log-line); background: #fbfdfd;
+}
+body.theme-logistics .roadmap-step-card.is-complete {
+  border-color: #cce5db; background: #edf7f3;
+}
+
+/* Reading and exam surfaces stay almost neutral, with selection as the accent. */
+body.theme-logistics .cbt-question-card,
+body.theme-logistics .cbt-answer-card { background: #fff; }
+body.theme-logistics .cbt-question-text {
+  color: #172b40; font-size: clamp(18px, 2vw, 20px); line-height: 1.78;
+}
+body.theme-logistics .cbt-choice-option {
+  border-color: var(--log-line); background: #fff; color: var(--log-ink);
+  line-height: 1.66;
+}
+body.theme-logistics .cbt-choice-option:hover { border-color: #94bdc9; background: #f7fbfc; }
+body.theme-logistics .cbt-choice-option:has(input:checked) {
+  border-color: #3c829e; background: #eaf5f7;
+}
+body.theme-logistics .cbt-choice-option input:checked + .cbt-choice-marker {
+  border-color: var(--log-blue); background: var(--log-blue);
+}
+body.theme-logistics .result-correct { border-color: #cce5db; background: #f0f8f4; }
+body.theme-logistics .result-wrong { border-color: #eedfc3; background: #fcf6ec; }
+body.theme-logistics .result-correct .pre-line,
+body.theme-logistics .result-wrong .pre-line,
+body.theme-logistics .result-explanation p { color: var(--log-ink); font-size: 1rem; line-height: 1.82; }
+body.theme-logistics .exam-start-page h1 {
+  font-size: clamp(1.55rem, 4vw, 2rem);
+  line-height: 1.35;
+  word-break: keep-all;
+}
+body.theme-logistics .exam-start-page .exam-mode-card:not(.is-recommended) button {
+  border: 1px solid var(--log-line); background: #edf4f5; color: #34536c; box-shadow: none;
+}
+body.theme-logistics .exam-start-page .exam-mode-card:not(.is-recommended) button:hover { background: #e2eef0; }
+body.theme-logistics .cbt-exam-page .exam-question-number:not(.is-current) {
+  border-color: var(--log-line); background: #fff; color: #39536a; box-shadow: none;
+}
+body.theme-logistics .cbt-exam-page .exam-question-number.is-answered:not(.is-current) { background: #eaf5f7; }
+body.theme-logistics .cbt-exam-page #open-final-submit-dialog {
+  border: 1px solid var(--log-line); background: #edf4f5; color: #34536c; box-shadow: none;
+}
+body.theme-logistics .exam-result-hero { background: #edf5f6; }
+body.theme-logistics .exam-result-weakness { border-color: #eedfc3; background: #fcf7ee; }
+body.theme-logistics .exam-result-page .clean-list li { line-height: 1.65; }
+body.theme-logistics #wrong-note-list > .info-box {
+  border: 1px solid var(--log-line); background: #fff;
+}
+body.theme-logistics #wrong-note-list .result-card-actions .main-button {
+  border: 1px solid #bcd7df; background: #edf6f7; color: #245b78; box-shadow: none;
+}
+body.theme-logistics #wrong-note-list .result-card-actions .main-button:hover { background: #dfeff2; }
+@media (min-width: 1100px) {
+  body.theme-logistics .home-primary-grid {
+    grid-template-columns: minmax(0, 1.7fr) minmax(280px, .9fr);
+  }
+  body.theme-logistics .coach-summary-action { grid-column: 1; }
+  body.theme-logistics .home-insight-stack { grid-column: 2; }
+}
+@media (min-width: 769px) and (max-width: 1099px) {
+  body.theme-logistics .home-insight-stack {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 768px) {
+  body.theme-logistics .course-chapter-row::before { top: 28px; transform: none; }
+  body.theme-logistics .cbt-question-text { font-size: 18px; }
+  body.theme-logistics .cbt-choice-option { padding: 14px 15px; }
+}

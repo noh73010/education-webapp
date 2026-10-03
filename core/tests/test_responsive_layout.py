@@ -11,6 +11,16 @@ class ResponsiveLayoutTests(SimpleTestCase):
 
     def test_stylesheet_is_available(self):
         self.assertIsNotNone(finders.find("core/responsive.css"))
+        self.assertIsNotNone(finders.find("core/logistics.css"))
+
+    def test_logistics_theme_is_scoped_and_loaded_after_responsive_rules(self):
+        html = render_to_string("core/base.html")
+        self.assertLess(html.index("core/responsive.css"), html.index("core/logistics.css"))
+        with open(finders.find("core/logistics.css"), encoding="utf-8") as stylesheet:
+            css = stylesheet.read()
+        self.assertIn("body.theme-logistics .coach-summary-action", css)
+        self.assertIn("body.theme-logistics .course-chapter-row::before", css)
+        self.assertIn("body.theme-logistics .cbt-choice-option", css)
 
     def test_learning_coach_colors_layout_and_reduced_motion_are_defined(self):
         path = finders.find("core/style.css")

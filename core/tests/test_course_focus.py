@@ -29,6 +29,7 @@ class CourseFocusTests(TestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "core/course_focus_select.html")
+        self.assertContains(response, 'class="theme-logistics"')
         self.assertEqual(len(response.context["course_options"]), 5)
         self.assertContains(response, "순서대로 시작하지 않아도 됩니다")
         self.assertContains(response, 'href="%s" class="sub-button qualification-switch-link"' % reverse("landing"))

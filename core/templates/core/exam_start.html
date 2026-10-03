@@ -1,6 +1,7 @@
 {% extends 'core/base.html' %}
 {% block title %}모의고사 선택{% endblock %}
 {% block content %}
+<main class="exam-start-page">
 <section class="card">
   <h1>내 시간에 맞는 모의고사</h1>
   <p>{{ current_subject.name }} · 평소에는 짧게, 약점은 과목별로, 시험 전에는 실제처럼.</p>
@@ -16,12 +17,12 @@
   {% else %}<a href="{% url 'exam_result' exam.id %}">풀던 시험 이어하기</a>{% endif %}
 </section>
 {% endfor %}
-<section class="card">
+<section class="card exam-mode-card is-recommended">
   <h2>짧은 실전 연습</h2><p>10문제 · 10분</p><p>짧게 풀며 실력을 확인해요. 전체 합격 판정은 하지 않습니다.</p>
   <form method="post" action="{% url 'exam_create' %}">{% csrf_token %}<input type="hidden" name="mode" value="short"><button type="submit" {% if not can_start_short %}disabled{% endif %}>10분 연습 시작</button></form>
   {% if not can_start_short %}<p role="status">선택한 단계의 출제 가능한 문제가 10개 이상 등록되면 이용할 수 있습니다.</p>{% endif %}
 </section>
-<section class="card">
+<section class="card exam-mode-card">
   <h2>과목별 모의고사</h2><p>한 과목 40문제 · 40분</p><p>40분은 앱의 연습 기준입니다. 실제 시험은 교시 안에서 시간을 배분합니다.</p>
   <form method="post" action="{% url 'exam_create' %}">{% csrf_token %}<input type="hidden" name="mode" value="course">
     <label for="exam-course">연습할 과목</label><select id="exam-course" name="course" required>{% for course in courses %}<option value="{{ course }}">{{ course }}</option>{% endfor %}</select>
@@ -30,7 +31,7 @@
   {% if current_subject.code == 'realtor' and not courses %}<p role="status">한 과목에 출제 가능한 문제가 40개 이상 등록되면 이용할 수 있습니다.</p>{% endif %}
 </section>
 {% if supports_full %}
-<section class="card">
+<section class="card exam-mode-card">
   <h2>실전 모의고사</h2>
   <p>1교시: 물류관리론 · 화물운송론 · 국제물류론<br>120문제 · 120분</p>
   <p>2교시: 보관하역론 · 물류관련법규<br>80문제 · 80분</p>
@@ -41,4 +42,5 @@
 </section>
 {% endif %}
 <a href="{% url 'exam_history' %}">시험 기록</a>
+</main>
 {% endblock %}

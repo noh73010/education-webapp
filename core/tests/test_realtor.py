@@ -42,7 +42,9 @@ class RealtorLearningTests(TestCase):
         self.assertContains(self.client.get(reverse("mission_detail", args=[mission.pk])), 'class="theme-realtor"')
         self.assertNotContains(self.client.get(reverse("landing")), 'class="theme-realtor"')
         self.client.post(reverse("select_subject", args=["logistics"]))
-        self.assertNotContains(self.client.get(reverse("mission_list")), 'class="theme-realtor"')
+        logistics_page = self.client.get(reverse("mission_list"))
+        self.assertNotContains(logistics_page, 'class="theme-realtor"')
+        self.assertContains(logistics_page, 'class="theme-logistics"')
 
     def test_study_path_is_saved_per_user_and_changes_stage_order(self):
         self.assertEqual(self.client.get(reverse("realtor_choose_path")).status_code, 405)

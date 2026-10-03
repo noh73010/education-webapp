@@ -127,6 +127,7 @@ class ExamModeTests(TestCase):
     @override_settings(PREMIUM_GATING_ENABLED=True)
     def test_mode_screen_and_daily_limit_resume(self):
         response = self.client.get(reverse("exam_start"))
+        self.assertContains(response, 'class="exam-start-page"')
         for label in ("짧은 실전 연습", "과목별 모의고사", "실전 모의고사"):
             self.assertContains(response, label)
         for _ in range(2):
