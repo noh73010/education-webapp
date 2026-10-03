@@ -12,7 +12,7 @@ from core.models import (
     ProblemSetSession, ProblemSetSessionItem, Mission, StudyProfile, Subject,
     UserAccess, UserEvent, UserStreak, UserWeakness, WrongPattern, WrongReason,
 )
-from core.services.account_data import reset_learning_data
+from core.services.account_data import reset_learning_data, reset_subject_learning_data
 
 
 class AccountSettingsTests(TestCase):
@@ -34,6 +34,14 @@ class AccountSettingsTests(TestCase):
                 f"{action}-confirmation": "학습 기록 초기화" if action == "reset" else "회원 탈퇴",
                 f"{action}-acknowledged": "on"}
 
+    def subject_payload(self, subject=None):
+        subject = subject or self.subject
+        prefix = f"reset-{subject.pk}"
+        return {"action": "reset_subject", "subject_id": str(subject.pk),
+                f"{prefix}-password": "SafePass123!",
+                f"{prefix}-confirmation": f"{subject.name} 초기화",
+                f"{prefix}-acknowledged": "on"}
+
     def test_login_required_and_get_does_not_delete(self):
         self.assertContains(self.client.get(self.url), "학습 기록 초기화")
         self.assertTrue(Attempt.objects.filter(pk=self.attempt.pk).exists())
@@ -48,8 +56,8 @@ class AccountSettingsTests(TestCase):
                 data[f"delete-{field}"] = ""
                 self.assertEqual(self.client.post(self.url, data).status_code, 400)
                 self.assertTrue(Attempt.objects.filter(pk=self.attempt.pk).exists())
-        data = self.payload("reset")
-        data["reset-password"] = "wrong"
+        data = self.subject_payload()
+        data[f"reset-{self.subject.pk}-password"] = "wrong"
         self.assertEqual(self.client.post(self.url, data).status_code, 400)
 
     def test_csrf_required(self):
@@ -58,10 +66,10 @@ class AccountSettingsTests(TestCase):
         self.assertEqual(client.post(self.url, self.payload("delete")).status_code, 403)
         self.assertTrue(get_user_model().objects.filter(pk=self.user.pk).exists())
 
-    def test_reset_all_subjects_and_dependent_records_only(self):
+    def test_reset_one_subject_preserves_other_subject_and_dependent_records(self):
         second = Subject.objects.create(code="reset-second", name="다른 시험")
         mission = Mission.objects.create(subject=second, external_id="reset-2", title="문제", skill="b")
-        Attempt.objects.create(user=self.user, mission=mission)
+        second_attempt = Attempt.objects.create(user=self.user, mission=mission)
         reason = WrongReason.objects.create(name="reset reason")
         AttemptWrongReason.objects.create(attempt=self.attempt, wrong_reason=reason)
         pattern = WrongPattern.objects.create(subject=self.subject, code="p", name="패턴")
@@ -75,19 +83,23 @@ class AccountSettingsTests(TestCase):
         problem_set = ProblemSet.objects.create(title="세트")
         session = ProblemSetSession.objects.create(user=self.user, problem_set=problem_set)
         ProblemSetSessionItem.objects.create(problem_set_session=session, mission=self.mission, order_no=1, attempt=self.attempt)
-        UserEvent.objects.create(user=self.user, event_type="finish_mission")
+        UserEvent.objects.create(user=self.user, event_type="finish_mission", metadata={"mission_id": self.mission.pk})
+        UserEvent.objects.create(user=self.user, event_type="finish_mission", metadata={"mission_id": mission.pk})
         UserEvent.objects.create(user=self.user, event_type="signup")
         other_device = Client()
         other_device.force_login(self.user)
         session = other_device.session
         session["pattern_training_results"] = [True]
         session.save()
-        data = self.payload("reset")
+        data = self.subject_payload()
         data["user_id"] = self.other.pk  # A supplied target is never trusted.
         self.assertRedirects(self.client.post(self.url, data), reverse("login"), fetch_redirect_response=False)
-        for model in (Attempt, DailyMission, UserStreak, ConfusionCard, UserWeakness,
-                      PatternTrainingSession, ExamSession, ProblemSetSession):
+        for model in (DailyMission, ConfusionCard, UserWeakness, PatternTrainingSession,
+                      ExamSession, ProblemSetSession):
             self.assertFalse(model.objects.filter(user=self.user).exists(), model.__name__)
+        self.assertFalse(Attempt.objects.filter(pk=self.attempt.pk).exists())
+        self.assertTrue(Attempt.objects.filter(pk=second_attempt.pk).exists())
+        self.assertEqual(UserStreak.objects.get(user=self.user).last_solved_date, timezone.localdate())
         self.assertFalse(AttemptWrongReason.objects.exists())
         self.assertFalse(ExamSessionMission.objects.exists())
         self.assertFalse(ProblemSetSessionItem.objects.exists())
@@ -95,7 +107,8 @@ class AccountSettingsTests(TestCase):
         self.assertTrue(UserAccess.objects.get(user=self.user).is_premium)
         self.assertEqual(StudyProfile.objects.get(user=self.user).daily_minutes, 20)
         self.assertTrue(Inquiry.objects.filter(pk=self.inquiry.pk).exists())
-        self.assertFalse(UserEvent.objects.filter(user=self.user, event_type="finish_mission").exists())
+        self.assertFalse(UserEvent.objects.filter(user=self.user, metadata__mission_id=self.mission.pk).exists())
+        self.assertTrue(UserEvent.objects.filter(user=self.user, metadata__mission_id=mission.pk).exists())
         self.assertTrue(UserEvent.objects.filter(user=self.user, event_type="signup").exists())
         self.assertEqual(Mission.objects.filter(subject__in=[self.subject, second]).count(), 2)
         self.assertEqual(other_device.get(self.url).status_code, 302)
@@ -122,20 +135,20 @@ class AccountSettingsTests(TestCase):
         self.user.save()
         self.client.force_login(self.user)
         page = self.client.get(self.url)
-        self.assertContains(page, "학습 기록은 아직 초기화되지 않았습니다")
+        self.assertContains(page, "현재 기록은 그대로 유지됩니다")
         self.assertContains(page, f'value="{reverse("login")}?next={self.url}"')
-        self.assertNotContains(page, "모든 학습 기록 영구 초기화")
+        self.assertNotContains(page, "기록만 영구 초기화")
         self.assertNotContains(page, "회원 탈퇴 및 데이터 삭제")
-        self.assertEqual(self.client.post(self.url, self.payload("reset")).status_code, 400)
+        self.assertEqual(self.client.post(self.url, self.subject_payload()).status_code, 400)
         self.assertTrue(Attempt.objects.filter(pk=self.attempt.pk).exists())
         with patch("core.views.account_settings.get_authentication_records", return_value=[
             {"method": "socialaccount", "at": time.time() - 3600},
         ]):
-            self.assertEqual(self.client.post(self.url, self.payload("reset")).status_code, 400)
+            self.assertEqual(self.client.post(self.url, self.subject_payload()).status_code, 400)
         with patch("core.views.account_settings.get_authentication_records", return_value=[
             {"method": "socialaccount", "at": time.time()},
         ]):
-            self.assertEqual(self.client.post(self.url, self.payload("reset")).status_code, 302)
+            self.assertEqual(self.client.post(self.url, self.subject_payload()).status_code, 302)
         self.assertFalse(Attempt.objects.filter(user=self.user).exists())
 
     def test_social_relogin_returns_to_account_settings(self):
@@ -156,6 +169,39 @@ class AccountSettingsTests(TestCase):
             with self.assertRaises(RuntimeError):
                 reset_learning_data(self.user)
         self.assertTrue(Attempt.objects.filter(pk=self.attempt.pk).exists())
+
+    def test_old_global_reset_action_and_tampered_subject_are_rejected(self):
+        self.assertEqual(self.client.post(self.url, self.payload("reset")).status_code, 400)
+        data = self.subject_payload()
+        data["subject_id"] = "999999"
+        self.assertEqual(self.client.post(self.url, data).status_code, 400)
+        self.assertTrue(Attempt.objects.filter(pk=self.attempt.pk).exists())
+
+    def test_mixed_subject_session_aborts_without_deleting_either_record(self):
+        second = Subject.objects.create(code="reset-second", name="다른 시험")
+        other_mission = Mission.objects.create(subject=second, external_id="reset-2", title="문제", skill="b")
+        other_attempt = Attempt.objects.create(user=self.user, mission=other_mission)
+        problem_set = ProblemSet.objects.create(title="혼합 세트")
+        session = ProblemSetSession.objects.create(user=self.user, problem_set=problem_set)
+        ProblemSetSessionItem.objects.create(problem_set_session=session, mission=self.mission, order_no=1)
+        ProblemSetSessionItem.objects.create(problem_set_session=session, mission=other_mission, order_no=2)
+        self.assertEqual(self.client.post(self.url, self.subject_payload()).status_code, 400)
+        self.assertTrue(Attempt.objects.filter(pk=self.attempt.pk).exists())
+        self.assertTrue(Attempt.objects.filter(pk=other_attempt.pk).exists())
+        self.assertEqual(session.items.count(), 2)
+
+    def test_two_sitting_exam_reset_preserves_other_qualification_exam(self):
+        second = Subject.objects.create(code="reset-second", name="다른 시험")
+        other_mission = Mission.objects.create(subject=second, external_id="reset-2", title="문제", skill="b")
+        first = ExamSession.objects.create(user=self.user)
+        followup = ExamSession.objects.create(user=self.user, previous_sitting=first)
+        other_exam = ExamSession.objects.create(user=self.user)
+        ExamSessionMission.objects.create(exam_session=first, mission=self.mission, order_no=1)
+        ExamSessionMission.objects.create(exam_session=followup, mission=self.mission, order_no=1)
+        ExamSessionMission.objects.create(exam_session=other_exam, mission=other_mission, order_no=1)
+        reset_subject_learning_data(self.user, self.subject)
+        self.assertFalse(ExamSession.objects.filter(pk__in=[first.pk, followup.pk]).exists())
+        self.assertTrue(ExamSession.objects.filter(pk=other_exam.pk).exists())
 
     def test_unknown_action_rejected(self):
         self.assertEqual(self.client.post(self.url, {"action": "all"}).status_code, 400)

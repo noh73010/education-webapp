@@ -14,7 +14,10 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_http_methods
 
-from core.services.account_data import delete_member, reset_learning_data
+from core.models import Subject
+from core.services.account_data import (
+    MixedQualificationSessionError, delete_member, reset_subject_learning_data,
+)
 
 
 SOCIAL_PROVIDER_LABELS = {
@@ -25,7 +28,7 @@ SOCIAL_PROVIDER_LABELS = {
 
 
 class AccountActionForm(forms.Form):
-    confirmation = forms.CharField(label="확인 문구", max_length=30)
+    confirmation = forms.CharField(label="확인 문구", max_length=120)
     password = forms.CharField(
         label="현재 비밀번호", strip=False,
         widget=forms.PasswordInput(attrs={"autocomplete": "current-password"}),
@@ -83,35 +86,49 @@ def _social_login_options(user):
 
 @login_required
 @never_cache
-@sensitive_post_parameters("reset-password", "delete-password")
+@sensitive_post_parameters()
 @require_http_methods(["GET", "POST"])
 def account_settings(request):
     action = request.POST.get("action") if request.method == "POST" else None
-    reset_form = AccountActionForm(
-        request.POST if action == "reset" else None,
-        user=request.user, phrase="학습 기록 초기화", prefix="reset",
-    )
+    subjects = list(Subject.objects.filter(is_active=True).order_by("name", "code"))
+    selected_subject = next((subject for subject in subjects
+                             if str(subject.pk) == request.POST.get("subject_id")), None)
+    subject_reset_forms = [{
+        "subject": subject,
+        "form": AccountActionForm(
+            request.POST if action == "reset_subject" and selected_subject == subject else None,
+            user=request.user, phrase=f"{subject.name} 초기화", prefix=f"reset-{subject.pk}",
+        ),
+    } for subject in subjects]
     delete_form = AccountActionForm(
         request.POST if action == "delete" else None,
         user=request.user, phrase="회원 탈퇴", prefix="delete",
     )
     needs_login = not request.user.has_usable_password() and not _recent_social_login(request)
-    form = {"reset": reset_form, "delete": delete_form}.get(action)
+    form = delete_form if action == "delete" else None
+    if action == "reset_subject" and selected_subject is not None:
+        form = next(entry["form"] for entry in subject_reset_forms
+                    if entry["subject"] == selected_subject)
     if form is not None and form.is_valid():
         if needs_login:
             form.add_error(None, "안전을 위해 로그아웃 후 소셜 계정으로 다시 로그인하고 진행하세요.")
         else:
-            if action == "reset":
-                reset_learning_data(request.user)
-                message = "모든 자격증의 학습 기록을 초기화했습니다. 다시 로그인해 시작하세요."
+            if action == "reset_subject":
+                try:
+                    reset_subject_learning_data(request.user, selected_subject)
+                except MixedQualificationSessionError as exc:
+                    form.add_error(None, str(exc))
+                else:
+                    message = f"{selected_subject.name} 학습 기록만 초기화했습니다. 다시 로그인해 시작하세요."
             else:
                 delete_member(request.user)
                 message = "회원 탈퇴가 완료되었습니다. 계정과 연결된 데이터가 삭제되었습니다."
-            logout(request)
-            messages.success(request, message)
-            return redirect("login")
+            if not form.errors:
+                logout(request)
+                messages.success(request, message)
+                return redirect("login")
     return render(request, "core/account_settings.html", {
-        "reset_form": reset_form,
+        "subject_reset_forms": subject_reset_forms,
         "delete_form": delete_form,
         "needs_login": needs_login,
         "social_login_options": _social_login_options(request.user),
