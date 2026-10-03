@@ -78,11 +78,11 @@
 
 .landing-page .landing-hero {
     display: flex;
-    min-height: 330px;
+    min-height: 0;
     align-items: center;
     justify-content: space-between;
     gap: 20px;
-    padding: 56px 12px 54px;
+    padding: 28px 12px 22px;
     text-align: left;
 }
 
@@ -110,7 +110,7 @@
 .landing-page .landing-hero h1 {
     margin: 0;
     color: #0f172a;
-    font-size: clamp(38px, 5.5vw, 60px);
+    font-size: clamp(34px, 4.5vw, 50px);
     font-weight: 800;
     letter-spacing: -0.055em;
     line-height: 1.16;
@@ -118,8 +118,8 @@
 
 .landing-page .landing-lead {
     max-width: none;
-    margin: 22px 0 0;
-    color: #64748b;
+    margin: 12px 0 0;
+    color: #475569;
     font-size: 17px;
     line-height: 1.65;
 }
@@ -129,7 +129,7 @@
     min-height: 48px;
     align-items: center;
     gap: 14px;
-    margin-top: 26px;
+    margin-top: 16px;
     padding: 10px 20px;
     border-radius: 999px;
     background: #2563eb;
@@ -145,7 +145,7 @@
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 14px;
-    margin: -18px 0 26px;
+    margin: 24px 0 26px;
 }
 
 .landing-proof article,
@@ -169,7 +169,7 @@
 .landing-example-note { margin-bottom: 0; }
 
 .subject-selection {
-    padding: 0 0 72px;
+    padding: 8px 0 22px;
 }
 
 .subject-section-heading {
@@ -194,8 +194,8 @@
 }
 
 .landing-page .subject-card {
-    min-height: 310px;
-    padding: 30px;
+    min-height: 210px;
+    padding: 23px;
     border: 1px solid #e2e8f0;
     border-radius: 20px;
     background: #ffffff;
@@ -211,7 +211,7 @@
 
 .subject-card-label {
     display: inline-flex;
-    margin-bottom: 40px;
+    margin-bottom: 14px;
     padding: 6px 10px;
     border-radius: 999px;
     background: #eff6ff;
@@ -230,7 +230,7 @@
 
 .landing-page .subject-card p {
     margin: 0;
-    color: #64748b;
+    color: #475569;
     font-size: 15px;
     line-height: 1.65;
 }
@@ -315,9 +315,9 @@
     .landing-page .landing-hero {
         min-height: 0;
         flex-direction: column;
-        gap: 12px;
-        padding: 42px 8px 34px;
-        text-align: center;
+        gap: 8px;
+        padding: 18px 4px 14px;
+        text-align: left;
     }
 
     .landing-page .landing-copy {
@@ -326,22 +326,23 @@
 
     .landing-hero-illustration {
         flex: none;
-        width: min(100%, 420px);
-        max-height: 230px;
+        width: min(100%, 340px);
+        max-height: 116px;
+        object-position: left center;
     }
 
     .landing-page .landing-hero h1 {
-        font-size: clamp(34px, 10vw, 44px);
+        font-size: clamp(27px, 7.5vw, 36px);
         letter-spacing: -0.05em;
     }
 
     .landing-page .landing-lead {
-        margin-top: 18px;
+        margin-top: 10px;
         font-size: 15px;
     }
 
     .subject-selection {
-        padding-bottom: 50px;
+        padding-bottom: 16px;
     }
 
     .landing-proof { grid-template-columns: 1fr; margin-top: -8px; }
@@ -354,12 +355,12 @@
     }
 
     .landing-page .subject-card {
-        min-height: 260px;
-        padding: 24px;
+        min-height: 0;
+        padding: 17px;
     }
 
     .subject-card-label {
-        margin-bottom: 30px;
+        margin-bottom: 8px;
     }
 
     .landing-page .subject-card h3 {
@@ -374,6 +375,6 @@
 
 @media (max-width: 420px) {
     .landing-page .landing-hero h1 {
-        font-size: 30px;
+        font-size: 28px;
     }
 }

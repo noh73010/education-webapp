@@ -25,21 +25,26 @@ class LandingPageTests(TestCase):
         self.assertContains(response, "물류관리사")
         self.assertNotContains(response, "컴활 2급")
         self.assertContains(response, "학습 시작")
+        html = response.content.decode()
+        self.assertLess(html.index('class="subject-selection"'), html.index('class="landing-proof"'))
         self.assertContains(response, reverse("signup"))
         self.assertContains(response, reverse("login"))
 
-    def test_landing_page_hides_learning_navigation_for_authenticated_user(self):
+    def test_landing_page_keeps_learning_navigation_out_of_intro(self):
         user = User.objects.create_user(username="learner", password="pass12345")
         self.client.force_login(user)
 
         response = self.client.get(reverse("landing"))
 
         self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'class="nav-learning"')
         self.assertNotContains(response, "학습 홈")
-        self.assertNotContains(response, "문제 세트")
-        self.assertNotContains(response, "오답노트")
-        self.assertNotContains(response, "통계")
+        self.assertContains(response, 'class="nav-utility-menu"')
         self.assertContains(response, "로그아웃")
+
+        learning_response = self.client.get(reverse("mission_list"))
+        self.assertContains(learning_response, 'class="nav-learning"')
+        self.assertContains(learning_response, "학습 홈")
 
     def test_empty_learning_stats_shows_start_illustration(self):
         user = User.objects.create_user(username="new-learner", password="pass12345")
@@ -51,6 +56,17 @@ class LandingPageTests(TestCase):
         self.assertContains(response, "아직 분석할 학습 기록이 없어요")
         self.assertContains(response, "core/illustrations/learning-start.png")
         self.assertIsNotNone(finders.find("core/illustrations/learning-start.png"))
+
+    def test_new_learner_home_compacts_empty_insight_cards(self):
+        user = User.objects.create_user(username="new-home-learner", password="pass12345")
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("mission_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "coach-summary-warning is-empty")
+        self.assertContains(response, "coach-summary-success is-empty")
+        self.assertContains(response, "오늘 학습 시작")
 
     def test_landing_post_stores_subject_in_session(self):
         subject = get_default_subject()

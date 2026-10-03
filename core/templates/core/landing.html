@@ -6,7 +6,7 @@
 {% block meta_robots %}index, follow{% endblock %}
 {% block seo_links %}<link rel="canonical" href="{{ canonical_url }}">{% endblock %}
 {% block body_class %}landing-page{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'core/landing.css' %}?v=20261003-1">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'core/landing.css' %}?v=20261003-2">{% endblock %}
 
 {% block content %}
 
@@ -19,23 +19,6 @@
     <a class="landing-hero-action" href="#subject-selection-title">학습할 자격증 고르기 <span aria-hidden="true">↓</span></a>
   </div>
   <img class="landing-hero-illustration" src="{% static 'core/illustrations/learning-journey.png' %}" width="1672" height="941" alt="문제를 풀며 헷갈린 개념을 익히고 다시 맞히는 학습 과정" decoding="async" fetchpriority="high">
-</section>
-
-<section class="landing-proof" aria-label="개인화 학습 예시">
-  <article><span>01</span><b>오답 원인 확인</b><p>내 답과 정답을 가르는 기준부터 짧게 확인합니다.</p></article>
-  <article><span>02</span><b>약점은 신중하게 판정</b><p>한 번의 실수는 관찰하고, 반복 근거가 쌓일 때만 약점으로 안내합니다.</p></article>
-  <article><span>03</span><b>시간을 두고 재평가</b><p>다시 맞힌 순간이 아니라 며칠 뒤에도 기억하는지 확인합니다.</p></article>
-</section>
-
-<section class="landing-example" aria-label="학습 변화 예시">
-  <p class="landing-eyebrow">이렇게 달라집니다 · 예시</p>
-  <h2>틀린 문제에서 다음 공부까지</h2>
-  <ol class="landing-example-steps">
-    <li><b>문제를 틀렸다면</b><p>예: 재고관리에서 안전재고와 재주문점을 헷갈렸어요.</p></li>
-    <li><b>왜 틀렸는지 확인하고</b><p>두 개념을 구분하는 기준을 짧게 비교해요.</p></li>
-    <li><b>다시 확인해요</b><p>관련 문제를 복습하고, 시간이 지난 뒤에도 기억하는지 살펴봐요.</p></li>
-  </ol>
-  <p class="landing-example-note">실제 학습 안내는 나의 풀이 기록에 따라 달라집니다.</p>
 </section>
 
 <section class="subject-selection" aria-labelledby="subject-selection-title">
@@ -71,6 +54,23 @@
   {% else %}
     <div class="landing-empty-state">현재 선택 가능한 과목이 없습니다. 기본 과목을 준비 중입니다.</div>
   {% endif %}
+</section>
+
+<section class="landing-proof" aria-label="개인화 학습 예시">
+  <article><span>01</span><b>오답 원인 확인</b><p>내 답과 정답을 가르는 기준부터 짧게 확인합니다.</p></article>
+  <article><span>02</span><b>약점은 신중하게 판정</b><p>한 번의 실수는 관찰하고, 반복 근거가 쌓일 때만 약점으로 안내합니다.</p></article>
+  <article><span>03</span><b>시간을 두고 재평가</b><p>다시 맞힌 순간이 아니라 며칠 뒤에도 기억하는지 확인합니다.</p></article>
+</section>
+
+<section class="landing-example" aria-label="학습 변화 예시">
+  <p class="landing-eyebrow">이렇게 달라집니다 · 예시</p>
+  <h2>틀린 문제에서 다음 공부까지</h2>
+  <ol class="landing-example-steps">
+    <li><b>문제를 틀렸다면</b><p>예: 재고관리에서 안전재고와 재주문점을 헷갈렸어요.</p></li>
+    <li><b>왜 틀렸는지 확인하고</b><p>두 개념을 구분하는 기준을 짧게 비교해요.</p></li>
+    <li><b>다시 확인해요</b><p>관련 문제를 복습하고, 시간이 지난 뒤에도 기억하는지 살펴봐요.</p></li>
+  </ol>
+  <p class="landing-example-note">실제 학습 안내는 나의 풀이 기록에 따라 달라집니다.</p>
 </section>
 
 <footer class="landing-footer" aria-label="서비스 안내">
