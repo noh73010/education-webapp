@@ -128,10 +128,11 @@ def infer_answer_input_type(answer: str) -> str:
 
 def parse_chapter(raw_chapter):
     value = (raw_chapter or "").strip()
-    match = re.match(r"^([A-Za-z]{2}\d{2})\s*(?:[.|]\s*)?(.*)$", value)
+    # Generated logistics sheets use both "LM01" and "LM 01" chapter labels.
+    match = re.match(r"^([A-Za-z]{2}\s*\d{2})\s*(?:[.|]\s*)?(.*)$", value)
     if not match:
         return "", value
-    return match.group(1).upper(), match.group(2).strip()
+    return re.sub(r"\s+", "", match.group(1)).upper(), match.group(2).strip()
 
 
 def source_slug(csv_path):

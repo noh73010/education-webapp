@@ -1533,6 +1533,7 @@ py -3 manage.py seed_subjects
 - `confirmed_error`와 출제 보류 상태는 재동기화가 임의로 해제하지 않으며 모의고사 출제에서 계속 제외한다.
 - 2026-09-11 기준 `generated/logistics`의 6개 CSV, 총 600문항을 로컬 DB에 동기화했다. `core/static/images/questions/logistics`의 PNG 66개는 모두 `MissionImage`에 연결되어 있으며 디스크 미존재·미연결 경로가 없다.
 - `logistics_27-2.csv`는 44번과 45번 행 사이의 누락된 줄바꿈을 복구하고, 실제 `27회-2` 이미지 폴더와 달랐던 11개 경로를 바로잡았다. 이후 재동기화 dry-run은 `created=0, updated=0, skipped=600, errors=0`으로 멱등성을 확인했다.
+- 2026-10-03 콘텐츠 갱신: `generated/logistics`의 25~29회 1·2교시 CSV 10개, 총 1,000문항을 배포 원본에 반영했다. 새 자료는 `LM 01`처럼 챕터 코드 사이에 공백을 넣으므로 `import_missions`가 공백 유무를 모두 허용한다. 27회 1교시의 잘못된 이미지 경로 5개도 실제 파일 경로로 수정했다. 독립 테스트 DB에서 1,000문항 생성·이미지 연결·재실행 무중복을 검증했다. 이후 문항 추가 때도 파일명·교시별 120/80문항·이미지 실존 여부를 확인한다.
 
 ### 실전 기록과 점수
 

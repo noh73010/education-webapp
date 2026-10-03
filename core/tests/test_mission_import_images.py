@@ -25,7 +25,7 @@ class MissionImportImageTests(TestCase):
     def setUp(self):
         seed_platform_subjects()
 
-    def write_korean_csv(self, directory, filename="logistics_29-1.csv", image_path=""):
+    def write_korean_csv(self, directory, filename="logistics_29-1.csv", image_path="", chapter="LM01 물류관리 일반"):
         csv_path = Path(directory) / filename
         with csv_path.open("w", newline="", encoding="utf-8-sig") as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames=KOREAN_COLUMNS)
@@ -33,7 +33,7 @@ class MissionImportImageTests(TestCase):
             writer.writerow({
                 "번호": "15",
                 "과목": "물류관리론",
-                "챕터": "LM01 물류관리 일반",
+                "챕터": chapter,
                 "난이도": "중",
                 "문제": "물류 활동에 대한 설명으로 옳은 것은?",
                 "문제이미지": image_path,
@@ -57,6 +57,14 @@ class MissionImportImageTests(TestCase):
             **options,
         )
         return output.getvalue()
+
+    def test_korean_csv_accepts_spaced_chapter_code(self):
+        with TemporaryDirectory() as tmpdir:
+            csv_path = self.write_korean_csv(tmpdir, chapter="LM 01 물류관리총론")
+            output = self.import_csv(csv_path)
+        self.assertIn("created=1", output)
+        mission = Mission.objects.get(external_id__contains="LOGISTICS-LM01-")
+        self.assertEqual(mission.chapter_code, "LM01")
 
     def test_korean_csv_imports_choice_mission_for_logistics_only(self):
         with TemporaryDirectory() as tmpdir:
