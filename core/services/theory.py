@@ -9,6 +9,7 @@ from django.utils.text import slugify
 
 from core.models import Attempt, Mission
 from core.services.logistics_curriculum import LOGISTICS_CURRICULUM
+from core.services.realtor_curriculum import REALTOR_LEARNING_AREAS
 
 
 THEORY_ROOT = Path(settings.BASE_DIR) / "theory"
@@ -213,34 +214,46 @@ def build_subject_theory_roadmap(user, subject):
     for row in rows:
         row["review_count"] = review_count_by_chapter.get(row["chapter_code"], 0)
 
-    logistics_order = {
+    curriculum = (
+        LOGISTICS_CURRICULUM if subject.code == "logistics"
+        else REALTOR_LEARNING_AREAS if subject.code == "realtor"
+        else ()
+    )
+    curriculum_order = {
         code: position
         for position, code in enumerate(
-            code
-            for course in LOGISTICS_CURRICULUM
-            for code, _name in course["chapters"]
+            code for area in curriculum for code, _name in area["chapters"]
         )
     }
-    if subject.code == "logistics":
+    if curriculum:
         row_by_code = {row["chapter_code"]: row for row in rows}
         curriculum_rows = []
-        for position, course in enumerate(LOGISTICS_CURRICULUM):
-            for chapter_position, (chapter_code, chapter_name) in enumerate(course["chapters"]):
-                curriculum_rows.append(row_by_code.pop(chapter_code, {
-                    "course": course["course"],
-                    "chapter_code": chapter_code,
-                    "chapter_name": chapter_name,
+        for position, area in enumerate(curriculum):
+            for chapter_position, (chapter_code, chapter_name) in enumerate(area["chapters"]):
+                row = row_by_code.pop(chapter_code, None) or {
                     "first_id": 1_000_000 + (position * 100) + chapter_position,
                     "total_count": 0,
                     "attempted_count": 0,
                     "solved_count": 0,
                     "review_count": 0,
-                }))
+                }
+                curriculum_rows.append({
+                    **row,
+                    "course": area["course"],
+                    "chapter_code": chapter_code,
+                    "chapter_name": (
+                        chapter_name if subject.code == "realtor" or not row.get("chapter_name")
+                        else row["chapter_name"]
+                    ),
+                    "area_name": area.get("title", area["course"]),
+                    "area_code": area.get("code", ""),
+                    "stage": area.get("stage", ""),
+                })
         rows = curriculum_rows + list(row_by_code.values())
 
     rows.sort(
         key=lambda row: (
-            logistics_order.get(row["chapter_code"], 10_000),
+            curriculum_order.get(row["chapter_code"], 10_000),
             row["first_id"],
         )
     )
@@ -275,12 +288,18 @@ def build_subject_theory_roadmap(user, subject):
             "status": status,
             "has_theory": has_theory(subject.code, row["chapter_code"]),
         }
-        course_name = row["course"] or subject.name
-        if course_name not in course_map:
-            course = {"course": course_name, "chapters": []}
-            course_map[course_name] = course
+        area_name = row.get("area_name") or row["course"] or subject.name
+        if area_name not in course_map:
+            course = {
+                "course": area_name,
+                "exam_course": row["course"],
+                "area_code": row.get("area_code", ""),
+                "stage": row.get("stage", ""),
+                "chapters": [],
+            }
+            course_map[area_name] = course
             courses.append(course)
-        course_map[course_name]["chapters"].append(chapter)
+        course_map[area_name]["chapters"].append(chapter)
 
     recommended_assigned = False
     for course in courses:

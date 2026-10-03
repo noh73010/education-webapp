@@ -1,6 +1,9 @@
 {% if chapter.has_theory %}
   <a class="roadmap-step-card theory-roadmap-card {% if chapter.status == '연습 완료' %}is-complete{% elif chapter.status == '학습 중' or chapter.status == '복습 필요' %}is-progress{% endif %} {% if chapter.is_recommended %}is-recommended{% endif %}"
      href="{% url 'theory_chapter' chapter.slug %}">
+{% elif chapter.total_count %}
+  <a class="roadmap-step-card theory-roadmap-card {% if chapter.status == '연습 완료' %}is-complete{% elif chapter.status == '학습 중' or chapter.status == '복습 필요' %}is-progress{% endif %}"
+     href="{% url 'chapter_practice_start' chapter.slug %}">
 {% else %}
   <div class="roadmap-step-card theory-roadmap-card is-unavailable">
 {% endif %}
@@ -31,12 +34,14 @@
 
     <span class="theory-roadmap-action">
       {% if chapter.has_theory %}
-        <span>핵심 이론 학습하기</span><span aria-hidden="true">→</span>
+        <span>{% if chapter.total_count %}이론과 문제 보기{% else %}핵심 이론 보기{% endif %}</span><span aria-hidden="true">→</span>
+      {% elif chapter.total_count %}
+        <span>이 단원 문제 풀기</span><span aria-hidden="true">→</span>
       {% else %}
-        <span>이론 준비 중</span>
+        <span>이론·문제 준비 중</span>
       {% endif %}
     </span>
-{% if chapter.has_theory %}
+{% if chapter.has_theory or chapter.total_count %}
   </a>
 {% else %}
   </div>

@@ -396,7 +396,9 @@ def learning_type_training_result(request, skill, learning_type):
 @login_required
 def mission_list(request):
     current_subject, subject_needs_selection = get_current_subject(request)
-    course_options = available_courses(current_subject) if current_subject.code == LOGISTICS_SUBJECT_CODE else []
+    course_options = available_courses(current_subject) if current_subject.code in {
+        LOGISTICS_SUBJECT_CODE, REALTOR_SUBJECT_CODE,
+    } else []
     realtor_path = None
     if current_subject.code == REALTOR_SUBJECT_CODE:
         realtor_path = getattr(request.user, "realtor_study_path", None)
@@ -612,7 +614,11 @@ def mission_list(request):
     learning_roadmap = []
     logistics_chapter_roadmap = []
     theory_roadmap = build_subject_theory_roadmap(request.user, current_subject)
-    focus_roadmap = next((row for row in theory_roadmap if row["course"] == selected_course), None)
+    focus_roadmaps = [
+        row for row in theory_roadmap
+        if row.get("exam_course", row["course"]) == selected_course
+    ]
+    focus_roadmap = focus_roadmaps[0] if focus_roadmaps else None
 
     if is_logistics_subject:
         logistics_chapter_roadmap = build_logistics_chapter_roadmap(
@@ -698,6 +704,7 @@ def mission_list(request):
         "selected_course": selected_course,
         "selected_course_weakness": selected_course_weakness,
         "focus_roadmap": focus_roadmap,
+        "focus_roadmaps": focus_roadmaps,
         "skill": skill,
         "level": level,
         "sort": sort,

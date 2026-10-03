@@ -188,23 +188,26 @@
 {% if is_logistics_subject %}</div>{% endif %}
 </div>
 
-{% if focus_roadmap %}
+{% if focus_roadmaps %}
 <section class="card selected-course-contents" aria-label="{{ selected_course }} 목차">
   <p class="eyebrow">원하는 단원부터 시작하세요</p>
   <h2 class="section-title">{{ selected_course }} 목차</h2>
   <p>번호 순서대로 풀지 않아도 됩니다. 이론이 준비된 단원은 이론부터, 그렇지 않은 단원은 문제부터 시작할 수 있어요.</p>
+  {% for area in focus_roadmaps %}
+  {% if focus_roadmaps|length > 1 %}<h3>{{ area.course }}</h3>{% endif %}
   <div class="course-chapter-list">
-    {% for chapter in focus_roadmap.chapters %}
+    {% for chapter in area.chapters %}
       <div class="course-chapter-row">
         <div><span class="course-chapter-number">{{ chapter.display_no }}</span><b>{{ chapter.chapter_name }}</b><small>{{ chapter.status }}{% if chapter.review_count %} · 복습할 내용 있음{% endif %}</small></div>
         {% if chapter.has_theory %}
-          <a href="{% url 'theory_chapter' chapter.slug %}" class="sub-button">이론과 문제 보기</a>
+          <a href="{% url 'theory_chapter' chapter.slug %}" class="sub-button">{% if chapter.total_count %}이론과 문제 보기{% else %}이론 보기{% endif %}</a>
         {% elif chapter.total_count %}
           <a href="?chapter={{ chapter.chapter_code }}#search-section" class="sub-button">문제 풀기</a>
         {% else %}<span class="meta-text">학습 자료 준비 중</span>{% endif %}
       </div>
     {% endfor %}
   </div>
+  {% endfor %}
 </section>
 {% endif %}
 

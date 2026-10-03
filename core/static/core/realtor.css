@@ -116,3 +116,55 @@ body.theme-realtor .realtor-actions a:hover {
   filter: brightness(.96);
   text-decoration: underline;
 }
+
+.realtor-chapter-group {
+  margin-top: 14px;
+  border: 1px solid #e2ddec;
+  border-radius: 20px;
+  background: #fff;
+  overflow: hidden;
+}
+.realtor-chapter-group summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  cursor: pointer;
+  list-style: none;
+}
+.realtor-chapter-group summary::-webkit-details-marker { display: none; }
+.realtor-chapter-group summary span:first-child { display: grid; gap: 4px; }
+.realtor-chapter-group summary small { color: #604e79; }
+.realtor-chapter-group summary span:last-child { color: #536682; white-space: nowrap; }
+.realtor-chapter-group > .meta-text { margin: 0 18px 12px; }
+.realtor-chapter-list { padding: 0 18px 12px; }
+.realtor-chapter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 0;
+  border-top: 1px solid #eeeaf3;
+}
+.realtor-chapter-row > div { display: grid; gap: 3px; min-width: 0; }
+.realtor-chapter-row small,
+.realtor-chapter-row span { color: #56647a; }
+.realtor-chapter-row b { line-height: 1.45; }
+.realtor-chapter-row a {
+  flex-shrink: 0;
+  padding: 9px 13px;
+  border-radius: 999px;
+  background: #ede7f8;
+  color: #49316c;
+  font-weight: 700;
+  text-decoration: none;
+}
+.realtor-chapter-row a:hover { background: #e4d9f4; }
+.realtor-chapter-pending { font-size: .88rem; text-align: right; }
+@media (max-width: 600px) {
+  .realtor-chapter-group summary { align-items: flex-start; }
+  .realtor-chapter-row { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .realtor-chapter-row a { align-self: flex-start; }
+  .realtor-chapter-pending { text-align: left; }
+}

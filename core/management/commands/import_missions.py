@@ -10,7 +10,9 @@ from django.db import transaction
 
 from core.models import Mission, MissionImage, ProblemSet, ProblemSetItem, Subject
 from core.services.logistics_curriculum import normalize_logistics_chapter
-from core.services.realtor_curriculum import REALTOR_COURSES, REALTOR_SUBJECT_CODE
+from core.services.realtor_curriculum import (
+    REALTOR_COURSES, REALTOR_SUBJECT_CODE, normalize_realtor_chapter,
+)
 from core.services.mission_images import resolve_question_image
 from core.services.content_review import apply_review, load_review
 from core.services.subjects import LOGISTICS_SUBJECT_CODE
@@ -128,8 +130,8 @@ def infer_answer_input_type(answer: str) -> str:
 
 def parse_chapter(raw_chapter):
     value = (raw_chapter or "").strip()
-    # Generated logistics sheets use both "LM01" and "LM 01" chapter labels.
-    match = re.match(r"^([A-Za-z]{2}\s*\d{2})\s*(?:[.|]\s*)?(.*)$", value)
+    # Accept LM01 / LM 01 and the more detailed realtor code RE01-01.
+    match = re.match(r"^([A-Za-z]{2}\s*\d{2}(?:-\d{2})?)\s*(?:[.|]\s*)?(.*)$", value)
     if not match:
         return "", value
     return re.sub(r"\s+", "", match.group(1)).upper(), match.group(2).strip()
@@ -159,6 +161,8 @@ def normalize_korean_row(row, *, csv_path, subject_code):
     chapter_code, chapter_name = parse_chapter(row.get("챕터") or row.get("분류코드"))
     if subject_code == LOGISTICS_SUBJECT_CODE:
         chapter_code, chapter_name = normalize_logistics_chapter(chapter_code, chapter_name)
+    elif subject_code == REALTOR_SUBJECT_CODE and chapter_code:
+        chapter_code, chapter_name = normalize_realtor_chapter(course, chapter_code)
 
     difficulty = (row.get("난이도") or "").strip()
     prompt = (row.get("문제") or "").strip()
@@ -220,6 +224,8 @@ def normalize_standard_row(row, *, subject_code):
     chapter_name = (row.get("chapter_name") or "").strip()
     if subject_code == LOGISTICS_SUBJECT_CODE:
         chapter_code, chapter_name = normalize_logistics_chapter(chapter_code, chapter_name)
+    elif subject_code == REALTOR_SUBJECT_CODE and chapter_code:
+        chapter_code, chapter_name = normalize_realtor_chapter(course, chapter_code)
 
     difficulty = (row.get("difficulty") or "").strip()
     title = (row.get("title") or "").strip()

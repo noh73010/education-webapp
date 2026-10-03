@@ -4,10 +4,14 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from core.management.commands.import_missions import normalize_korean_row
+from core.management.commands.import_missions import normalize_korean_row, parse_chapter
 from core.models import Attempt, Mission, RealtorStudyPath, Subject
 from core.services.exam_modes import available_courses, blueprint, create_mode_exam
-from core.services.realtor_curriculum import REALTOR_COURSES, courses_for_path
+from core.services.course_focus import available_courses as focus_courses
+from core.services.realtor_curriculum import (
+    REALTOR_CHAPTERS, REALTOR_COURSES, REALTOR_LEARNING_AREAS, courses_for_path,
+)
+from core.services.theory import build_subject_theory_roadmap
 
 
 @override_settings(PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"])
@@ -111,13 +115,62 @@ class RealtorLearningTests(TestCase):
         self.assertNotContains(page, "실전 1교시 시작")
 
     def test_korean_csv_requires_official_course_and_five_choices(self):
-        row = {"번호": "1", "과목": REALTOR_COURSES[0], "챕터": "RE01 부동산의 개념",
+        row = {"번호": "1", "과목": REALTOR_COURSES[0], "챕터": "RE01-01 부동산학 총론",
             "난이도": "중", "문제": "질문", "정답": "2", "해설": "해설",
             **{f"보기{i}": f"선택지 {i}" for i in range(1, 6)}}
         data = normalize_korean_row(row, csv_path=Path("realtor_2026_first.csv"), subject_code="realtor")
         self.assertEqual(data["course"], REALTOR_COURSES[0])
+        self.assertEqual(data["chapter_code"], "RE01-01")
         self.assertEqual(data["answer_schema"].count("\n"), 4)
         with self.assertRaisesRegex(ValueError, "보기 5개"):
             normalize_korean_row({**row, "보기5": ""}, csv_path=Path("realtor.csv"), subject_code="realtor")
         with self.assertRaisesRegex(ValueError, "과목명"):
             normalize_korean_row({**row, "과목": "물류관리론"}, csv_path=Path("realtor.csv"), subject_code="realtor")
+
+    def test_realtor_learning_areas_are_visible_before_content_is_added(self):
+        self.assertEqual(len(REALTOR_LEARNING_AREAS), 6)
+        self.assertEqual(len(REALTOR_CHAPTERS), 55)
+        roadmap = build_subject_theory_roadmap(self.user, self.realtor)
+        self.assertEqual([area["area_code"] for area in roadmap], [f"RE0{i}" for i in range(1, 7)])
+        self.assertEqual([len(area["chapters"]) for area in roadmap], [10, 10, 9, 10, 8, 8])
+        self.assertEqual(roadmap[4]["exam_course"], roadmap[5]["exam_course"])
+        self.assertEqual(roadmap[4]["exam_course"], REALTOR_COURSES[4])
+        self.assertEqual(roadmap[5]["chapters"][5]["chapter_name"], "양도소득세")
+        self.assertEqual(len(focus_courses(self.realtor)[4]["chapter_codes"]), 16)
+        page = self.client.get(reverse("realtor_home"))
+        self.assertContains(page, "RE01-01")
+        self.assertContains(page, "RE06-08")
+        self.assertContains(page, "이론·문제 준비 중")
+        self.assertNotContains(page, reverse("chapter_practice_start", args=[roadmap[0]["chapters"][0]["slug"]]))
+
+    def test_realtor_chapter_questions_open_from_their_own_unit(self):
+        RealtorStudyPath.objects.create(user=self.user, path="second")
+        session = self.client.session
+        session["current_subject_code"] = "realtor"
+        session.save()
+        mission = Mission.objects.create(
+            subject=self.realtor, external_id="RE-06-06", title="양도소득세 문제",
+            course=REALTOR_COURSES[4], chapter_code="RE06-06", chapter_name="양도소득세",
+            prompt="질문", question_type="choice_one", answer_schema="1|A\n2|B\n3|C\n4|D\n5|E",
+            correct_answer="1",
+        )
+        roadmap = build_subject_theory_roadmap(self.user, self.realtor)
+        chapter = roadmap[5]["chapters"][5]
+        page = self.client.get(reverse("realtor_home"))
+        self.assertContains(page, reverse("chapter_practice_start", args=[chapter["slug"]]))
+        listed = self.client.get(reverse("mission_list"), {
+            "course": REALTOR_COURSES[4], "chapter": "RE06-06",
+        })
+        self.assertEqual(list(listed.context["missions"].object_list), [mission])
+
+    def test_realtor_csv_chapter_code_and_course_must_match(self):
+        self.assertEqual(parse_chapter("RE01-01 부동산학 총론"), ("RE01-01", "부동산학 총론"))
+        row = {"번호": "1", "과목": REALTOR_COURSES[4], "챕터": "RE06-06 양도소득세",
+               "난이도": "중", "문제": "질문", "정답": "2", "해설": "해설",
+               **{f"보기{i}": f"선택지 {i}" for i in range(1, 6)}}
+        data = normalize_korean_row(row, csv_path=Path("realtor_2026.csv"), subject_code="realtor")
+        self.assertEqual(data["chapter_code"], "RE06-06")
+        with self.assertRaisesRegex(ValueError, "과목명"):
+            normalize_korean_row({**row, "과목": REALTOR_COURSES[0]}, csv_path=Path("realtor.csv"), subject_code="realtor")
+        with self.assertRaisesRegex(ValueError, "챕터 코드"):
+            normalize_korean_row({**row, "챕터": "RE06-09 없는 단원"}, csv_path=Path("realtor.csv"), subject_code="realtor")

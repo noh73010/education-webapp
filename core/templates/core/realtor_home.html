@@ -46,6 +46,30 @@
   </section>
   {% endfor %}
 
+  <section class="card realtor-chapters" aria-labelledby="realtor-chapters-title">
+    <p class="eyebrow">내가 고르는 학습 순서</p>
+    <h2 id="realtor-chapters-title">과목별 단원 목차</h2>
+    <p>준비된 이론이나 문제부터 시작할 수 있습니다. 내용이 없는 단원은 준비 상태만 보여드려요.</p>
+    {% for group in chapter_groups %}
+      <details class="realtor-chapter-group" {% if group.is_recommended %}open{% endif %}>
+        <summary><span><small>{{ group.area_code }} · {% if group.stage == 'first' %}1차{% else %}2차{% endif %}</small><b>{{ group.course }}</b></span><span>{{ group.chapters|length }}개 단원 ▾</span></summary>
+        {% if group.exam_course != group.course %}<p class="meta-text">시험 채점 과목: {{ group.exam_course }}</p>{% endif %}
+        <div class="realtor-chapter-list">
+          {% for chapter in group.chapters %}
+            <div class="realtor-chapter-row">
+              <div><small>{{ chapter.chapter_code }}</small><b>{{ chapter.chapter_name }}</b><span>{{ chapter.status }}</span></div>
+              {% if chapter.has_theory %}
+                <a href="{% url 'theory_chapter' chapter.slug %}">{% if chapter.total_count %}이론과 문제 보기{% else %}이론 보기{% endif %}</a>
+              {% elif chapter.total_count %}
+                <a href="{% url 'chapter_practice_start' chapter.slug %}">문제 풀기</a>
+              {% else %}<span class="realtor-chapter-pending">이론·문제 준비 중</span>{% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      </details>
+    {% endfor %}
+  </section>
+
   <section class="card">
     <h2>학습 기록은 그대로 이어집니다</h2>
     <p>문제를 풀면 이 자격증의 오답노트와 통계에만 반영됩니다. 실전 모의고사는 단계별 검수 문항이 충분히 확보된 뒤 열 예정이며, 현재 다른 자격증의 시험 규칙을 그대로 적용하지 않습니다.</p>

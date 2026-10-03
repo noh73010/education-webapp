@@ -98,7 +98,9 @@ def chapter_practice_start(request, chapter_slug):
             messages.info(request, "현재 다시 풀어야 할 오답이 없습니다.")
         else:
             messages.warning(request, "이 챕터에는 아직 연습할 수 있는 문제가 없습니다.")
-        return redirect("theory_chapter", chapter_slug=chapter_slug)
+        if context["chapter"]["has_theory"]:
+            return redirect("theory_chapter", chapter_slug=chapter_slug)
+        return redirect("mission_list")
 
     chapter = context["chapter"]
     problem_set, _created = ProblemSet.objects.update_or_create(
@@ -107,7 +109,7 @@ def chapter_practice_start(request, chapter_slug):
             "skill_group": chapter_code,
             "level": 1,
             "set_type": "training",
-            "description": f"{chapter['chapter_name']} 핵심 이론을 확인한 뒤 푸는 기출 연습문제입니다.",
+            "description": f"{chapter['chapter_name']} 단원의 연습문제입니다.",
             "is_active": True,
         },
     )

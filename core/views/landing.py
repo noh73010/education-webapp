@@ -9,6 +9,7 @@ from core.models import Attempt, Mission, RealtorStudyPath, Subject
 from core.services.realtor_curriculum import (
     REALTOR_EXAM_GUIDE, REALTOR_SITTINGS, REALTOR_SUBJECT_CODE, courses_for_path,
 )
+from core.services.theory import build_subject_theory_roadmap
 
 from core.services.subjects import (
     CURRENT_SUBJECT_SESSION_KEY,
@@ -93,11 +94,15 @@ def realtor_home(request):
         stages.append({"code": stage, "label": "1차" if stage == "first" else "2차", "sittings": sittings})
     if path == "second":
         stages.reverse()
+    chapter_groups = build_subject_theory_roadmap(request.user, subject)
+    if path == "second":
+        chapter_groups.sort(key=lambda group: group["stage"] != "second")
     return render(request, "core/realtor_home.html", {
         "current_subject": subject,
         "study_path": path,
         "focused_courses": courses_for_path(path) if path else (),
         "stages": stages,
+        "chapter_groups": chapter_groups,
         "exam_guide_url": REALTOR_EXAM_GUIDE,
     })
 

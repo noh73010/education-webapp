@@ -1,5 +1,8 @@
 from core.models import Attempt, CourseFocus, Mission, UserWeakness
 from core.services.logistics_curriculum import LOGISTICS_CURRICULUM
+from core.services.realtor_curriculum import (
+    REALTOR_COURSES, REALTOR_LEARNING_AREAS, REALTOR_SUBJECT_CODE,
+)
 from core.services.subjects import LOGISTICS_SUBJECT_CODE
 
 
@@ -9,6 +12,17 @@ def available_courses(subject):
         return [
             {"name": row["course"], "chapter_codes": [code for code, _ in row["chapters"]]}
             for row in LOGISTICS_CURRICULUM
+        ]
+    if subject.code == REALTOR_SUBJECT_CODE:
+        return [
+            {
+                "name": course,
+                "chapter_codes": [
+                    code for area in REALTOR_LEARNING_AREAS if area["course"] == course
+                    for code, _ in area["chapters"]
+                ],
+            }
+            for course in REALTOR_COURSES
         ]
     rows = Mission.objects.filter(subject=subject).exclude(course="").values_list(
         "course", "chapter_code"
