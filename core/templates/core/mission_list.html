@@ -15,6 +15,7 @@
   {% if is_realtor_subject %}
     <a href="{% url 'realtor_home' %}">다른 과목 선택</a>
   {% else %}
+  <div class="selected-course-actions">
   <details class="course-switcher">
     <summary>과목 바꾸기</summary>
     <div class="course-switcher-options">
@@ -29,6 +30,8 @@
       {% endfor %}
     </div>
   </details>
+  <a href="{% url 'landing' %}" class="sub-button qualification-switch-link">다른 자격증 선택</a>
+  </div>
   {% endif %}
 </section>
 {% endif %}

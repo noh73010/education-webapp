@@ -10,6 +10,9 @@
 .selected-course-banner { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 20px; }
 .selected-course-banner h1 { margin: 6px 0 8px; font-size: clamp(1.45rem, 3vw, 2rem); }
 .selected-course-banner p { margin-bottom: 0; }
+.selected-course-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; }
+.qualification-switch-link { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; padding: 10px 16px; text-decoration: none; white-space: nowrap; }
+.course-focus-intro .qualification-switch-link { margin-top: 14px; }
 .course-switcher { min-width: 180px; }
 .course-switcher summary { min-height: 44px; padding: 10px 16px; border: 1px solid #cbd8eb; border-radius: 999px; cursor: pointer; font-weight: 700; text-align: center; }
 .course-switcher-options { display: grid; gap: 8px; margin-top: 10px; }
@@ -25,5 +28,7 @@
   .course-focus-grid { grid-template-columns: 1fr; }
   .selected-course-banner, .course-chapter-row { align-items: stretch; flex-direction: column; }
   .course-switcher { width: 100%; }
+  .selected-course-actions { width: 100%; justify-content: stretch; }
+  .selected-course-actions > * { flex: 1 1 100%; }
   .course-chapter-row .sub-button { text-align: center; }
 }

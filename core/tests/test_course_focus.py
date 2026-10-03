@@ -31,6 +31,7 @@ class CourseFocusTests(TestCase):
         self.assertTemplateUsed(response, "core/course_focus_select.html")
         self.assertEqual(len(response.context["course_options"]), 5)
         self.assertContains(response, "순서대로 시작하지 않아도 됩니다")
+        self.assertContains(response, 'href="%s" class="sub-button qualification-switch-link"' % reverse("landing"))
         self.assertFalse(CourseFocus.objects.filter(user=self.user).exists())
 
     def test_choice_is_validated_persisted_and_limits_daily_questions(self):
@@ -40,6 +41,7 @@ class CourseFocusTests(TestCase):
         self.assertEqual(CourseFocus.objects.get(user=self.user).course, "화물운송론")
         response = self.client.get(self.url)
         self.assertContains(response, "화물운송론 목차")
+        self.assertContains(response, 'href="%s" class="sub-button qualification-switch-link"' % reverse("landing"))
         self.assertEqual(response.context["selected_course"], "화물운송론")
         self.assertEqual([row.id for row in response.context["recommended"]], [self.transport.id])
         self.assertEqual([row.id for row in response.context["missions"]], [self.transport.id])
