@@ -888,6 +888,7 @@ class CourseFocus(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     course = models.CharField(max_length=100)
+    area_code = models.CharField(max_length=8, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

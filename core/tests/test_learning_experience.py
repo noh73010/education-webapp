@@ -176,7 +176,7 @@ class LearningExperienceTests(TestCase):
         self.assertEqual(client.get(reverse("learning_start")).status_code, 302)
 
     def test_onboarding_is_optional_and_subject_scoped(self):
-        self.assertContains(self.client.get(reverse("mission_list")), "나의 출발점 정하기")
+        self.assertContains(self.client.get(reverse("mission_list")), "3문제 진단")
         response = self.client.post(reverse("learning_start"), {
             "experience": "new", "mode": "diagnostic", "target_exam_date": "2026-12-01",
         })

@@ -48,7 +48,9 @@ from core.services.learning_dashboard import build_learning_dashboard
 from core.services.learning_concepts import get_answer_display
 from core.services.learning_feedback import build_mission_feedback
 from core.services.logistics_curriculum import build_logistics_chapter_roadmap
-from core.services.realtor_curriculum import REALTOR_SUBJECT_CODE, REALTOR_COURSES, courses_for_path
+from core.services.realtor_curriculum import (
+    REALTOR_SUBJECT_CODE, REALTOR_COURSES, REALTOR_LEARNING_AREAS, area_for_focus, learning_area,
+)
 from core.services.mission_cards import load_mission_cards, prepare_mission_cards, with_user_learning_state
 from core.services.personal_coach import build_personal_coach_context
 from core.services.course_focus import available_courses, chosen_course, course_weakness
@@ -399,17 +401,12 @@ def mission_list(request):
     course_options = available_courses(current_subject) if current_subject.code in {
         LOGISTICS_SUBJECT_CODE, REALTOR_SUBJECT_CODE,
     } else []
-    realtor_path = None
-    if current_subject.code == REALTOR_SUBJECT_CODE:
-        realtor_path = getattr(request.user, "realtor_study_path", None)
-        if realtor_path is None:
-            return redirect("realtor_home")
     if request.method == "POST":
         course_name = request.POST.get("course", "")
         if course_name not in {row["name"] for row in course_options}:
             return HttpResponseBadRequest("선택할 수 없는 과목입니다.")
         CourseFocus.objects.update_or_create(
-            user=request.user, subject=current_subject, defaults={"course": course_name},
+            user=request.user, subject=current_subject, defaults={"course": course_name, "area_code": ""},
         )
         requested_minutes = request.POST.get("minutes", "")
         if requested_minutes in {"5", "10", "20"}:
@@ -421,22 +418,25 @@ def mission_list(request):
         .values_list("course", flat=True).distinct()
     ) if course_options else set()
     selected_course = chosen_course(request.user, current_subject, course_options) if course_options else None
+    selected_area = None
     if current_subject.code == REALTOR_SUBJECT_CODE:
+        focus = CourseFocus.objects.filter(user=request.user, subject=current_subject).first()
+        selected_area = area_for_focus(focus)
         requested_course = request.GET.get("course", "").strip()
-        allowed_courses = courses_for_path(realtor_path.path) if realtor_path else ()
-        available_realtor_courses = set(Mission.objects.filter(
-            subject=current_subject, course__in=allowed_courses,
-        ).values_list("course", flat=True).distinct())
-        if requested_course in allowed_courses:
+        if requested_course in REALTOR_COURSES:
             selected_course = requested_course
-        elif selected_course not in allowed_courses:
-            recent_course = Attempt.objects.valid_for_learning().filter(
-                user=request.user, mission__subject=current_subject,
-                mission__course__in=allowed_courses,
-            ).order_by("-created_at").values_list("mission__course", flat=True).first()
-            selected_course = recent_course or next(
-                (name for name in allowed_courses if name in available_realtor_courses), None
-            )
+            if selected_area is None or selected_area["course"] != requested_course:
+                requested_chapter = request.GET.get("chapter", "")[:4]
+                candidate = learning_area(requested_chapter)
+                if candidate and candidate["course"] == requested_course:
+                    selected_area = candidate
+                else:
+                    matches = [area for area in REALTOR_LEARNING_AREAS if area["course"] == requested_course]
+                    selected_area = matches[0] if len(matches) == 1 else None
+            if selected_area is None:
+                return redirect("realtor_home")
+        elif selected_course is None or selected_area is None:
+            return redirect("realtor_home")
     if current_subject.code == LOGISTICS_SUBJECT_CODE and course_options and len(populated_courses) > 1 and selected_course is None:
         return render(request, "core/course_focus_select.html", {
             "current_subject": current_subject,
@@ -459,12 +459,13 @@ def mission_list(request):
     if selected_course:
         qs = qs.filter(course=selected_course)
         recommendation_qs = recommendation_qs.filter(course=selected_course)
-    elif realtor_path:
-        allowed_courses = courses_for_path(realtor_path.path)
-        qs = qs.filter(course__in=allowed_courses)
-        recommendation_qs = recommendation_qs.filter(course__in=allowed_courses)
+    if selected_area:
+        qs = qs.filter(chapter_code__startswith=selected_area["code"])
+        recommendation_qs = recommendation_qs.filter(chapter_code__startswith=selected_area["code"])
     subject_mission_count = qs.count()
     selected_chapter_codes = next((set(row["chapter_codes"]) for row in course_options if row["name"] == selected_course), set())
+    if selected_area:
+        selected_chapter_codes = {code for code in selected_chapter_codes if code.startswith(selected_area["code"])}
     if chapter and chapter in selected_chapter_codes:
         qs = qs.filter(chapter_code=chapter)
     else:
@@ -513,11 +514,13 @@ def mission_list(request):
         subject=current_subject,
         recommendation_limit=daily_question_limit,
         course=selected_course,
+        chapter_prefix=selected_area["code"] if selected_area else None,
     )
 
     prepare_mission_cards(recommended)
 
-    done_ids = get_daily_done_ids(request.user, today_date, subject=current_subject, course=selected_course)
+    done_ids = get_daily_done_ids(request.user, today_date, subject=current_subject, course=selected_course,
+                                  chapter_prefix=selected_area["code"] if selected_area else None)
 
     for m in recommended:
         m.today_done = (m.id in done_ids)
@@ -537,7 +540,8 @@ def mission_list(request):
         .order_by("skill")
     )
 
-    daily_progress = get_daily_progress(request.user, today_date, subject=current_subject, course=selected_course)
+    daily_progress = get_daily_progress(request.user, today_date, subject=current_subject, course=selected_course,
+                                        chapter_prefix=selected_area["code"] if selected_area else None)
     daily_study_plan = build_daily_study_plan(
         request.user,
         recommended,
@@ -547,7 +551,10 @@ def mission_list(request):
     streak, _ = UserStreak.objects.get_or_create(user=request.user)
     dashboard = build_learning_dashboard(request.user, streak=streak, subject=current_subject)
     personal_coach = build_personal_coach_context(request.user, current_subject, streak=streak)
-    selected_course_weakness = course_weakness(request.user, current_subject, selected_course) if selected_course else None
+    selected_course_weakness = course_weakness(
+        request.user, current_subject, selected_course,
+        area_code=selected_area["code"] if selected_area else None,
+    ) if selected_course else None
 
     recommendation_data = get_problem_set_recommendations(request.user, subject=current_subject)
     recommendation_data["pattern_missions"] = load_mission_cards(
@@ -626,8 +633,11 @@ def mission_list(request):
     focus_roadmaps = [
         row for row in theory_roadmap
         if row.get("exam_course", row["course"]) == selected_course
+        and (selected_area is None or row.get("area_code") == selected_area["code"])
     ]
     focus_roadmap = focus_roadmaps[0] if focus_roadmaps else None
+    if current_subject.code == REALTOR_SUBJECT_CODE and selected_area:
+        theory_roadmap = focus_roadmaps
 
     if is_logistics_subject:
         logistics_chapter_roadmap = build_logistics_chapter_roadmap(
@@ -711,6 +721,7 @@ def mission_list(request):
         "chapter": chapter,
         "course_options": course_options,
         "selected_course": selected_course,
+        "selected_area": selected_area,
         "selected_course_weakness": selected_course_weakness,
         "focus_roadmap": focus_roadmap,
         "focus_roadmaps": focus_roadmaps,

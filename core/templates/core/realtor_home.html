@@ -1,120 +1,91 @@
 {% extends 'core/base.html' %}
 {% load static %}
 {% block title %}공인중개사 학습 | 합격한걸음{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'core/realtor.css' %}?v=20261004-1">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'core/realtor.css' %}?v=20261004-2">{% endblock %}
 {% block content %}
 <main class="realtor-page">
   <header class="realtor-hero">
     {% if first_visit %}<img class="realtor-hero-illustration" src="{% static 'core/illustrations/learning-start.png' %}" alt="" width="112" height="112">{% endif %}
     <p class="eyebrow">공인중개사 학습</p>
     <h1>{% if first_visit %}무엇부터 공부할까요?{% else %}지난 학습에서 한 걸음 더 가요{% endif %}</h1>
-    <p>{% if first_visit %}시험 단계와 과목을 고르면, 오늘 풀 문제까지 안내해 드릴게요.{% else %}오늘은 익숙한 과목부터 가볍게 이어가세요. 학습 방향은 언제든 바꿀 수 있어요.{% endif %}</p>
+    <p>먼저 공부할 과목을 골라 주세요. 1차·2차 순서대로 시작하지 않아도 됩니다.</p>
     <a href="{% url 'landing' %}">다른 자격증 선택</a>
   </header>
 
-  {% if selected_course %}
+  {% if selected_area %}
   <section class="card realtor-next-step" aria-labelledby="realtor-next-title">
-    <p class="eyebrow">오늘의 시작점</p>
-    <h2 id="realtor-next-title">{{ selected_course }}</h2>
+    <p class="eyebrow">오늘의 시작점 · {% if selected_area.stage == 'first' %}1차{% else %}2차{% endif %}</p>
+    <h2 id="realtor-next-title">{{ selected_area.title }}</h2>
     {% if pending_work %}
       <p>저장해 둔 답안이 있어요. 풀던 곳부터 이어갈 수 있습니다.</p>
       <a class="main-button" href="{% url 'mission_detail' pending_work.mission_id %}">지난 학습 이어하기</a>
-    {% elif selected_course %}
-      <p>{% if recent_attempt %}지난 학습 기록을 이어서, 오늘의 추천 문제부터 풀어보세요.{% else %}처음은 5분이면 충분해요. 풀면서 약점을 찾아드릴게요.{% endif %}</p>
-      {% for course in allowed_courses %}{% if course.name == selected_course %}
-        {% if course.available %}<a class="main-button" href="{% url 'mission_list' %}?minutes=5&amp;start=1">{% if recent_attempt %}지난 과목 5분 이어 공부하기{% else %}선택한 과목 5분 학습 시작{% endif %}</a>
-        {% else %}<p class="realtor-unavailable">이 과목의 문제는 준비 중입니다. 다른 과목이나 단원을 살펴보세요.</p>{% endif %}
-      {% endif %}{% endfor %}
+    {% elif selected_group.total_count %}
+      <p>{% if recent_attempt %}지난 학습을 이어서 오늘의 추천 문제를 풀어보세요.{% else %}처음은 5분이면 충분해요. 풀면서 약점을 찾아드릴게요.{% endif %}</p>
+      {% if has_focus %}<a class="main-button" href="{% url 'mission_list' %}?minutes=5&amp;start=1">{{ selected_area.title }} 5분 학습 시작</a>
+      {% else %}<form method="post" action="{% url 'realtor_choose_course' %}">{% csrf_token %}<input type="hidden" name="area_code" value="{{ selected_area.code }}"><input type="hidden" name="start" value="1"><button class="main-button" type="submit">{{ selected_area.title }} 5분 학습 시작</button></form>{% endif %}
+    {% else %}
+      <p class="realtor-unavailable">이 과목의 문제는 준비 중입니다. 아래 단원 목차를 살펴보거나 다른 과목을 선택해 주세요.</p>
     {% endif %}
-    <details class="realtor-change"><summary>과목이나 시험 단계 바꾸기</summary>
-  {% elif study_path %}
+    <details class="realtor-change" {% if filter_stage != 'all' %}open{% endif %}><summary>다른 과목 선택하기</summary>
+  {% else %}
   <section class="card realtor-next-step" aria-labelledby="realtor-next-title">
-    <p class="eyebrow">두 번째 선택</p>
+    <p class="eyebrow">첫 번째 선택</p>
     <h2 id="realtor-next-title">오늘 공부할 과목을 골라주세요</h2>
-    <p>순서대로 공부하지 않아도 됩니다. 나중에 언제든 바꿀 수 있어요.</p>
+    <p>선택은 언제든 바꿀 수 있고, 기존 학습 기록은 그대로 남습니다.</p>
   {% endif %}
 
-  {% if study_path %}
+    <nav class="realtor-stage-filters" aria-label="과목 보기 범위">
+      <a href="{% url 'realtor_home' %}" {% if filter_stage == 'all' %}aria-current="page"{% endif %}>전체</a>
+      <a href="{% url 'realtor_home' %}?stage=first" {% if filter_stage == 'first' %}aria-current="page"{% endif %}>1차 과목만 보기</a>
+      <a href="{% url 'realtor_home' %}?stage=second" {% if filter_stage == 'second' %}aria-current="page"{% endif %}>2차 과목만 보기</a>
+    </nav>
     <div class="realtor-course-choices" aria-label="공부할 과목">
-      {% for course in allowed_courses %}
+      {% for area in areas %}
       <form method="post" action="{% url 'realtor_choose_course' %}">
-        {% csrf_token %}<input type="hidden" name="course" value="{{ course.name }}">
-        <button type="submit" {% if selected_course == course.name %}aria-current="true"{% endif %}>{{ course.name }}<small>{% if course.available %}문제 풀이 가능{% else %}문제 준비 중 · 이론 목차 확인 가능{% endif %}</small></button>
+        {% csrf_token %}<input type="hidden" name="area_code" value="{{ area.code }}">
+        <button type="submit" {% if selected_area.code == area.code %}aria-current="true"{% endif %}><small>{% if area.stage == 'first' %}1차{% else %}2차{% endif %} · {{ area.code }}</small>{{ area.title }}<small>{% if area.available %}문제 풀이 가능{% else %}문제 준비 중 · 단원 목차 확인 가능{% endif %}</small></button>
       </form>
       {% endfor %}
     </div>
-  {% endif %}
+  {% if selected_area %}</details>{% endif %}
+  </section>
 
-  {% if selected_course %}</details></section>{% elif study_path %}</section>{% endif %}
-
-  {% if study_path %}<details class="realtor-path-disclosure"><summary>1차·2차·동차 선택 바꾸기</summary>{% endif %}
-  <section class="card realtor-path-card" aria-labelledby="realtor-path-title">
-    <p class="eyebrow">{% if study_path %}시험 단계 변경{% else %}첫 번째 선택{% endif %}</p>
-    <h2 id="realtor-path-title">{% if study_path %}지금 준비하는 단계{% else %}어느 시험을 준비하세요?{% endif %}</h2>
-    <p>1차·2차·동차 중 골라 주세요. 나중에 바꿔도 기록은 그대로 남습니다.</p>
-    <div class="realtor-paths">
-      <form method="post" action="{% url 'realtor_choose_path' %}">{% csrf_token %}<input type="hidden" name="path" value="first"><button type="submit" class="{% if study_path == 'first' %}selected{% endif %}" {% if study_path == 'first' %}aria-pressed="true"{% else %}aria-pressed="false"{% endif %}>1차 준비<small>학개론·민법</small></button></form>
-      <form method="post" action="{% url 'realtor_choose_path' %}">{% csrf_token %}<input type="hidden" name="path" value="second"><button type="submit" class="{% if study_path == 'second' %}selected{% endif %}" {% if study_path == 'second' %}aria-pressed="true"{% else %}aria-pressed="false"{% endif %}>2차 준비<small>법령·공법·공시/세법</small></button></form>
-      <form method="post" action="{% url 'realtor_choose_path' %}">{% csrf_token %}<input type="hidden" name="path" value="both"><button type="submit" class="{% if study_path == 'both' %}selected{% endif %}" {% if study_path == 'both' %}aria-pressed="true"{% else %}aria-pressed="false"{% endif %}>동차 준비<small>1차와 2차 함께</small></button></form>
+  {% if selected_group %}
+  <section class="card realtor-chapters" aria-labelledby="realtor-chapters-title">
+    <p class="eyebrow">선택한 과목만 보기</p>
+    <h2 id="realtor-chapters-title">{{ selected_group.course }} 단원 목차</h2>
+    {% if selected_group.exam_course != selected_group.course %}<p class="meta-text">학습은 공시법·세법으로 나누고, 모의고사에서는 두 영역을 합쳐 한 과목으로 채점합니다.</p>{% endif %}
+    <div class="realtor-chapter-list">
+      {% for chapter in selected_group.chapters %}
+        <div class="realtor-chapter-row">
+          <div><small>{{ chapter.chapter_code }}</small><b>{{ chapter.chapter_name }}</b><span>{{ chapter.status }}</span></div>
+          {% if chapter.has_theory %}
+            <a href="{% url 'theory_chapter' chapter.slug %}">{% if chapter.total_count %}이론과 문제 보기{% else %}이론 보기{% endif %}</a>
+          {% elif chapter.total_count %}
+            <a href="{% url 'chapter_practice_start' chapter.slug %}">문제 풀기</a>
+          {% else %}<span class="realtor-chapter-pending">이론·문제 준비 중</span>{% endif %}
+        </div>
+      {% endfor %}
     </div>
   </section>
-  {% if study_path %}</details>{% endif %}
+  {% endif %}
 
-  <details class="realtor-more"><summary><b>단원 목차·모의고사·학습 기록</b><span>필요할 때 펼쳐보기</span></summary>
-  {% for stage in stages %}
-  <section class="card realtor-stage" aria-labelledby="stage-{{ stage.code }}">
-    <h2 id="stage-{{ stage.code }}">{{ stage.label }} 과목</h2>
-    {% for sitting in stage.sittings %}
-      <div class="realtor-sitting">
-        <h3>{{ sitting.sitting }} <small>과목당 40문항 · {{ sitting.minutes }}분</small></h3>
-        <div class="realtor-courses">
-          {% for course in sitting.course_rows %}
-          <article class="realtor-course">
-            <h4>{{ course.name }}</h4>
-            {% if course.available %}
-              <p>풀이 기록 {{ course.attempts }}회{% if course.mistakes %} · 오답 기록 {{ course.mistakes }}회{% endif %}</p>
-              <a href="{% url 'mission_list' %}?course={{ course.name|urlencode }}">이 과목 문제 풀기</a>
-            {% else %}
-              <p>문제 준비 중</p>
-            {% endif %}
-          </article>
-          {% endfor %}
-        </div>
+  <details class="realtor-more"><summary><b>모의고사·학습 기록·시험 준비 범위</b><span>필요할 때 펼쳐보기</span></summary>
+    <section class="card">
+      <h2>학습 기록은 그대로 이어집니다</h2>
+      <p>공시법과 세법은 학습할 때 별도 과목으로 고릅니다. 시험 채점은 기존처럼 두 영역을 합친 한 과목으로 유지합니다.</p>
+      <div class="realtor-actions"><a href="{% url 'mission_list' %}">학습 홈</a><a href="{% url 'exam_start' %}">모의고사</a><a href="{% url 'wrong_notes' %}">오답노트</a><a href="{% url 'stats' %}">내 기록</a></div>
+    </section>
+    <section class="card realtor-path-card" aria-labelledby="realtor-path-title">
+      <h2 id="realtor-path-title">모의고사 준비 범위</h2>
+      <p>1차·2차·동차 선택은 모의고사 출제 범위를 정할 때만 사용합니다. 과목 학습은 위에서 자유롭게 바꿀 수 있어요.</p>
+      <div class="realtor-paths">
+        <form method="post" action="{% url 'realtor_choose_path' %}">{% csrf_token %}<input type="hidden" name="path" value="first"><button type="submit" class="{% if study_path == 'first' %}selected{% endif %}" aria-pressed="{% if study_path == 'first' %}true{% else %}false{% endif %}">1차 준비<small>학개론·민법</small></button></form>
+        <form method="post" action="{% url 'realtor_choose_path' %}">{% csrf_token %}<input type="hidden" name="path" value="second"><button type="submit" class="{% if study_path == 'second' %}selected{% endif %}" aria-pressed="{% if study_path == 'second' %}true{% else %}false{% endif %}">2차 준비<small>법령·공법·공시/세법</small></button></form>
+        <form method="post" action="{% url 'realtor_choose_path' %}">{% csrf_token %}<input type="hidden" name="path" value="both"><button type="submit" class="{% if study_path == 'both' %}selected{% endif %}" aria-pressed="{% if study_path == 'both' %}true{% else %}false{% endif %}">동차 준비<small>1차와 2차 함께</small></button></form>
       </div>
-    {% endfor %}
-  </section>
-  {% endfor %}
-
-  <section class="card realtor-chapters" aria-labelledby="realtor-chapters-title">
-    <p class="eyebrow">내가 고르는 학습 순서</p>
-    <h2 id="realtor-chapters-title">과목별 단원 목차</h2>
-    <p>준비된 이론이나 문제부터 시작할 수 있습니다. 내용이 없는 단원은 준비 상태만 보여드려요.</p>
-    {% for group in chapter_groups %}
-      <details class="realtor-chapter-group">
-        <summary><span><small>{{ group.area_code }} · {% if group.stage == 'first' %}1차{% else %}2차{% endif %}</small><b>{{ group.course }}</b></span><span>{{ group.chapters|length }}개 단원 ▾</span></summary>
-        {% if group.exam_course != group.course %}<p class="meta-text">시험 채점 과목: {{ group.exam_course }}</p>{% endif %}
-        <div class="realtor-chapter-list">
-          {% for chapter in group.chapters %}
-            <div class="realtor-chapter-row">
-              <div><small>{{ chapter.chapter_code }}</small><b>{{ chapter.chapter_name }}</b><span>{{ chapter.status }}</span></div>
-              {% if chapter.has_theory %}
-                <a href="{% url 'theory_chapter' chapter.slug %}">{% if chapter.total_count %}이론과 문제 보기{% else %}이론 보기{% endif %}</a>
-              {% elif chapter.total_count %}
-                <a href="{% url 'chapter_practice_start' chapter.slug %}">문제 풀기</a>
-              {% else %}<span class="realtor-chapter-pending">이론·문제 준비 중</span>{% endif %}
-            </div>
-          {% endfor %}
-        </div>
-      </details>
-    {% endfor %}
-  </section>
-
-  <section class="card">
-    <h2>학습 기록은 그대로 이어집니다</h2>
-    <p>문제를 풀면 이 자격증의 오답노트와 통계에만 반영됩니다. 실전 모의고사는 단계별 검수 문항이 충분히 확보된 뒤 열 예정이며, 현재 다른 자격증의 시험 규칙을 그대로 적용하지 않습니다.</p>
-    <div class="realtor-actions"><a href="{% url 'mission_list' %}">학습 홈</a><a href="{% url 'exam_start' %}">모의고사</a><a href="{% url 'wrong_notes' %}">오답노트</a><a href="{% url 'stats' %}">내 기록</a></div>
-    <p class="meta-text">시험 구성 참고: <a href="{{ exam_guide_url }}" target="_blank" rel="noopener noreferrer">Q-Net 공인중개사 시험 안내</a>. 법령·시험 범위는 응시 연도의 공식 공고를 다시 확인하세요.</p>
-  </section>
+      <p class="meta-text">시험 구성 참고: <a href="{{ exam_guide_url }}" target="_blank" rel="noopener noreferrer">Q-Net 공인중개사 시험 안내</a>. 법령·시험 범위는 응시 연도의 공식 공고를 확인하세요.</p>
+    </section>
   </details>
 </main>
 {% endblock %}

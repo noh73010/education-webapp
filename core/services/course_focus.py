@@ -40,18 +40,21 @@ def chosen_course(user, subject, courses):
     return name if name in {row["name"] for row in courses} else None
 
 
-def course_weakness(user, subject, course):
+def course_weakness(user, subject, course, area_code=None):
     """Avoid presenting a guessed weakness before this course has attempt evidence."""
     attempts = Attempt.objects.valid_for_learning().filter(
         user=user, mission__subject=subject, mission__course=course,
     )
+    if area_code:
+        attempts = attempts.filter(mission__chapter_code__startswith=area_code)
     if not attempts.exists():
         return {"state": "new"}
+    missions = Mission.objects.filter(subject=subject, course=course).exclude(chapter_code="")
+    if area_code:
+        missions = missions.filter(chapter_code__startswith=area_code)
     weakness = UserWeakness.objects.filter(
         user=user, subject=subject,
-        wrong_pattern__skill__in=Mission.objects.filter(
-            subject=subject, course=course,
-        ).exclude(chapter_code="").values_list("chapter_code", flat=True).distinct(),
+        wrong_pattern__skill__in=missions.values_list("chapter_code", flat=True).distinct(),
     ).exclude(status=UserWeakness.STATUS_MASTERED).select_related("wrong_pattern").order_by(
         "-severity", "-recent_failure_count", "-last_detected_at",
     ).first()

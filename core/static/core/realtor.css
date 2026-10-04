@@ -46,6 +46,11 @@ body.theme-realtor .realtor-course-choices button:hover,
 body.theme-realtor .realtor-course-choices button:focus-visible { background: #f4eefa; border-color: #a68ac8; }
 body.theme-realtor .realtor-course-choices button[aria-current] { border-color: #8f70b5; background: #eee6f8; }
 .realtor-course-choices small { display: block; margin-top: 4px; color: #657088; font-weight: 400; }
+.realtor-stage-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.realtor-stage-filters a { display: inline-flex; align-items: center; min-height: 40px; padding: 7px 13px; border-radius: 999px; border: 1px solid #ddd5e8; color: #4b3e64; text-decoration: none; background: #fff; font-weight: 650; }
+.realtor-stage-filters a[aria-current="page"] { background: #eee6f8; border-color: #9d81bf; }
+.realtor-stage-filters a:hover { background: #f5effb; }
+.realtor-chapters .realtor-chapter-list { padding: 0; }
 
 .realtor-paths,
 .realtor-courses {

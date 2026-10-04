@@ -120,6 +120,20 @@ REALTOR_CHAPTERS = {
 }
 
 
+def learning_area(code):
+    return next((area for area in REALTOR_LEARNING_AREAS if area["code"] == code), None)
+
+
+def area_for_focus(focus):
+    if focus is None:
+        return None
+    area = learning_area(focus.area_code)
+    if area and area["course"] == focus.course:
+        return area
+    matches = [item for item in REALTOR_LEARNING_AREAS if item["course"] == focus.course]
+    return matches[0] if len(matches) == 1 else None
+
+
 def normalize_realtor_chapter(course, chapter_code):
     code = (chapter_code or "").strip().upper()
     expected = REALTOR_CHAPTERS.get(code)
