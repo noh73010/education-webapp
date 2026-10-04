@@ -48,6 +48,9 @@
   .course-focus-form { padding-bottom: 72px; }
   .course-focus-start { position: sticky; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 2; box-shadow: 0 12px 28px rgba(22, 67, 143, .22); }
   .selected-course-banner, .course-chapter-row { align-items: stretch; flex-direction: column; }
+  .selected-course-banner { gap: 10px; padding: 16px 18px; margin-bottom: 12px; }
+  .selected-course-banner h1 { margin: 4px 0; font-size: 1.38rem; }
+  .selected-course-banner p { font-size: .9rem; line-height: 1.45; }
   .course-switcher { width: 100%; }
   .selected-course-actions { width: 100%; justify-content: stretch; }
   .selected-course-actions > * { flex: 1 1 100%; }

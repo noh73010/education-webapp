@@ -17,7 +17,7 @@
   {% else %}
   <div class="selected-course-actions">
   <details class="course-switcher">
-    <summary>과목 바꾸기</summary>
+    <summary>과목·자격증 바꾸기</summary>
     <div class="course-switcher-options">
       {% for option in course_options %}
         {% if option.name != selected_course %}
@@ -28,9 +28,9 @@
           </form>
         {% endif %}
       {% endfor %}
+      <a href="{% url 'landing' %}" class="sub-button qualification-switch-link">다른 자격증 선택</a>
     </div>
   </details>
-  <a href="{% url 'landing' %}" class="sub-button qualification-switch-link">다른 자격증 선택</a>
   </div>
   {% endif %}
 </section>
@@ -50,12 +50,6 @@
       {% else %}
         <a href="{% url 'exam_take' ongoing_exam.exam.id ongoing_exam.resume_order %}">시험 이어하기</a>
       {% endif %}
-    </div>
-  {% endif %}
-  {% if learning_experience.needs_start %}
-    <div class="coach-inline-notice">
-      <b>처음이라면 나의 출발점 정하기부터 시작하세요.</b>
-      <a href="{% url 'learning_start' %}">3문제 진단 시작</a>
     </div>
   {% endif %}
   {% if learning_experience.draft %}
@@ -85,10 +79,6 @@
       <a href="?minutes=10" class="{% if selected_daily_minutes == 10 %}is-selected{% endif %}">10분</a>
       <a href="?minutes=20" class="{% if selected_daily_minutes == 20 %}is-selected{% endif %}">20분</a>
     </div>
-    <div class="info-box daily-guide-box">
-      <b>{{ today_guide_message }}</b>
-    </div>
-
     <p class="primary-action-wrap">
       {% if today_start_mission %}
         <a href="{% url 'mission_detail' today_start_mission.id %}" class="main-button main-button-large">{% if recent_attempts %}지난 과목 {{ selected_daily_minutes }}분 이어 공부하기{% elif selected_course %}선택한 과목 {{ selected_daily_minutes }}분 학습 시작{% else %}오늘 {{ selected_daily_minutes }}분 학습 시작{% endif %}</a>
@@ -101,7 +91,10 @@
       {% endif %}
     </p>
 
-    <details class="home-plan-details"><summary>오늘 계획과 진행 상황 보기</summary>
+    {% if learning_experience.needs_start %}<p class="meta-text">처음이라면 <a href="{% url 'learning_start' %}">3문제 진단</a>으로 출발점을 확인할 수도 있어요.</p>{% endif %}
+    <details class="home-plan-details"><summary>오늘 학습 안내와 진행 상황 보기</summary>
+    <div class="info-box daily-guide-box"><b>{{ today_guide_message }}</b></div>
+
     {% if daily_study_plan.total %}
       <div class="daily-plan" aria-label="오늘의 학습 계획">
         <div class="daily-plan-heading">
