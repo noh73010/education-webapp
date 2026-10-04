@@ -5,7 +5,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
-from core.models import Attempt, Mission, RealtorStudyPath, Subject
+from core.models import Attempt, CourseFocus, Mission, MissionWork, RealtorStudyPath, Subject
 from core.services.realtor_curriculum import (
     REALTOR_EXAM_GUIDE, REALTOR_SITTINGS, REALTOR_SUBJECT_CODE, courses_for_path,
 )
@@ -97,12 +97,35 @@ def realtor_home(request):
     chapter_groups = build_subject_theory_roadmap(request.user, subject)
     if path == "second":
         chapter_groups.sort(key=lambda group: group["stage"] != "second")
+    allowed_courses = courses_for_path(path) if path else ()
+    saved_course = CourseFocus.objects.filter(user=request.user, subject=subject).values_list("course", flat=True).first()
+    recent_any_attempt = attempts.filter(mission__course__in=allowed_courses).select_related("mission").order_by("-created_at").first()
+    pending_work = MissionWork.objects.filter(
+        user=request.user, attempt__isnull=True, mission__subject=subject,
+        mission__course__in=allowed_courses,
+    ).select_related("mission").order_by("-updated_at").first()
+    selected_course = saved_course if saved_course in allowed_courses else (
+        pending_work.mission.course if pending_work else (
+            recent_any_attempt.mission.course if recent_any_attempt else ""
+        )
+    )
+    if pending_work and pending_work.mission.course != selected_course:
+        pending_work = None
+    recent_attempt = attempts.filter(mission__course=selected_course).order_by("-created_at").first() if selected_course else None
+    first_visit = not selected_course and not recent_any_attempt and not pending_work
     return render(request, "core/realtor_home.html", {
         "current_subject": subject,
         "study_path": path,
         "focused_courses": courses_for_path(path) if path else (),
         "stages": stages,
         "chapter_groups": chapter_groups,
+        "allowed_courses": [
+            {"name": name, "available": counts.get(name, 0)} for name in allowed_courses
+        ],
+        "selected_course": selected_course,
+        "recent_attempt": recent_attempt,
+        "pending_work": pending_work,
+        "first_visit": first_visit,
         "exam_guide_url": REALTOR_EXAM_GUIDE,
     })
 
@@ -120,4 +143,22 @@ def realtor_choose_path(request):
     RealtorStudyPath.objects.update_or_create(user=request.user, defaults={"path": path})
     set_current_subject(request, subject)
     messages.success(request, "학습 목표를 저장했습니다. 언제든 이 화면에서 바꿀 수 있어요.")
+    return redirect("realtor_home")
+
+
+@login_required
+@require_POST
+def realtor_choose_course(request):
+    subject = Subject.objects.filter(code=REALTOR_SUBJECT_CODE, is_active=True).first()
+    preference = RealtorStudyPath.objects.filter(user=request.user).first()
+    if subject is None or preference is None:
+        return redirect("realtor_home")
+    course = request.POST.get("course", "").strip()
+    if course not in courses_for_path(preference.path):
+        messages.warning(request, "선택한 시험 단계의 과목을 골라 주세요.")
+        return redirect("realtor_home")
+    CourseFocus.objects.update_or_create(
+        user=request.user, subject=subject, defaults={"course": course},
+    )
+    set_current_subject(request, subject)
     return redirect("realtor_home")

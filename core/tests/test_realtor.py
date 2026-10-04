@@ -5,7 +5,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from core.management.commands.import_missions import normalize_korean_row, parse_chapter
-from core.models import Attempt, Mission, RealtorStudyPath, Subject
+from core.models import Attempt, CourseFocus, Mission, RealtorStudyPath, Subject
 from core.services.exam_modes import available_courses, blueprint, create_mode_exam
 from core.services.course_focus import available_courses as focus_courses
 from core.services.realtor_curriculum import (
@@ -33,6 +33,39 @@ class RealtorLearningTests(TestCase):
         self.assertContains(self.client.get(reverse("realtor_home")), "1차 준비")
         self.assertEqual(self.client.session["current_subject_code"], "realtor")
         self.assertTrue(self.logistics.is_active)
+
+    def test_first_visit_guides_stage_then_course_and_keeps_one_primary_start(self):
+        first = self.client.get(reverse("realtor_home"))
+        self.assertContains(first, "무엇부터 공부할까요?")
+        self.assertNotContains(first, 'class="realtor-course-choices"')
+        self.client.post(reverse("realtor_choose_path"), {"path": "first"})
+        choose = self.client.get(reverse("realtor_home"))
+        self.assertContains(choose, "오늘 공부할 과목을 골라주세요")
+        self.assertContains(choose, 'class="realtor-course-choices"')
+        self.assertNotContains(choose, "선택한 과목 5분 학습 시작")
+        self.assertEqual(self.client.get(reverse("realtor_choose_course")).status_code, 405)
+        self.client.post(reverse("realtor_choose_course"), {"course": REALTOR_COURSES[0]})
+        self.assertEqual(CourseFocus.objects.get(user=self.user, subject=self.realtor).course, REALTOR_COURSES[0])
+        selected = self.client.get(reverse("realtor_home"))
+        self.assertContains(selected, "이 과목의 문제는 준비 중입니다")
+        self.assertNotContains(selected, "선택한 과목 5분 학습 시작")
+
+    def test_realtor_quick_start_and_course_change_are_scoped_to_study_path(self):
+        mission = Mission.objects.create(
+            subject=self.realtor, external_id="RE-START", title="시작 문제",
+            course=REALTOR_COURSES[0], chapter_code="RE01-01", chapter_name="부동산학 총론",
+            prompt="질문", question_type="choice_one", answer_schema="1|A\n2|B\n3|C\n4|D\n5|E",
+            correct_answer="1",
+        )
+        self.client.post(reverse("realtor_choose_path"), {"path": "first"})
+        self.client.post(reverse("realtor_choose_course"), {"course": REALTOR_COURSES[2]})
+        self.assertFalse(CourseFocus.objects.filter(user=self.user, subject=self.realtor).exists())
+        self.client.post(reverse("realtor_choose_course"), {"course": REALTOR_COURSES[0]})
+        page = self.client.get(reverse("realtor_home"))
+        self.assertContains(page, "선택한 과목 5분 학습 시작")
+        started = self.client.get(reverse("mission_list"), {"minutes": "5", "start": "1"})
+        self.assertRedirects(started, reverse("mission_detail", args=[mission.id]))
+        self.assertEqual(CourseFocus.objects.get(user=self.user, subject=self.realtor).course, REALTOR_COURSES[0])
 
     def test_theme_follows_subject_on_learning_screens_not_public_landing(self):
         self.client.post(reverse("realtor_choose_path"), {"path": "first"})

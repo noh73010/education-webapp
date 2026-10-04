@@ -34,6 +34,15 @@ class CourseFocusTests(TestCase):
         self.assertContains(response, "순서대로 시작하지 않아도 됩니다")
         self.assertContains(response, 'href="%s" class="sub-button qualification-switch-link"' % reverse("landing"))
         self.assertFalse(CourseFocus.objects.filter(user=self.user).exists())
+        self.assertContains(response, 'type="radio"')
+        self.assertContains(response, "선택한 과목 5분 학습 시작")
+
+    def test_first_visit_five_minute_start_opens_chosen_course_question(self):
+        response = self.client.post(self.url, {
+            "course": "화물운송론", "minutes": "5", "start": "1",
+        }, follow=True)
+        self.assertEqual(response.redirect_chain[-1][0], reverse("mission_detail", args=[self.transport.id]))
+        self.assertEqual(CourseFocus.objects.get(user=self.user, subject=self.subject).course, "화물운송론")
 
     def test_choice_is_validated_persisted_and_limits_daily_questions(self):
         self.assertEqual(self.choose("가짜 과목").status_code, 400)

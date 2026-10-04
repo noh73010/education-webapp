@@ -13,6 +13,7 @@ from core.views import (
     select_subject,
     realtor_home,
     realtor_choose_path,
+    realtor_choose_course,
     mission_list,
     mission_detail,
     stats,
@@ -69,6 +70,7 @@ urlpatterns = [
     path("subjects/<str:subject_code>/", select_subject, name="select_subject"),
     path("realtor/", realtor_home, name="realtor_home"),
     path("realtor/study-path/", realtor_choose_path, name="realtor_choose_path"),
+    path("realtor/study-course/", realtor_choose_course, name="realtor_choose_course"),
     path("inquiry/", inquiry, name="inquiry"),
     path("inquiry/done/", inquiry_done, name="inquiry_done"),
 

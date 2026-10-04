@@ -7,6 +7,7 @@
 }
 
 .realtor-hero {
+  position: relative;
   padding: clamp(28px, 6vw, 56px);
   border-radius: 32px 32px 72px 32px;
   background: linear-gradient(135deg, #eee8fc, #fff7eb);
@@ -19,6 +20,32 @@
 }
 .realtor-hero p { max-width: 680px; }
 .realtor-hero a { display: inline-block; margin-top: 10px; }
+.realtor-hero-illustration { float: right; width: 112px; height: 112px; object-fit: contain; margin: 0 0 8px 16px; }
+
+.realtor-next-step { padding: clamp(24px, 4vw, 36px); border-radius: 28px; background: linear-gradient(145deg, #fff, #f6f2fc); }
+.realtor-next-step h2 { margin: 6px 0 12px; font-size: clamp(1.35rem, 3vw, 1.8rem); }
+.realtor-next-step .main-button { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; margin-top: 12px; text-decoration: none; }
+.realtor-unavailable { color: #6a5265; }
+.realtor-change { margin-top: 20px; }
+.realtor-change summary,
+.realtor-path-disclosure > summary,
+.realtor-more > summary { cursor: pointer; color: #364760; font-weight: 700; }
+.realtor-change summary { padding: 8px 0; }
+.realtor-path-disclosure > summary,
+.realtor-more > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; padding: 14px 18px; border: 1px solid #ddd9e8; border-radius: 20px; background: #faf8fd; list-style: none; }
+.realtor-path-disclosure > summary::-webkit-details-marker,
+.realtor-more > summary::-webkit-details-marker { display: none; }
+.realtor-more > summary span { font-size: .86rem; font-weight: 400; color: #66718a; }
+.realtor-path-disclosure[open] > summary,
+.realtor-more[open] > summary { margin-bottom: 14px; }
+.realtor-path-card { margin-top: 0; }
+.realtor-course-choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 10px; margin-top: 18px; }
+.realtor-course-choices form { margin: 0; }
+body.theme-realtor .realtor-course-choices button { width: 100%; min-height: 76px; padding: 15px; border: 1px solid #dcd5e9; border-radius: 18px; background: #fff; color: #273a55; font: inherit; font-weight: 700; text-align: left; cursor: pointer; box-shadow: none; }
+body.theme-realtor .realtor-course-choices button:hover,
+body.theme-realtor .realtor-course-choices button:focus-visible { background: #f4eefa; border-color: #a68ac8; }
+body.theme-realtor .realtor-course-choices button[aria-current] { border-color: #8f70b5; background: #eee6f8; }
+.realtor-course-choices small { display: block; margin-top: 4px; color: #657088; font-weight: 400; }
 
 .realtor-paths,
 .realtor-courses {
@@ -163,6 +190,8 @@ body.theme-realtor .realtor-actions a:hover {
 .realtor-chapter-row a:hover { background: #e4d9f4; }
 .realtor-chapter-pending { font-size: .88rem; text-align: right; }
 @media (max-width: 600px) {
+  .realtor-hero { padding: 24px; border-radius: 26px 26px 42px 26px; }
+  .realtor-hero-illustration { width: 76px; height: 76px; }
   .realtor-chapter-group summary { align-items: flex-start; }
   .realtor-chapter-row { align-items: flex-start; flex-direction: column; gap: 8px; }
   .realtor-chapter-row a { align-self: flex-start; }

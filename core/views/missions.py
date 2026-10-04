@@ -413,7 +413,8 @@ def mission_list(request):
         )
         requested_minutes = request.POST.get("minutes", "")
         if requested_minutes in {"5", "10", "20"}:
-            return redirect(f"{reverse('mission_list')}?minutes={requested_minutes}")
+            start_query = "&start=1" if request.POST.get("start") == "1" else ""
+            return redirect(f"{reverse('mission_list')}?minutes={requested_minutes}{start_query}")
         return redirect("mission_list")
     populated_courses = set(
         Mission.objects.filter(subject=current_subject).exclude(course="")
@@ -428,8 +429,14 @@ def mission_list(request):
         ).values_list("course", flat=True).distinct())
         if requested_course in allowed_courses:
             selected_course = requested_course
-        else:
-            selected_course = next((name for name in allowed_courses if name in available_realtor_courses), None)
+        elif selected_course not in allowed_courses:
+            recent_course = Attempt.objects.valid_for_learning().filter(
+                user=request.user, mission__subject=current_subject,
+                mission__course__in=allowed_courses,
+            ).order_by("-created_at").values_list("mission__course", flat=True).first()
+            selected_course = recent_course or next(
+                (name for name in allowed_courses if name in available_realtor_courses), None
+            )
     if current_subject.code == LOGISTICS_SUBJECT_CODE and course_options and len(populated_courses) > 1 and selected_course is None:
         return render(request, "core/course_focus_select.html", {
             "current_subject": current_subject,
@@ -519,6 +526,8 @@ def mission_list(request):
         (mission for mission in recommended if not mission.today_done),
         None,
     )
+    if request.GET.get("start") == "1" and today_start_mission:
+        return redirect("mission_detail", mission_id=today_start_mission.id)
 
     skill_choices = (
         Mission.objects

@@ -10,7 +10,7 @@
   <div>
     <p class="eyebrow">{{ current_subject.name }} · 오늘의 집중 과목</p>
     <h1>{{ selected_course }}</h1>
-    <p>이 과목의 약점과 오늘의 문제를 먼저 보여드려요. 다른 과목은 언제든 선택할 수 있습니다.</p>
+    <p>오늘은 이 과목부터 시작해요. 다른 과목은 언제든 선택할 수 있습니다.</p>
   </div>
   {% if is_realtor_subject %}
     <a href="{% url 'realtor_home' %}">다른 과목 선택</a>
@@ -39,7 +39,7 @@
 <div class="home-primary-grid">
 <section class="card daily-focus-card coach-summary-card coach-summary-action {% if daily_progress.total and daily_progress.done == daily_progress.total %}is-complete{% endif %}">
   <p class="eyebrow">오늘 학습</p>
-  <h1 class="section-title">오늘 {{ selected_daily_minutes }}분만 공부해요</h1>
+  <h1 class="section-title">{% if recent_attempts %}지난 학습을 이어가요{% else %}오늘 {{ selected_daily_minutes }}분만 시작해요{% endif %}</h1>
   <p class="subject-label">{% if selected_course %}집중 과목: <b>{{ selected_course }}</b>{% else %}현재 과목: <b>{{ current_subject.name }}</b>{% endif %}</p>
   {% if is_realtor_subject %}<p><a href="{% url 'realtor_home' %}">1차·2차 과목 목차와 학습 목표 보기</a></p>{% endif %}
   {% if ongoing_exam %}
@@ -91,7 +91,7 @@
 
     <p class="primary-action-wrap">
       {% if today_start_mission %}
-        <a href="{% url 'mission_detail' today_start_mission.id %}" class="main-button main-button-large">오늘 {{ selected_daily_minutes }}분 학습 시작</a>
+        <a href="{% url 'mission_detail' today_start_mission.id %}" class="main-button main-button-large">{% if recent_attempts %}지난 과목 {{ selected_daily_minutes }}분 이어 공부하기{% elif selected_course %}선택한 과목 {{ selected_daily_minutes }}분 학습 시작{% else %}오늘 {{ selected_daily_minutes }}분 학습 시작{% endif %}</a>
       {% elif today_guide_url_name == "pattern_training_start" %}
         <a href="{% url 'pattern_training_start' today_guide_pattern_code %}" class="main-button main-button-large">3문제 약점 훈련 시작</a>
       {% elif today_guide_url_name == "learning_type_training_start" %}
@@ -101,6 +101,7 @@
       {% endif %}
     </p>
 
+    <details class="home-plan-details"><summary>오늘 계획과 진행 상황 보기</summary>
     {% if daily_study_plan.total %}
       <div class="daily-plan" aria-label="오늘의 학습 계획">
         <div class="daily-plan-heading">
@@ -133,15 +134,16 @@
     </div>
 
     <p class="meta-text">{{ daily_progress.pct }}% 완료</p>
+    </details>
 
   {% endif %}
 
-  <div class="quick-action-row">
+  <details class="home-quick-tools"><summary>다른 학습 방법 보기</summary><div class="quick-action-row">
     <a href="{% url 'final_cards' %}" class="sub-button">시험 전 핵심 복습</a>
     <a href="{% url 'wrong_notes' %}" class="sub-button">오답 복습</a>
     <a href="{% url 'exam_start' %}" class="sub-button">모의고사</a>
     <a href="{% url 'stats' %}" class="sub-button">학습 변화</a>
-  </div>
+  </div></details>
 </section>
 
 {% if is_logistics_subject %}<div class="home-insight-stack">{% endif %}
@@ -189,7 +191,8 @@
 </div>
 
 {% if focus_roadmaps %}
-<section class="card selected-course-contents" aria-label="{{ selected_course }} 목차">
+<details class="card selected-course-contents" {% if chapter %}open{% endif %}>
+  <summary>{{ selected_course }} 단원 목차 펼쳐보기</summary>
   <p class="eyebrow">원하는 단원부터 시작하세요</p>
   <h2 class="section-title">{{ selected_course }} 목차</h2>
   <p>번호 순서대로 풀지 않아도 됩니다. 이론이 준비된 단원은 이론부터, 그렇지 않은 단원은 문제부터 시작할 수 있어요.</p>
@@ -208,7 +211,7 @@
     {% endfor %}
   </div>
   {% endfor %}
-</section>
+</details>
 {% endif %}
 
 <details class="home-learning-more" {% if chapter %}open{% endif %}>
