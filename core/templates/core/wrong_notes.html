@@ -24,15 +24,22 @@
     </div>
 </section>
 {% else %}
-<section class="card">
-    <h2 class="card-title">필터</h2>
+<details class="card wrong-note-filters">
+    <summary>
+        <strong>오답 필터 조정</strong>
+        <span class="wrong-note-filter-current">
+            {% if mode == "all" %}전체 오답{% else %}미해결만{% endif %}
+            · {% if days == "7" %}최근 7일{% elif days == "30" %}최근 30일{% else %}전체 기간{% endif %}
+            · {{ selected_skill_label|default:"전체 범위" }}
+        </span>
+    </summary>
 
     <form method="get" class="filter-form">
 
         <div class="mb-medium">
-            <label>보기</label><br>
+            <label for="wrong-mode">보기</label><br>
 
-            <select name="mode">
+            <select id="wrong-mode" name="mode">
                 <option value="open" {% if mode == "open" %}selected{% endif %}>
                     미해결만
                 </option>
@@ -44,9 +51,9 @@
         </div>
 
         <div class="mb-medium">
-            <label>기간</label><br>
+            <label for="wrong-days">기간</label><br>
 
-            <select name="days">
+            <select id="wrong-days" name="days">
                 <option value="all" {% if days == "all" %}selected{% endif %}>
                     전체
                 </option>
@@ -62,9 +69,9 @@
         </div>
 
         <div class="mb-medium">
-            <label>스킬</label><br>
+            <label for="wrong-skill">범위</label><br>
 
-            <select name="skill">
+            <select id="wrong-skill" name="skill">
                 <option value="">전체</option>
 
                 {% for s in skill_choices %}
@@ -86,7 +93,7 @@
             집계 시작: {{ since }}
         </p>
     {% endif %}
-</section>
+</details>
 
 <section class="card" id="wrong-note-list">
 
@@ -172,7 +179,7 @@
 
 <section class="card">
     <p>
-        <a href="{% url 'mission_list' %}" class="sub-link">
+        <a href="{% if current_subject.code == 'realtor' %}{% url 'realtor_home' %}{% else %}{% url 'mission_list' %}{% endif %}" class="sub-link">
             학습 홈
         </a>
 

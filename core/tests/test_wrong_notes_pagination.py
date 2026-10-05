@@ -70,6 +70,9 @@ class WrongNotesPaginationTests(TestCase):
             response.content.count(b'class="info-box mb-medium"'),
             WRONG_NOTES_PAGE_SIZE,
         )
+        self.assertContains(response, '<details class="card wrong-note-filters">')
+        self.assertContains(response, "오답 필터 조정")
+        self.assertContains(response, "미해결만")
 
     @override_settings(PREMIUM_GATING_ENABLED=False)
     def test_page_links_preserve_filters_and_second_page_has_only_its_items(self):
@@ -85,6 +88,9 @@ class WrongNotesPaginationTests(TestCase):
             response.context["filter_query"],
             "mode=all&days=30&skill=LM01",
         )
+        self.assertContains(response, "전체 오답")
+        self.assertContains(response, "최근 30일")
+        self.assertContains(response, "물류관리총론")
         self.assertContains(
             response,
             "?mode=all&amp;days=30&amp;skill=LM01&amp;page=2#wrong-note-list",

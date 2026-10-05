@@ -120,6 +120,10 @@ def wrong_notes(request):
         {"value": value, "label": get_skill_label(value)}
         for value in raw_skill_choices
     ]
+    selected_skill_label = next(
+        (choice["label"] for choice in skill_choices if choice["value"] == skill),
+        skill,
+    )
 
     filter_query = urlencode({
         "mode": mode,
@@ -136,6 +140,7 @@ def wrong_notes(request):
         "since": since,
         "skill": skill,
         "skill_choices": skill_choices,
+        "selected_skill_label": selected_skill_label,
         "is_premium": access.is_premium,
         "has_full_access": has_full_access,
         "is_limited": is_limited,
