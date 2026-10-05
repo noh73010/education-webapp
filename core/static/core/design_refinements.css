@@ -114,6 +114,8 @@ body.theme-realtor .wrong-note-filters > summary strong::before { color: #725896
   background: #fff6e8; color: #704314; font-size: .95rem;
   font-weight: 800; line-height: 1.55;
 }
+.confidence-help-important span { display: block; }
+.confidence-help-important span + span { margin-top: 6px; }
 .wrong-reason-after-grading h2 { margin: 0 0 6px; }
 .wrong-reason-after-grading > p { margin: 0 0 14px; color: #52647d; }
 .wrong-reason-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
