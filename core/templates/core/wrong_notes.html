@@ -14,6 +14,16 @@
     </p>
 </section>
 
+{% if not has_wrong_history %}
+<section class="card learning-empty-state" aria-labelledby="wrong-notes-empty-title">
+    <div class="learning-empty-mark" aria-hidden="true">✓</div>
+    <div>
+        <h2 id="wrong-notes-empty-title">아직 오답이 없어요</h2>
+        <p>문제를 풀고 틀린 내용이 생기면 이곳에서 다시 볼 수 있어요.</p>
+        <a href="{% if current_subject.code == 'realtor' %}{% url 'realtor_home' %}{% else %}{% url 'mission_list' %}{% endif %}" class="main-button">{% if current_subject.code == 'realtor' %}공부할 과목 고르기{% else %}오늘 학습 시작{% endif %}</a>
+    </div>
+</section>
+{% else %}
 <section class="card">
     <h2 class="card-title">필터</h2>
 
@@ -133,7 +143,7 @@
     {% empty %}
 
         <div class="info-box">
-            아직 오답 기록이 없습니다.
+            선택한 조건에 맞는 오답이 없습니다.
         </div>
 
     {% endfor %}
@@ -174,4 +184,5 @@
     </p>
 </section>
 
+{% endif %}
 {% endblock %}

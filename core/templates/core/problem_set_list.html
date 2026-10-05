@@ -1,126 +1,40 @@
 {% extends 'core/base.html' %}
 
-{% block title %}
-문제 세트 목록
-{% endblock %}
+{% block title %}문제 세트 목록{% endblock %}
 
 {% block content %}
+<main class="learning-directory-page">
+  <header class="card compact-page-intro">
+    <p class="eyebrow">추천 학습</p>
+    <h1 class="section-title">지금 풀 문제 세트</h1>
+    <p>오늘 할 분량부터 골라보세요. 더 많은 세트는 아래에서 찾을 수 있어요.</p>
+  </header>
 
-<section class="card">
-  <h1 class="section-title">문제 세트 목록</h1>
-  <p>오늘 풀 문제 세트와 약점 기반 추천 세트를 확인합니다.</p>
-</section>
-
-<section class="card">
-  <h2 class="card-title">처음이신가요?</h2>
-
-  <div class="info-box">
-    아래 추천 세트부터 시작해보세요.
-  </div>
-
-  {% if today_sets %}
-    <p>
-      <a href="{% url 'problem_set_start' today_sets.0.id %}" class="main-button">
-        추천 세트 바로 시작
-      </a>
-    </p>
-  {% else %}
-    <p>추천 세트를 준비 중입니다.</p>
-  {% endif %}
-</section>
-
-<section class="card">
-  <h2 class="card-title">오늘 할 세트</h2>
-
-  <ul class="clean-list">
-    {% for ps in today_sets %}
-      <li>
-        <a href="{% url 'problem_set_detail' ps.id %}">
-          <b>{{ ps.learner_title }}</b>
-        </a>
-        <div class="meta-text">
-          {{ ps.question_count }}문제{% if ps.estimated_minutes %} · 약 {{ ps.estimated_minutes }}분{% endif %}
-          · {{ ps.skill_label }}
-        </div>
-        <p class="mt-small">{{ ps.recommendation_reason }}</p>
-      </li>
-    {% empty %}
-      <li>추천할 세트가 없습니다.</li>
-    {% endfor %}
-  </ul>
-</section>
-
-<section class="card">
-  <h2 class="card-title">약점 기반 추천 세트</h2>
-
-  {% if weak_sets %}
-    <div class="info-box">
-      최근 오답이 많았던 스킬을 기준으로 추천합니다.
+  {% if not today_sets and not weak_sets and not review_sets and not problem_sets %}
+  <section class="card learning-empty-state" aria-labelledby="sets-empty-title">
+    <div class="learning-empty-mark" aria-hidden="true">↗</div>
+    <div>
+      <h2 id="sets-empty-title">추천 세트를 준비 중이에요</h2>
+      <p>단원 이론과 이용 가능한 학습을 먼저 살펴보세요. 세트가 생기면 이곳에 보여드릴게요.</p>
+      <a href="{% if request.session.current_subject_code == 'realtor' %}{% url 'realtor_home' %}{% else %}{% url 'mission_list' %}{% endif %}" class="main-button">공부할 단원 살펴보기</a>
     </div>
-
-    <ul class="clean-list">
-      {% for ps in weak_sets %}
-        <li>
-          <a href="{% url 'problem_set_detail' ps.id %}">
-            <b>{{ ps.learner_title }}</b>
-          </a>
-          <div class="meta-text">
-            {{ ps.question_count }}문제{% if ps.estimated_minutes %} · 약 {{ ps.estimated_minutes }}분{% endif %}
-          </div>
-          <p class="mt-small">{{ ps.recommendation_reason }}</p>
-        </li>
-      {% endfor %}
-    </ul>
+  </section>
   {% else %}
-    <p>아직 약점 추천을 만들 만큼의 오답 기록이 없습니다.</p>
+    {% if today_sets %}
+    <section class="card learning-directory-feature" aria-labelledby="today-sets-title">
+      <p class="eyebrow">오늘의 추천</p>
+      <h2 id="today-sets-title">{{ today_sets.0.learner_title }}</h2>
+      <p>{{ today_sets.0.question_count }}문제 · 약 {{ today_sets.0.estimated_minutes }}분</p>
+      <a href="{% url 'problem_set_start' today_sets.0.id %}" class="main-button">이 세트 시작</a>
+    </section>
+    {% endif %}
+
+    <details class="card learning-directory-more" {% if not today_sets %}open{% endif %}>
+      <summary><b>다른 문제 세트 보기</b><span>약점·복습·전체 세트</span></summary>
+      {% if weak_sets %}<h2>약점에 맞는 세트</h2><ul class="clean-list">{% for ps in weak_sets %}<li><a href="{% url 'problem_set_detail' ps.id %}">{{ ps.learner_title }}</a><small>{{ ps.question_count }}문제 · {{ ps.recommendation_reason }}</small></li>{% endfor %}</ul>{% endif %}
+      {% if review_sets %}<h2>다시 볼 세트</h2><ul class="clean-list">{% for ps in review_sets %}<li><a href="{% url 'problem_set_detail' ps.id %}">{{ ps.learner_title }}</a><small>{{ ps.question_count }}문제 · {{ ps.recommendation_reason }}</small></li>{% endfor %}</ul>{% endif %}
+      {% if problem_sets %}<h2>전체 세트</h2><ul class="clean-list">{% for ps in problem_sets %}<li><a href="{% url 'problem_set_detail' ps.id %}">{{ ps.learner_title }}</a><small>{{ ps.question_count }}문제 · 약 {{ ps.estimated_minutes }}분</small></li>{% endfor %}</ul>{% endif %}
+    </details>
   {% endif %}
-</section>
-
-<section class="card">
-  <h2 class="card-title">복습 추천 세트</h2>
-
-  <ul class="clean-list">
-    {% for ps in review_sets %}
-      <li>
-        <a href="{% url 'problem_set_detail' ps.id %}">
-          <b>{{ ps.learner_title }}</b>
-        </a>
-        <div class="meta-text">
-          {{ ps.question_count }}문제{% if ps.estimated_minutes %} · 약 {{ ps.estimated_minutes }}분{% endif %}
-          · {{ ps.skill_label }}
-        </div>
-        <p class="mt-small">{{ ps.recommendation_reason }}</p>
-      </li>
-    {% empty %}
-      <li>아직 복습 추천 세트가 없습니다.</li>
-    {% endfor %}
-  </ul>
-</section>
-
-<section class="card">
-  <h2 class="card-title">대표 세트</h2>
-
-  <ul class="clean-list">
-    {% for ps in problem_sets %}
-      <li>
-        <a href="{% url 'problem_set_detail' ps.id %}">
-          <b>{{ ps.learner_title }}</b>
-        </a>
-
-        <div class="meta-text">
-          {{ ps.question_count }}문제{% if ps.estimated_minutes %} · 약 {{ ps.estimated_minutes }}분{% endif %}
-          · {{ ps.skill_label }}
-        </div>
-        <p class="mt-small">{{ ps.recommendation_reason }}</p>
-      </li>
-    {% empty %}
-      <li>등록된 문제 세트가 없습니다.</li>
-    {% endfor %}
-  </ul>
-</section>
-
-<section class="card">
-  <a href="{% url 'mission_list' %}" class="sub-link">학습 홈으로 돌아가기</a>
-</section>
-
+</main>
 {% endblock %}

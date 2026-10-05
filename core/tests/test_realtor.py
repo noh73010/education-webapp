@@ -49,9 +49,10 @@ class RealtorLearningTests(TestCase):
         self.client.post(reverse("realtor_choose_course"), {"area_code": "RE01"})
         self.assertEqual(CourseFocus.objects.get(user=self.user, subject=self.realtor).course, REALTOR_COURSES[0])
         selected = self.client.get(reverse("realtor_home"))
-        self.assertContains(selected, "이 과목의 문제는 준비 중입니다")
+        self.assertContains(selected, "부동산학개론 문제는 준비 중이에요")
         self.assertNotContains(selected, "5분 학습 시작")
         self.assertContains(selected, "1단원")
+        self.assertContains(selected, 'class="card realtor-chapters realtor-chapters--pending"')
         self.assertNotContains(selected, "<small>RE01-01</small>")
         self.assertNotContains(selected, "RE06-08")
 
@@ -114,6 +115,21 @@ class RealtorLearningTests(TestCase):
         logistics_page = self.client.get(reverse("mission_list"))
         self.assertNotContains(logistics_page, 'class="theme-realtor"')
         self.assertContains(logistics_page, 'class="theme-logistics"')
+
+    def test_empty_realtor_surfaces_offer_one_clear_next_step(self):
+        self.client.get(reverse("realtor_home"))
+        home = self.client.get(reverse("realtor_home"))
+        self.assertContains(home, 'href="/realtor/">홈</a>')
+        self.assertContains(home, "무엇부터 공부할까요?")
+        wrong = self.client.get(reverse("wrong_notes"))
+        self.assertContains(wrong, "아직 오답이 없어요")
+        self.assertNotContains(wrong, 'class="filter-form"')
+        stats = self.client.get(reverse("stats"))
+        self.assertContains(stats, "첫 학습부터 시작해 볼까요?")
+        self.assertNotContains(stats, "지금 가장 먼저 복습할 것")
+        sets = self.client.get(reverse("problem_set_list"))
+        self.assertContains(sets, "추천 세트를 준비 중이에요")
+        self.assertNotContains(sets, "약점 기반 추천 세트")
 
     def test_study_path_is_saved_without_limiting_course_picker(self):
         self.assertEqual(self.client.get(reverse("realtor_choose_path")).status_code, 405)
@@ -179,8 +195,9 @@ class RealtorLearningTests(TestCase):
         session["current_subject_code"] = "realtor"
         session.save()
         page = self.client.get(reverse("exam_start"))
-        self.assertContains(page, "출제 가능한 문제가 10개 이상")
-        self.assertContains(page, "한 과목에 출제 가능한 문제가 40개 이상")
+        self.assertContains(page, "모의고사를 준비 중이에요")
+        self.assertContains(page, "공인중개사 단원 보기")
+        self.assertNotContains(page, "10분 연습 시작")
         self.assertNotContains(page, "실전 1교시 시작")
 
     def test_korean_csv_requires_official_course_and_five_choices(self):
@@ -216,7 +233,7 @@ class RealtorLearningTests(TestCase):
         self.assertContains(selected, "8단원")
         self.assertNotContains(selected, "<small>RE06-08</small>")
         self.assertNotContains(selected, "부동산학 총론")
-        self.assertContains(selected, "이론·문제 준비 중")
+        self.assertContains(selected, "자료 준비 중")
         self.assertNotContains(page, reverse("chapter_practice_start", args=[roadmap[0]["chapters"][0]["slug"]]))
 
     def test_realtor_chapter_questions_open_from_their_own_unit(self):

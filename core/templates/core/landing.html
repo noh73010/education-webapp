@@ -1,8 +1,8 @@
 {% extends 'core/base.html' %}
 {% load static %}
 
-{% block title %}합격한걸음 | 물류관리사 오답·약점 맞춤 학습{% endblock %}
-{% block meta_description %}물류관리사 문제를 풀고 틀린 이유를 확인하세요. 오답 기록을 바탕으로 약점을 찾아 오늘의 복습과 모의고사까지 이어가는 무료 학습 서비스입니다.{% endblock %}
+{% block title %}합격한걸음 | 물류관리사·공인중개사 맞춤 학습{% endblock %}
+{% block meta_description %}물류관리사와 공인중개사를 원하는 과목부터 공부하세요. 오답 기록을 바탕으로 약점과 복습 시점을 안내하는 무료 학습 서비스입니다.{% endblock %}
 {% block meta_robots %}index, follow{% endblock %}
 {% block seo_links %}<link rel="canonical" href="{{ canonical_url }}">{% endblock %}
 {% block body_class %}landing-page{% endblock %}
@@ -23,14 +23,14 @@
 
 <section class="subject-selection" aria-labelledby="subject-selection-title">
   <div class="subject-section-heading">
-    <h2 id="subject-selection-title">과목 선택</h2>
+    <h2 id="subject-selection-title">자격증 선택</h2>
     <p>학습할 자격증을 선택하면 오늘의 개인 학습 계획으로 이동합니다.</p>
   </div>
 
   {% if subjects %}
     <div class="subject-grid">
       {% for subject in subjects %}
-        <form method="post" action="{% url 'select_subject' subject.code %}" class="subject-card">
+        <form method="post" action="{% url 'select_subject' subject.code %}" class="subject-card subject-card--{{ subject.code }}">
           {% csrf_token %}
           <div class="subject-card-copy">
             <span class="subject-card-label">자격시험</span>
@@ -38,10 +38,10 @@
             {% if subject.description %}
               <p>{{ subject.description }}</p>
             {% else %}
-              <p>이 과목의 학습 홈으로 이동합니다.</p>
+              <p>원하는 과목을 고르고 학습을 시작할 수 있어요.</p>
             {% endif %}
             {% if selected_subject_code == subject.code %}
-              <p class="selected-subject-label">현재 선택한 과목</p>
+              <p class="selected-subject-label">현재 선택한 자격증</p>
             {% endif %}
           </div>
           <button type="submit" class="subject-start-button">

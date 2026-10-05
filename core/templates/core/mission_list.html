@@ -39,7 +39,7 @@
 <div class="home-primary-grid">
 <section class="card daily-focus-card coach-summary-card coach-summary-action {% if daily_progress.total and daily_progress.done == daily_progress.total %}is-complete{% endif %}">
   <p class="eyebrow">오늘 학습</p>
-  <h1 class="section-title">{% if recent_attempts %}지난 학습을 이어가요{% else %}오늘 {{ selected_daily_minutes }}분만 시작해요{% endif %}</h1>
+  <h1 class="section-title">{% if subject_mission_count == 0 %}준비된 과목부터 시작해요{% elif recent_attempts %}지난 학습을 이어가요{% else %}오늘 {{ selected_daily_minutes }}분만 시작해요{% endif %}</h1>
   <p class="subject-label">{% if selected_course %}집중 과목: <b>{{ selected_course }}</b>{% else %}현재 과목: <b>{{ current_subject.name }}</b>{% endif %}</p>
   {% if is_realtor_subject %}<p><a href="{% url 'realtor_home' %}">1차·2차 과목 목차와 학습 목표 보기</a></p>{% endif %}
   {% if ongoing_exam %}
@@ -69,8 +69,8 @@
   {% if subject_mission_count == 0 %}
     <div class="info-box daily-guide-box">
       <b>현재 선택한 과목에는 아직 준비된 문제가 없습니다.</b>
-      <p class="mt-small">다른 과목을 선택하거나, 관리자가 문제를 추가한 뒤 다시 학습을 시작해 주세요.</p>
-      <a href="{% url 'landing' %}" class="sub-button">과목 선택으로 돌아가기</a>
+      <p class="mt-small">다른 과목을 고르거나 단원 목차에서 준비된 이론을 살펴보세요.</p>
+      <a href="{% if is_realtor_subject %}{% url 'realtor_home' %}{% else %}{% url 'landing' %}{% endif %}" class="sub-button">다른 과목 선택하기</a>
     </div>
   {% else %}
     <div class="study-time-picker" aria-label="오늘 가능한 학습 시간">
@@ -139,6 +139,7 @@
   </div></details>
 </section>
 
+{% if recent_attempts %}
 {% if is_logistics_subject %}<div class="home-insight-stack">{% endif %}
 <section class="card coach-summary-card coach-summary-warning {% if selected_course %}{% if selected_course_weakness.state != 'found' %}is-empty{% endif %}{% elif not personal_coach.priority_weakness %}is-empty{% endif %}">
   <p class="eyebrow">{% if selected_course %}{{ selected_course }}의 약점{% else %}지금 가장 위험한 약점{% endif %}</p>
@@ -181,6 +182,7 @@
   {% if personal_coach.recent_improvement %}<a href="{% url 'stats' %}" class="sub-button">학습 변화 자세히</a>{% endif %}
 </section>
 {% if is_logistics_subject %}</div>{% endif %}
+{% endif %}
 </div>
 
 {% if focus_roadmaps %}

@@ -208,6 +208,28 @@
     box-shadow: 0 16px 42px rgba(15, 23, 42, 0.09);
     transform: translateY(-3px);
 }
+.landing-page .subject-card--logistics {
+    border-color: #d8e6e9;
+    background: linear-gradient(145deg, #ffffff 55%, #edf5f6);
+}
+.landing-page .subject-card--realtor {
+    border-color: #e5dced;
+    background: linear-gradient(145deg, #ffffff 55%, #f4eef9);
+}
+.landing-page .subject-card--realtor .subject-card-label {
+    background: #eee8f7;
+    color: #6a4c92;
+}
+.landing-page .subject-card--logistics .subject-card-label {
+    background: #e7f2f4;
+    color: #245b78;
+}
+.landing-page .subject-card--realtor .subject-start-button {
+    background: #614582;
+}
+.landing-page .subject-card--realtor .subject-start-button:hover { background: #52366f; }
+.landing-page .subject-card--logistics .subject-start-button { background: #245f9e; }
+.landing-page .subject-card--logistics .subject-start-button:hover { background: #174a80; }
 
 .subject-card-label {
     display: inline-flex;

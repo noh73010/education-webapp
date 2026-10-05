@@ -1,9 +1,9 @@
 {% extends 'core/base.html' %}
 {% block title %}시험 기록{% endblock %}
 {% block content %}
-<section class="card"><h1>시험 기록</h1><p>서로 다른 모드의 점수는 직접 비교하지 않습니다. 전체 합격 기준 판정은 실전 두 교시 완료 후 결과에서 확인하세요.</p></section>
+<section class="card compact-page-intro"><h1>시험 기록</h1><p>내가 응시한 모의고사를 여기서 이어 보거나 결과를 확인할 수 있어요.</p><details class="exam-usage-details"><summary>점수 비교 기준 보기</summary><p>서로 다른 모드의 점수는 직접 비교하지 않습니다. 전체 합격 기준 판정은 실전 두 교시 완료 후 결과에서 확인하세요.</p></details></section>
 {% for card in history_cards %}
-<section class="card">
+<section class="card exam-history-card">
   <h2>{{ card.title }}</h2>
   <p>{{ card.started_at|date:'Y-m-d H:i' }}</p>
   {% if card.is_full %}
@@ -33,13 +33,13 @@
       <form method="post" action="{% url 'exam_create' %}">
         {% csrf_token %}
         <input type="hidden" name="second_sitting" value="{{ card.action.exam_id }}">
-        <button type="submit">{{ card.action.label }}</button>
+        <button type="submit" class="main-button">{{ card.action.label }}</button>
       </form>
     {% else %}
-      <a href="{% url 'exam_result' card.action.exam_id %}">{{ card.action.label }}</a>
+      <a href="{% url 'exam_result' card.action.exam_id %}" class="quiet-action-link">{{ card.action.label }}</a>
     {% endif %}
   {% endif %}
 </section>
-{% empty %}<section class="card">아직 시험 기록이 없습니다.</section>{% endfor %}
-<a href="{% url 'exam_start' %}">모의고사 선택</a>
+{% empty %}<section class="card learning-empty-state" aria-labelledby="exam-history-empty-title"><div class="learning-empty-mark" aria-hidden="true">▦</div><div><h2 id="exam-history-empty-title">아직 응시한 시험이 없어요</h2><p>준비된 모의고사가 있다면 짧은 연습부터 시작해 보세요.</p><a href="{% url 'exam_start' %}" class="main-button">모의고사 살펴보기</a></div></section>{% endfor %}
+{% if history_cards %}<p class="history-back-link"><a href="{% url 'exam_start' %}" class="quiet-action-link">다른 모의고사 보기</a></p>{% endif %}
 {% endblock %}

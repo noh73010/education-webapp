@@ -7,8 +7,8 @@
   <header class="realtor-hero">
     {% if first_visit %}<img class="realtor-hero-illustration" src="{% static 'core/illustrations/learning-start.png' %}" alt="" width="112" height="112">{% endif %}
     <p class="eyebrow">공인중개사 학습</p>
-    <h1>{% if first_visit %}무엇부터 공부할까요?{% else %}지난 학습에서 한 걸음 더 가요{% endif %}</h1>
-    <p>먼저 공부할 과목을 골라 주세요. 1차·2차 순서대로 시작하지 않아도 됩니다.</p>
+    <h1>{% if recent_attempt or pending_work %}지난 학습에서 한 걸음 더 가요{% else %}무엇부터 공부할까요?{% endif %}</h1>
+    <p>{% if recent_attempt or pending_work %}오늘 공부할 과목을 정하고 이어가세요.{% else %}원하는 과목부터 골라 시작할 수 있어요.{% endif %}</p>
     <a href="{% url 'landing' %}">다른 자격증 선택</a>
   </header>
 
@@ -24,7 +24,8 @@
       {% if has_focus %}<a class="main-button" href="{% url 'mission_list' %}?minutes=5&amp;start=1">{{ selected_area.title }} 5분 학습 시작</a>
       {% else %}<form method="post" action="{% url 'realtor_choose_course' %}">{% csrf_token %}<input type="hidden" name="area_code" value="{{ selected_area.code }}"><input type="hidden" name="start" value="1"><button class="main-button" type="submit">{{ selected_area.title }} 5분 학습 시작</button></form>{% endif %}
     {% else %}
-      <p class="realtor-unavailable">이 과목의 문제는 준비 중입니다. 아래 단원 목차를 살펴보거나 다른 과목을 선택해 주세요.</p>
+      <p class="realtor-unavailable">{{ selected_area.title }} 문제는 준비 중이에요.{% if selected_group_has_content %} 지금은 단원 이론부터 살펴볼 수 있어요.{% else %} 다른 과목을 골라 학습을 시작해 보세요.{% endif %}</p>
+      {% if recommended_area %}<form method="post" action="{% url 'realtor_choose_course' %}" class="realtor-ready-suggestion">{% csrf_token %}<input type="hidden" name="area_code" value="{{ recommended_area.code }}"><input type="hidden" name="start" value="1"><button class="main-button" type="submit">{{ recommended_area.title }} 5분 학습 시작</button></form>{% endif %}
     {% endif %}
     <details class="realtor-change" {% if filter_stage != 'all' %}open{% endif %}><summary>다른 과목 선택하기</summary>
   {% else %}
@@ -51,7 +52,7 @@
   </section>
 
   {% if selected_group %}
-  <section class="card realtor-chapters" aria-labelledby="realtor-chapters-title">
+  {% if selected_group_has_content %}<section class="card realtor-chapters" aria-labelledby="realtor-chapters-title">
     <p class="eyebrow">선택한 과목만 보기</p>
     <h2 id="realtor-chapters-title">{{ selected_group.course }} 단원 목차</h2>
     {% if selected_group.exam_course != selected_group.course %}<p class="meta-text">학습 메뉴에서는 공시법과 세법을 5·6과목으로 나눕니다. 모의고사에서는 두 영역을 합쳐 한 과목으로 채점합니다.</p>{% endif %}
@@ -67,7 +68,9 @@
         </div>
       {% endfor %}
     </div>
-  </section>
+  </section>{% else %}<details class="card realtor-chapters realtor-chapters--pending"><summary>{{ selected_group.course }} 단원 목차 보기 <span>자료 준비 중</span></summary><div class="realtor-chapter-list">
+    {% for chapter in selected_group.chapters %}<div class="realtor-chapter-row"><div><small>{{ forloop.counter }}단원</small><b>{{ chapter.chapter_name }}</b></div><span class="realtor-chapter-pending">준비 중</span></div>{% endfor %}
+  </div></details>{% endif %}
   {% endif %}
 
   <details class="realtor-more"><summary><b>모의고사·학습 기록·시험 준비 범위</b><span>필요할 때 펼쳐보기</span></summary>

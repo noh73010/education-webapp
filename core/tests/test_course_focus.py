@@ -55,7 +55,8 @@ class CourseFocusTests(TestCase):
         self.assertEqual(response.context["selected_course"], "화물운송론")
         self.assertEqual([row.id for row in response.context["recommended"]], [self.transport.id])
         self.assertEqual([row.id for row in response.context["missions"]], [self.transport.id])
-        self.assertContains(response, "아직 풀이 기록이 없어요")
+        self.assertContains(response, "선택한 과목")
+        self.assertNotContains(response, "coach-summary-warning is-empty")
         self.assertNotContains(response, "물류관리론 문제")
 
         other_browser = Client()

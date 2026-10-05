@@ -375,9 +375,9 @@ class LogisticsDatasetIntegrationTests(TestCase):
     def test_stats_without_attempts_shows_one_start_action_instead_of_all_chapters(self):
         response = self.client.get(reverse("stats"))
 
-        self.assertContains(response, "시험 범위별 내 학습 상태")
-        self.assertContains(response, "아직 분석할 학습 기록이 없어요")
+        self.assertContains(response, "첫 학습부터 시작해 볼까요?")
         self.assertContains(response, "오늘 학습 시작")
+        self.assertNotContains(response, "시험 범위별 내 학습 상태")
         self.assertNotContains(response, "해상운송")
         self.assertNotContains(response, "학습 전")
         self.assertNotContains(response, "결과 예측형")

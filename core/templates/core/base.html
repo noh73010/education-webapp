@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="{% static 'core/responsive.css' %}?v=20261003-2">
     <link rel="stylesheet" href="{% static 'core/logistics.css' %}?v=20261003-1">
     {% block extra_css %}{% endblock %}
+    <link rel="stylesheet" href="{% static 'core/design_refinements.css' %}?v=20261005-1">
 </head>
 <body class="{% block body_class %}{% if user.is_authenticated and request.session.current_subject_code == 'realtor' %}theme-realtor{% elif user.is_authenticated and request.session.current_subject_code == 'logistics' %}theme-logistics{% endif %}{% endblock %}">
 
@@ -30,7 +31,7 @@
     <div class="nav-links" id="primary-nav">
         {% if user.is_authenticated and request.resolver_match.url_name != 'landing' and request.resolver_match.url_name != 'service_info' %}
         <div class="nav-learning" role="group" aria-label="학습 메뉴">
-            <a href="{% url 'mission_list' %}" class="sub-link">학습 홈</a>
+            <a href="{% if request.session.current_subject_code == 'realtor' %}{% url 'realtor_home' %}{% else %}{% url 'mission_list' %}{% endif %}" class="sub-link">학습 홈</a>
             <a href="{% url 'problem_set_list' %}" class="sub-link">문제 세트</a>
             <a href="{% url 'wrong_notes' %}" class="sub-link">오답노트</a>
             <a href="{% url 'exam_start' %}" class="sub-link">모의고사</a>
@@ -77,7 +78,7 @@
 
 {% if user.is_authenticated and request.resolver_match.url_name != 'landing' and request.resolver_match.url_name != 'service_info' %}
 <nav class="bottom-mobile-nav" aria-label="모바일 빠른 메뉴">
-    <a href="{% url 'mission_list' %}">홈</a>
+    <a href="{% if request.session.current_subject_code == 'realtor' %}{% url 'realtor_home' %}{% else %}{% url 'mission_list' %}{% endif %}">홈</a>
     <a href="{% url 'problem_set_list' %}">학습</a>
     <a href="{% url 'wrong_notes' %}">오답</a>
     <a href="{% url 'stats' %}">내 기록</a>

@@ -46,6 +46,7 @@ def stats(request):
     attempt_qs = Attempt.objects.valid_for_learning().filter(
         user=request.user, mission__subject=current_subject
     )
+    has_learning_history = attempt_qs.exists()
     awr_qs = AttemptWrongReason.objects.filter(
         attempt__user=request.user,
         attempt__mission__subject=current_subject,
@@ -317,6 +318,7 @@ def stats(request):
         "recent_improvement": recent_improvement,
         "reassessment_due": reassessment_due,
         "current_subject": current_subject,
+        "has_learning_history": has_learning_history,
         "progress_evidence": progress_evidence(request.user, Attempt.objects.valid_for_learning().filter(
             user=request.user, mission__subject=current_subject,
         ).select_related("mission__concept_unit").order_by("-created_at", "-pk").first()),

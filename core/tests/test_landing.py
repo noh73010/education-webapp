@@ -21,8 +21,11 @@ class LandingPageTests(TestCase):
         self.assertIsNotNone(finders.find("core/illustrations/learning-journey.png"))
         self.assertContains(response, "안전재고와 재주문점을 헷갈렸어요")
         self.assertContains(response, 'href="#subject-selection-title"')
-        self.assertContains(response, "과목 선택")
+        self.assertContains(response, "자격증 선택")
         self.assertContains(response, "물류관리사")
+        self.assertContains(response, "공인중개사")
+        self.assertContains(response, "subject-card--logistics")
+        self.assertContains(response, "subject-card--realtor")
         self.assertNotContains(response, "컴활 2급")
         self.assertContains(response, "학습 시작")
         html = response.content.decode()
@@ -53,7 +56,7 @@ class LandingPageTests(TestCase):
         response = self.client.get(reverse("stats"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "아직 분석할 학습 기록이 없어요")
+        self.assertContains(response, "첫 학습부터 시작해 볼까요?")
         self.assertContains(response, "core/illustrations/learning-start.png")
         self.assertIsNotNone(finders.find("core/illustrations/learning-start.png"))
 
@@ -64,8 +67,8 @@ class LandingPageTests(TestCase):
         response = self.client.get(reverse("mission_list"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "coach-summary-warning is-empty")
-        self.assertContains(response, "coach-summary-success is-empty")
+        self.assertNotContains(response, "coach-summary-warning is-empty")
+        self.assertNotContains(response, "coach-summary-success is-empty")
         self.assertContains(response, "오늘 학습 시작")
 
     def test_landing_post_stores_subject_in_session(self):

@@ -12,6 +12,15 @@ class ResponsiveLayoutTests(SimpleTestCase):
     def test_stylesheet_is_available(self):
         self.assertIsNotNone(finders.find("core/responsive.css"))
         self.assertIsNotNone(finders.find("core/logistics.css"))
+        self.assertIsNotNone(finders.find("core/design_refinements.css"))
+
+    def test_refinements_keep_mobile_theory_art_compact(self):
+        html = render_to_string("core/base.html")
+        self.assertLess(html.index("core/logistics.css"), html.index("core/design_refinements.css"))
+        with open(finders.find("core/design_refinements.css"), encoding="utf-8") as stylesheet:
+            css = stylesheet.read()
+        self.assertIn(".theory-lesson-art { width: min(36%, 120px)", css)
+        self.assertIn(".learning-empty-state", css)
 
     def test_logistics_theme_is_scoped_and_loaded_after_responsive_rules(self):
         html = render_to_string("core/base.html")

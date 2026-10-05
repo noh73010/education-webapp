@@ -349,7 +349,7 @@
       </button>
     </div>
   </form>
-  <a href="?work={{ work.pk }}" class="sub-link">저장·제출 여부 확인</a>
+  <a href="?work={{ work.pk }}" class="quiet-action-link">저장 상태 다시 확인</a>
 </section>
 {{ draft_answers|json_script:"draft-answers" }}
 <script src="{% static 'core/mission_draft.js' %}?v=20260909-1" defer></script>
@@ -357,8 +357,8 @@
 <section class="card"><a href="{% url 'mission_detail' mission.id %}" class="sub-button">다시 풀기</a></section>
 {% endif %}
 
-<section class="card">
-  <a href="{% url 'mission_list' %}" class="sub-link">← 목록으로</a>
+<section class="card mission-return-card">
+  <a href="{% url 'mission_list' %}" class="quiet-action-link">← 학습 홈으로</a>
 </section>
 </main>
 

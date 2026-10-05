@@ -103,6 +103,10 @@ def realtor_home(request):
         for number, area in enumerate(REALTOR_LEARNING_AREAS, start=1)
         if filter_stage == "all" or area["stage"] == filter_stage
     ]
+    recommended_area = next(
+        (area for area in areas if area["available"] and area["code"] != selected_area_code),
+        None,
+    )
     selected_area_number = next(
         (number for number, area in enumerate(REALTOR_LEARNING_AREAS, start=1)
          if area["code"] == selected_area_code), None,
@@ -117,6 +121,11 @@ def realtor_home(request):
         "selected_area": selected_area,
         "selected_area_number": selected_area_number,
         "selected_group": selected_group,
+        "selected_group_has_content": bool(selected_group and any(
+            chapter["has_theory"] or chapter["total_count"]
+            for chapter in selected_group["chapters"]
+        )),
+        "recommended_area": recommended_area,
         "has_focus": bool(saved_area),
         "recent_attempt": recent_attempt,
         "pending_work": pending_work,

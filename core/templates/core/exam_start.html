@@ -2,12 +2,14 @@
 {% block title %}모의고사 선택{% endblock %}
 {% block content %}
 <main class="exam-start-page">
-<section class="card">
+<section class="card compact-page-intro exam-mode-intro">
   <h1>내 시간에 맞는 모의고사</h1>
-  <p>{{ current_subject.name }} · 평소에는 짧게, 약점은 과목별로, 시험 전에는 실제처럼.</p>
-  <p>{% if has_full_access %}현재 모든 회원이 횟수 제한 없이 이용할 수 있습니다.{% else %}무료 회원은 세 모드를 합쳐 하루 1회 새 시험을 시작할 수 있습니다.{% endif %} 진행 중인 시험은 이어서 풀 수 있습니다.</p>
-  {% if current_subject.code == 'realtor' %}<p>1차·2차 실전 모의고사는 아직 열지 않았습니다. 먼저 <a href="{% url 'realtor_home' %}">학습 단계</a>를 선택하면 준비된 해당 단계의 짧은 연습과 과목별 연습을 이용할 수 있습니다.</p>{% endif %}
-  <p>미풀이 문제를 우선 출제합니다. 문제은행에 따라 이전 문제가 다시 나올 수 있습니다.</p>
+  <p>{{ current_subject.name }} · {% if supports_full %}10분 연습부터 실전 두 교시까지 선택하세요.{% else %}이용할 수 있는 연습 모드를 확인해 보세요.{% endif %}</p>
+  <details class="exam-usage-details"><summary>응시 전 알아둘 내용</summary>
+    <p>{% if has_full_access %}현재 모든 회원이 횟수 제한 없이 이용할 수 있습니다.{% else %}무료 회원은 세 모드를 합쳐 하루 1회 새 시험을 시작할 수 있습니다.{% endif %} 진행 중인 시험은 이어서 풀 수 있습니다.</p>
+    {% if current_subject.code == 'realtor' %}<p>1차·2차 실전 모의고사는 아직 열지 않았습니다. 준비된 단계의 짧은 연습과 과목별 연습부터 이용할 수 있습니다.</p>{% endif %}
+    <p>미풀이 문제를 우선 출제하며 문제은행에 따라 이전 문제가 다시 나올 수 있습니다.</p>
+  </details>
 </section>
 {% for exam in open_exams %}
 <section class="card">
@@ -17,6 +19,12 @@
   {% else %}<a href="{% url 'exam_result' exam.id %}">풀던 시험 이어하기</a>{% endif %}
 </section>
 {% endfor %}
+{% if current_subject.code == 'realtor' and not can_start_short and not courses %}
+<section class="card learning-empty-state" aria-labelledby="exam-empty-title">
+  <div class="learning-empty-mark" aria-hidden="true">⌛</div>
+  <div><h2 id="exam-empty-title">모의고사를 준비 중이에요</h2><p>현재 출제 가능한 문제가 아직 부족해요. 준비된 단원을 살펴보고, 문제가 등록되면 10분 연습부터 시작할 수 있어요.</p><a href="{% url 'realtor_home' %}" class="main-button">공인중개사 단원 보기</a></div>
+</section>
+{% else %}
 <section class="card exam-mode-card is-recommended">
   <h2>짧은 실전 연습</h2><p>10문제 · 10분</p><p>짧게 풀며 실력을 확인해요. 전체 합격 판정은 하지 않습니다.</p>
   <form method="post" action="{% url 'exam_create' %}">{% csrf_token %}<input type="hidden" name="mode" value="short"><button type="submit" {% if not can_start_short %}disabled{% endif %}>10분 연습 시작</button></form>
@@ -35,12 +43,12 @@
   <h2>실전 모의고사</h2>
   <p>1교시: 물류관리론 · 화물운송론 · 국제물류론<br>120문제 · 120분</p>
   <p>2교시: 보관하역론 · 물류관련법규<br>80문제 · 80분</p>
-  <p>각 과목 40문제, 1문제당 2.5점. 각 과목 40점 이상이면서 전체 평균 60점 이상이면 합격 기준 충족입니다.</p>
-  <p>두 교시 모두 완료해야 판정합니다. 2교시는 직접 시작할 때부터 시간이 흐릅니다. 진행 중 앱을 닫아도 해당 교시 시간은 계속 흐릅니다.</p>
+  <details class="exam-usage-details"><summary>채점·시간 규칙 보기</summary><p>각 과목 40문제, 1문제당 2.5점. 각 과목 40점 이상이면서 전체 평균 60점 이상이면 합격 기준 충족입니다.</p><p>두 교시 모두 완료해야 판정합니다. 2교시는 직접 시작할 때부터 시간이 흐릅니다. 진행 중 앱을 닫아도 해당 교시 시간은 계속 흐릅니다.</p></details>
   {% if missing_full_courses %}<p role="status">{{ missing_full_courses|join:', ' }}의 40문제 구성이 준비 중입니다. 짧은 연습이나 준비된 과목별 시험을 먼저 이용해 주세요.</p>{% endif %}
   <form method="post" action="{% url 'exam_create' %}">{% csrf_token %}<input type="hidden" name="mode" value="full"><button type="submit" {% if missing_full_courses %}disabled{% endif %}>실전 1교시 시작</button></form>
 </section>
 {% endif %}
-<a href="{% url 'exam_history' %}">시험 기록</a>
+{% endif %}
+<a href="{% url 'exam_history' %}" class="quiet-action-link exam-history-link">시험 기록 보기</a>
 </main>
 {% endblock %}

@@ -43,6 +43,7 @@ def wrong_notes(request):
     base_qs = Attempt.objects.valid_for_learning().filter(
         user=request.user, mission__subject=current_subject
     )
+    has_wrong_history = base_qs.filter(is_correct=False).exists()
     if since is not None:
         base_qs = base_qs.filter(created_at__gte=since)
 
@@ -139,4 +140,5 @@ def wrong_notes(request):
         "has_full_access": has_full_access,
         "is_limited": is_limited,
         "current_subject": current_subject,
+        "has_wrong_history": has_wrong_history,
     })
