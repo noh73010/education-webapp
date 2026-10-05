@@ -1,4 +1,5 @@
 from functools import wraps
+from urllib.parse import urlencode
 from uuid import UUID
 
 from django.contrib.auth import get_user_model
@@ -44,9 +45,11 @@ def reliable_submission(view):
             if attempt:
                 work.attempt = attempt
                 work.answers = {}
-                work.return_url = response.get("Location") or (
-                    reverse("mission_detail", args=[mission_id]) + f"?attempt={attempt.pk}"
-                )
+                destination = response.get("Location")
+                result_url = reverse("mission_detail", args=[mission_id]) + f"?attempt={attempt.pk}"
+                if not attempt.is_correct and destination:
+                    result_url += "&" + urlencode({"next": destination})
+                work.return_url = result_url if not attempt.is_correct else (destination or result_url)
                 work.save(update_fields=["attempt", "answers", "return_url", "updated_at"])
                 return redirect(work.return_url)
             return response

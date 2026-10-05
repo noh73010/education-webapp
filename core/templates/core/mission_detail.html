@@ -141,8 +141,32 @@
   {% endif %}
 {% endif %}
 
+{% if saved_attempt and not saved_attempt.is_correct and wrong_reasons %}
+  <section class="card wrong-reason-after-grading" aria-labelledby="wrong-reason-title">
+    <h2 id="wrong-reason-title">어디서 헷갈렸나요?</h2>
+    <p>채점과 해설을 확인한 뒤 원인을 골라 주세요. 선택하지 않고 다음으로 넘어가도 됩니다.</p>
+    <form method="post" action="{% url 'mission_detail' mission.id %}">
+      {% csrf_token %}
+      <input type="hidden" name="reason_attempt" value="{{ saved_attempt.pk }}">
+      <input type="hidden" name="next_url" value="{{ continue_url }}">
+      <div class="wrong-reason-choices">
+        {% for wr in wrong_reasons %}
+          <label><input type="checkbox" name="wrong_reason_ids" value="{{ wr.pk }}" {% if wr.pk in selected_wrong_reason_ids %}checked{% endif %}> {{ wr.name }}</label>
+        {% endfor %}
+      </div>
+      <div class="result-card-actions">
+        <button type="submit" class="main-button">{% if continue_url %}원인 기록하고 계속{% else %}원인 기록{% endif %}</button>
+        {% if continue_url %}<a href="{{ continue_url }}" class="sub-button">기록 없이 계속</a>{% endif %}
+      </div>
+    </form>
+    {% if reason_saved %}<p class="wrong-reason-saved" role="status">오답 원인 기록을 확인했어요.</p>{% endif %}
+  </section>
+{% elif saved_attempt and not saved_attempt.is_correct and continue_url %}
+  <section class="card"><a href="{{ continue_url }}" class="main-button">다음으로 계속</a></section>
+{% endif %}
+
 {% if saved_attempt %}
-  <section class="card confidence-result" aria-label="확신도에 따른 복습 안내">
+  <section class="card confidence-result {% if saved_attempt.is_correct and not saved_attempt.confidence_level %}confidence-result--unselected{% endif %}" aria-label="확신도에 따른 복습 안내">
     <h2>이제 어떻게 복습하나요?</h2>
     {% if not saved_attempt.is_correct %}
       <p>틀린 문제라 오답 복습 대상으로 기록했어요. 확신도와 관계없이 해설을 확인하고 다시 풀어보세요.</p>
@@ -153,14 +177,14 @@
     {% elif saved_attempt.confidence_level == "certain" %}
       <p>확실하게 맞힌 답으로 기록했어요. 시간이 지난 뒤에도 다시 맞혀야 안정된 실력으로 판단합니다.</p>
     {% else %}
-      <p>확신도를 고르지 않았어요. 정답은 기록하되 확실히 아는 문제라고 판단하지 않습니다.</p>
+      <p><strong>확신도를 선택하지 않았어요.</strong> 정답과 점수는 기록했습니다. 다만 확실히 아는 문제로 보지 않고 내일 다시 확인할 문제로 안내합니다.</p>
     {% endif %}
   </section>
 {% endif %}
 
 {% if saved %}{% include 'core/includes/diagnostic_progress.html' %}{% endif %}
 
-{% if saved and next_daily_mission and not diagnostic.next %}
+{% if saved and next_daily_mission and not diagnostic.next and not continue_url %}
   <section class="card">
     <p>해설을 확인했다면 다음 추천 문제로 넘어가세요.</p>
 
@@ -169,7 +193,7 @@
       다음 추천 문제 풀기
     </a>
   </section>
-{% elif saved and not diagnostic.next %}
+{% elif saved and not diagnostic.next and not continue_url %}
   <section class="card">
     {% if daily_completion %}
       <p><b>오늘 학습을 완료했습니다.</b></p>
@@ -245,6 +269,7 @@
 {% if not saved %}
 <section class="card cbt-answer-card">
   <p id="draft-status" role="status" aria-live="polite">답안을 선택하면 임시 저장합니다. 제출 전에는 풀이 기록에 반영되지 않습니다.</p>
+  <button type="button" id="draft-retry" class="sub-button" hidden>다시 저장</button>
   <form method="POST" id="mission-answer-form" data-draft-url="{% url 'save_mission_draft' mission.id %}" data-server-updated="{{ work.updated_at|date:'c' }}">
     {% csrf_token %}
     <input type="hidden" name="work_token" value="{{ work.pk }}">
@@ -267,16 +292,6 @@
         </div>
 
         <br><br>
-
-        <hr>
-
-        <h4>오답 원인 (오답일 때만 체크)</h4>
-        {% for wr in wrong_reasons %}
-          <label class="form-option">
-            <input type="checkbox" name="wrong_reason_ids" value="{{ wr.id }}">
-            {{ wr.name }}
-        </label>
-        {% endfor %}
 
     {% else %}
 
@@ -324,18 +339,9 @@
 
     {% endif %}
 
-    {% if mission.question_type != "manual" and wrong_reasons %}
-      <details class="quick-wrong-reasons">
-        <summary>틀렸다면 원인을 한 번에 기록하기</summary>
-        {% for wr in wrong_reasons %}
-          <label><input type="checkbox" name="wrong_reason_ids" value="{{ wr.id }}"> {{ wr.name }}</label>
-        {% endfor %}
-      </details>
-    {% endif %}
-
     <fieldset class="confidence-picker" aria-describedby="confidence-help">
       <legend>이 답, 알고 골랐나요?</legend>
-      <p id="confidence-help" class="confidence-help">맞혔어도 찍거나 헷갈린 문제는 다시 복습해요. 점수는 바뀌지 않으며, 선택하지 않아도 제출할 수 있어요.</p>
+      <p id="confidence-help" class="confidence-help">맞혀도 찍거나 헷갈렸다면 다시 복습해요. 선택하지 않으면 정답과 점수는 기록하되, 내일 다시 확인할 문제로 안내합니다.</p>
       <div class="confidence-options">
         <label class="confidence-option"><input type="radio" name="confidence_level" value="guessed"><span>찍었어요</span></label>
         <label class="confidence-option"><input type="radio" name="confidence_level" value="unsure"><span>헷갈려요</span></label>
@@ -349,10 +355,9 @@
       </button>
     </div>
   </form>
-  <a href="?work={{ work.pk }}" class="quiet-action-link">저장 상태 다시 확인</a>
 </section>
 {{ draft_answers|json_script:"draft-answers" }}
-<script src="{% static 'core/mission_draft.js' %}?v=20260909-1" defer></script>
+<script src="{% static 'core/mission_draft.js' %}?v=20261005-2" defer></script>
 {% else %}
 <section class="card"><a href="{% url 'mission_detail' mission.id %}" class="sub-button">다시 풀기</a></section>
 {% endif %}

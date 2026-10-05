@@ -8,10 +8,12 @@ from django.db.models import Count, Q, OuterRef, Subquery
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.http import Http404, HttpResponseBadRequest
+from django.utils.http import url_has_allowed_host_and_scheme
 from uuid import UUID
 
 from core.models import (
     Attempt,
+    AttemptWrongReason,
     CourseFocus,
     DailyMission,
     ExamSession,
@@ -779,18 +781,39 @@ def mission_detail(request, mission_id):
     pattern_training = build_pattern_training_context(request, current_subject, mission)
     wrong_reasons = WrongReason.objects.all()
 
+    def safe_continue_url(raw):
+        return raw if raw.startswith("/") and not raw.startswith("//") and url_has_allowed_host_and_scheme(
+            raw, allowed_hosts={request.get_host()}
+        ) else ""
+
+    if request.method == "POST" and "reason_attempt" in request.POST:
+        attempt_id = request.POST.get("reason_attempt", "")
+        if not attempt_id.isdigit():
+            raise Http404
+        attempt = get_object_or_404(Attempt, pk=attempt_id, user=request.user, mission=mission, is_correct=False)
+        reason_ids = {int(value) for value in request.POST.getlist("wrong_reason_ids") if value.isdigit()}
+        for reason in WrongReason.objects.filter(pk__in=reason_ids):
+            AttemptWrongReason.objects.get_or_create(attempt=attempt, wrong_reason=reason)
+        continue_to = safe_continue_url(request.POST.get("next_url", ""))
+        if continue_to:
+            return redirect(continue_to)
+        result_url = reverse("mission_detail", args=[mission_id]) + f"?attempt={attempt.pk}"
+        return redirect(result_url + ("&reason_saved=1" if reason_ids else ""))
+
     saved = False
     error = None
     saved_is_correct = None
     grading_rows = []
     next_daily_mission = None
     saved_attempt = None
+    continue_url = ""
     if request.method == "GET" and request.GET.get("attempt"):
         if not request.GET["attempt"].isdigit():
             raise Http404
         saved_attempt = get_object_or_404(Attempt, pk=request.GET["attempt"], user=request.user, mission=mission)
         saved = True
         saved_is_correct = saved_attempt.is_correct
+        continue_url = safe_continue_url(request.GET.get("next", ""))
     if request.method == "GET" and request.GET.get("work"):
         try:
             work_id = UUID(request.GET["work"])
@@ -1092,10 +1115,6 @@ def mission_detail(request, mission_id):
         confidence_level = request.POST.get("confidence_level", "").strip()
         if confidence_level not in {value for value, _ in Attempt.CONFIDENCE_CHOICES}:
             confidence_level = ""
-        quick_wrong_reason_ids = [
-            int(value) for value in request.POST.getlist("wrong_reason_ids")
-            if str(value).isdigit()
-        ]
         if mission.question_type != "manual":
             if schema_items:
                 submitted_answers = request.POST.getlist("submitted_answers")
@@ -1115,7 +1134,7 @@ def mission_detail(request, mission_id):
                             user=request.user,
                             mission=mission,
                             is_correct=saved_is_correct,
-                            wrong_reason_ids=quick_wrong_reason_ids if not saved_is_correct else None,
+                            wrong_reason_ids=None,
                             submitted_answer=" | ".join(
                                 row["submitted_answer"] for row in grading_rows
                             ),
@@ -1168,7 +1187,7 @@ def mission_detail(request, mission_id):
                             user=request.user,
                             mission=mission,
                             is_correct=saved_is_correct,
-                            wrong_reason_ids=quick_wrong_reason_ids if not saved_is_correct else None,
+                            wrong_reason_ids=None,
                             submitted_answer=submitted_answer,
                             confidence_level=confidence_level,
                         )
@@ -1204,28 +1223,13 @@ def mission_detail(request, mission_id):
                 error = "정답/오답을 선택하고 제출하세요."
             else:
                 saved_is_correct = (raw == "true")
-                only_int_ids = []
-
-                if not saved_is_correct:
-                    selected_ids = request.POST.getlist("wrong_reason_ids")
-
-                    if not selected_ids:
-                        error = "오답을 선택했으면 오답 원인도 최소 1개 체크하세요."
-                    else:
-                        for x in selected_ids:
-                            if str(x).isdigit():
-                                only_int_ids.append(int(x))
-
-                        if not only_int_ids:
-                            error = "오답 원인이 올바르지 않습니다."
-
                 if error is None:
                     try:
                         attempt = save_attempt(
                             user=request.user,
                             mission=mission,
                             is_correct=saved_is_correct,
-                            wrong_reason_ids=None if saved_is_correct else only_int_ids,
+                            wrong_reason_ids=None,
                             confidence_level=confidence_level,
                         )
                         saved_attempt = attempt
@@ -1252,6 +1256,11 @@ def mission_detail(request, mission_id):
                         error = str(e)
     if saved:
         next_daily_mission = get_next_daily_mission()
+    selected_wrong_reason_ids = set()
+    if saved_attempt and not saved_attempt.is_correct:
+        selected_wrong_reason_ids = set(
+            AttemptWrongReason.objects.filter(attempt=saved_attempt).values_list("wrong_reason_id", flat=True)
+        )
     related_theory_chapter = None
     related_learning_concept = None
     mission_feedback = None
@@ -1308,6 +1317,9 @@ def mission_detail(request, mission_id):
         "error": error,
         "saved_is_correct": saved_is_correct,
         "saved_attempt": saved_attempt,
+        "selected_wrong_reason_ids": selected_wrong_reason_ids,
+        "continue_url": continue_url,
+        "reason_saved": request.GET.get("reason_saved") == "1",
         "schema_items": schema_items,
         "choice_items": choice_items,
         "grading_rows": grading_rows,

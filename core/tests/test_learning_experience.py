@@ -6,8 +6,8 @@ from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from core.models import (Attempt, ConceptUnit, Inquiry, LearningStart, Mission, MissionWork,
-                         StudyProfile, Subject)
+from core.models import (Attempt, AttemptWrongReason, ConceptUnit, Inquiry, LearningStart,
+                         Mission, MissionWork, StudyProfile, Subject, WrongReason)
 from core.services.account_data import reset_learning_data
 from core.services.learning_experience import progress_evidence, repetition_guidance
 from core.management.commands.import_missions import optional_learning_feedback
@@ -103,8 +103,8 @@ class LearningExperienceTests(TestCase):
     def test_correct_result_shows_explanation_and_confidence_has_no_default(self):
         initial = self.client.get(self.url)
         self.assertNotContains(initial, 'value="unsure" checked')
-        self.assertContains(initial, "맞혔어도 찍거나 헷갈린 문제는 다시 복습해요.")
-        self.assertContains(initial, "점수는 바뀌지 않으며, 선택하지 않아도 제출할 수 있어요.")
+        self.assertContains(initial, "맞혀도 찍거나 헷갈렸다면 다시 복습해요.")
+        self.assertContains(initial, "선택하지 않으면 정답과 점수는 기록하되, 내일 다시 확인할 문제로 안내합니다.")
         for option in ("찍었어요", "헷갈려요", "확실해요"):
             self.assertContains(initial, option)
         work = initial.context["work"]
@@ -135,7 +135,55 @@ class LearningExperienceTests(TestCase):
         without_confidence = self.client.post(self.url, {
             "work_token": str(work.pk), "submitted_answer": "2",
         })
-        self.assertContains(self.client.get(without_confidence.url), "확신도를 고르지 않았어요.")
+        result = self.client.get(without_confidence.url)
+        self.assertContains(result, "확신도를 선택하지 않았어요.")
+        self.assertContains(result, 'class="card confidence-result confidence-result--unselected"')
+
+    def test_wrong_reason_is_offered_after_grading_before_next_review_question(self):
+        reason = WrongReason.objects.create(name="개념을 혼동함")
+        next_url = reverse("mission_detail", args=[self.second.pk])
+        session = self.client.session
+        session["review_mission_ids"] = [self.mission.pk, self.second.pk]
+        session["review_current_index"] = 0
+        session.save()
+        initial = self.client.get(self.url)
+        self.assertNotContains(initial, "틀렸다면 원인을 한 번에 기록하기")
+        self.assertNotContains(initial, "저장 상태 다시 확인")
+        self.assertContains(initial, 'id="draft-retry"')
+
+        submitted = self.submit(initial.context["work"], "1")
+        attempt = Attempt.objects.get(user=self.user, mission=self.mission)
+        self.assertIn(f"attempt={attempt.pk}", submitted.url)
+        self.assertEqual(self.client.session["review_current_index"], 1)
+        result = self.client.get(submitted.url)
+        self.assertContains(result, "어디서 헷갈렸나요?")
+        self.assertContains(result, "개념을 혼동함")
+        self.assertContains(result, "기록 없이 계속")
+        self.assertEqual(result.context["continue_url"], next_url)
+        self.assertFalse(AttemptWrongReason.objects.filter(attempt=attempt).exists())
+
+        post_data = {"reason_attempt": str(attempt.pk), "wrong_reason_ids": [str(reason.pk)],
+                     "next_url": next_url}
+        for _ in range(2):
+            self.assertEqual(self.client.post(self.url, post_data).url, next_url)
+        self.assertEqual(AttemptWrongReason.objects.filter(attempt=attempt, wrong_reason=reason).count(), 1)
+        self.assertEqual(Attempt.objects.filter(user=self.user, mission=self.mission).count(), 1)
+
+    def test_wrong_reason_cannot_change_another_members_attempt_or_redirect_externally(self):
+        reason = WrongReason.objects.create(name="선택지를 잘못 읽음")
+        foreign_attempt = Attempt.objects.create(user=self.other, mission=self.mission, is_correct=False)
+        response = self.client.post(self.url, {"reason_attempt": str(foreign_attempt.pk),
+                                               "wrong_reason_ids": [str(reason.pk)]})
+        self.assertEqual(response.status_code, 404)
+        self.assertFalse(AttemptWrongReason.objects.filter(attempt=foreign_attempt).exists())
+
+        wrong = self.submit(self.work(), "1")
+        attempt = Attempt.objects.get(user=self.user, mission=self.mission)
+        response = self.client.post(self.url, {"reason_attempt": str(attempt.pk),
+                                               "wrong_reason_ids": [str(reason.pk)],
+                                               "next_url": "https://example.net/steal"})
+        self.assertEqual(response.url, f"{self.url}?attempt={attempt.pk}&reason_saved=1")
+        self.assertContains(self.client.get(response.url), "오답 원인 기록을 확인했어요.")
 
     def test_validation_error_does_not_consume_receipt(self):
         work = self.work()

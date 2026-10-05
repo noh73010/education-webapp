@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="{% static 'core/responsive.css' %}?v=20261003-2">
     <link rel="stylesheet" href="{% static 'core/logistics.css' %}?v=20261003-1">
     {% block extra_css %}{% endblock %}
-    <link rel="stylesheet" href="{% static 'core/design_refinements.css' %}?v=20261005-2">
+    <link rel="stylesheet" href="{% static 'core/design_refinements.css' %}?v=20261005-3">
 </head>
 <body class="{% block body_class %}{% if user.is_authenticated and request.session.current_subject_code == 'realtor' %}theme-realtor{% elif user.is_authenticated and request.session.current_subject_code == 'logistics' %}theme-logistics{% endif %}{% endblock %}">
 

@@ -10,7 +10,7 @@
     ...document.querySelectorAll(`button[type="submit"][form="${form.id}"]`),
   ];
   const key = 'mission-draft:' + form.elements.work_token.value;
-  const allowed = ['submitted_answer', 'submitted_answers', 'is_correct', 'confidence_level', 'wrong_reason_ids'];
+  const allowed = ['submitted_answer', 'submitted_answers', 'is_correct', 'confidence_level'];
   let timer, queue = Promise.resolve(), submitting = false, lastSubmitter = null;
   const showRetry = (show = true) => {
     if (retryButton) retryButton.hidden = !show;
@@ -58,6 +58,7 @@
     });
   };
   form.addEventListener('input', () => {
+    lastSubmitter = null;
     capture();
     status.textContent = '저장 중…';
     clearTimeout(timer);
@@ -118,6 +119,8 @@
   });
 
   retryButton?.addEventListener('click', () => {
+    status.textContent = '다시 저장 중…';
+    showRetry(false);
     if (lastSubmitter) submit(lastSubmitter);
     else save();
   });
