@@ -108,6 +108,12 @@ body.theme-realtor .wrong-note-filters > summary strong::before { color: #725896
 }
 .confidence-result--unselected p { color: #493a25; line-height: 1.65; }
 .confidence-result--unselected strong { color: #7a4b19; font-weight: 800; }
+.confidence-help-important {
+  display: block; margin-top: 10px; padding: 11px 13px;
+  border-left: 4px solid #bd8339; border-radius: 0 10px 10px 0;
+  background: #fff6e8; color: #704314; font-size: .95rem;
+  font-weight: 800; line-height: 1.55;
+}
 .wrong-reason-after-grading h2 { margin: 0 0 6px; }
 .wrong-reason-after-grading > p { margin: 0 0 14px; color: #52647d; }
 .wrong-reason-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }

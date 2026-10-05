@@ -104,7 +104,8 @@ class LearningExperienceTests(TestCase):
         initial = self.client.get(self.url)
         self.assertNotContains(initial, 'value="unsure" checked')
         self.assertContains(initial, "맞혀도 찍거나 헷갈렸다면 다시 복습해요.")
-        self.assertContains(initial, "선택하지 않으면 정답과 점수는 기록하되, 내일 다시 확인할 문제로 안내합니다.")
+        self.assertContains(initial, 'class="confidence-help-important"')
+        self.assertContains(initial, "선택하지 않아도 제출할 수 있어요. 정답과 점수는 기록되지만, 확실히 아는 문제로 보지 않고 내일 다시 확인하도록 안내합니다.")
         for option in ("찍었어요", "헷갈려요", "확실해요"):
             self.assertContains(initial, option)
         work = initial.context["work"]
