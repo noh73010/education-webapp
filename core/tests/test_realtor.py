@@ -213,6 +213,26 @@ class RealtorLearningTests(TestCase):
         with self.assertRaisesRegex(ValueError, "과목명"):
             normalize_korean_row({**row, "과목": "물류관리론"}, csv_path=Path("realtor.csv"), subject_code="realtor")
 
+    def test_exam_paper_course_aliases_and_round_provenance(self):
+        row = {"번호": "1", "과목": "부동산세법", "챕터": "RE06-06",
+               "난이도": "중", "문제": "질문", "정답": "2", "해설": "해설",
+               **{f"보기{i}": f"선택지 {i}" for i in range(1, 6)}}
+        data = normalize_korean_row(row, csv_path=Path("realtor_35-2-2.csv"), subject_code="realtor")
+        self.assertEqual(data["course"], REALTOR_COURSES[4])
+        self.assertEqual(data["source_type"], "adapted")
+        self.assertEqual(data["source_reference"], "제35회 공인중개사 2차 2교시 기출 변형")
+        for filename, label in (("realtor_35-1-1.csv", "1차"),
+                                ("realtor_36-2-1.csv", "2차 1교시")):
+            source = normalize_korean_row(
+                {**row, "과목": "부동산학개론", "챕터": "RE01-01"},
+                csv_path=Path(filename), subject_code="realtor",
+            )
+            self.assertEqual(source["source_reference"],
+                             f"제{filename[8:10]}회 공인중개사 {label} 기출 변형")
+        with self.assertRaisesRegex(ValueError, "과목명"):
+            normalize_korean_row({**row, "챕터": "RE05-01", "과목": "부동산공법 중 부동산 중개 관련 규정"},
+                                 csv_path=Path("realtor_35-2-2.csv"), subject_code="realtor")
+
     def test_realtor_learning_areas_are_visible_before_content_is_added(self):
         self.assertEqual(len(REALTOR_LEARNING_AREAS), 6)
         self.assertEqual(len(REALTOR_CHAPTERS), 55)

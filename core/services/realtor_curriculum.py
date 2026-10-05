@@ -24,6 +24,19 @@ REALTOR_COURSES = tuple(
     course for sitting in REALTOR_SITTINGS for course in sitting["courses"]
 )
 
+REALTOR_SOURCE_COURSE_ALIASES = {
+    "민법 및 민사특별법 중 부동산 중개 관련 규정": REALTOR_COURSES[1],
+    "부동산공법 중 부동산 중개 관련 규정": REALTOR_COURSES[3],
+    "부동산공시법령": REALTOR_COURSES[4],
+    "부동산세법": REALTOR_COURSES[4],
+}
+
+
+def normalize_realtor_course(course):
+    """Map exam-paper section labels to the app's five scored courses."""
+    value = (course or "").strip()
+    return REALTOR_SOURCE_COURSE_ALIASES.get(value, value)
+
 # Learning areas are intentionally more detailed than the five scored exam
 # courses. RE05 and RE06 both belong to the same 2차 2교시 scoring course.
 REALTOR_LEARNING_AREAS = (

@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block title %}콘텐츠 출처 및 이용 안내 | 합격한걸음{% endblock %}
-{% block meta_description %}합격한걸음 물류관리사 학습 콘텐츠의 Q-Net 기출자료 출처, 회차별 원문 링크와 공공누리 이용조건을 확인하세요.{% endblock %}
+{% block meta_description %}합격한걸음 물류관리사·공인중개사 학습 콘텐츠의 Q-Net 기출자료 출처, 회차별 원문 링크와 공공누리 이용조건을 확인하세요.{% endblock %}
 {% block meta_robots %}index, follow{% endblock %}
 {% block seo_links %}<link rel="canonical" href="{{ canonical_url }}">{% endblock %}
 {% block body_class %}landing-page service-info-page{% endblock %}
@@ -16,7 +16,7 @@
   <header class="content-sources-intro">
     <p class="service-eyebrow">콘텐츠 안내</p>
     <h1>콘텐츠 출처 및 이용 안내</h1>
-    <p>물류관리사 학습 콘텐츠의 회차별 참고 자료를 안내합니다. 문제는 단계적으로 추가되므로 이 목록이 각 회차의 모든 문항이 현재 출제 중임을 뜻하지는 않습니다. 재구성한 문항·보기·해설은 원자료와 다를 수 있습니다.</p>
+    <p>물류관리사·공인중개사 학습 콘텐츠의 회차별 참고 자료를 안내합니다. 문제는 단계적으로 추가되므로 이 목록이 각 회차의 모든 문항이 현재 출제 중임을 뜻하지는 않습니다. 재구성한 문항·보기·해설은 원자료와 다를 수 있습니다.</p>
   </header>
 
   <section class="service-section content-sources-section" aria-labelledby="source-list-title">
@@ -39,6 +39,24 @@
     {% else %}
       <p>현재 공개할 물류관리사 기출문제 출처가 없습니다.</p>
     {% endif %}
+  </section>
+
+  <section class="service-section content-sources-section" aria-labelledby="realtor-source-list-title">
+    <h2 id="realtor-source-list-title">회차별 공인중개사 기출자료 출처</h2>
+    <ul class="content-source-list">
+      {% for source in realtor_sources %}
+        <li class="content-source-card">
+          <h3>{{ source.title }}</h3>
+          <ul>
+            {% for sitting in source.sittings %}
+              <li>{{ sitting.label }} — {{ sitting.subjects }}</li>
+            {% endfor %}
+          </ul>
+          <p>제공: 한국산업인력공단 Q-Net · 이용조건: 공공누리 제1유형(출처표시)</p>
+          <a href="{{ source.qnet_url }}" target="_blank" rel="noopener noreferrer" aria-label="{{ source.title }} Q-Net 원문 새 창에서 보기">Q-Net 원문 보기</a>
+        </li>
+      {% endfor %}
+    </ul>
   </section>
 
   <section class="service-section content-sources-section" aria-labelledby="license-title">

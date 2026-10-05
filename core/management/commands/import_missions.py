@@ -12,6 +12,7 @@ from core.models import Mission, MissionImage, ProblemSet, ProblemSetItem, Subje
 from core.services.logistics_curriculum import normalize_logistics_chapter
 from core.services.realtor_curriculum import (
     REALTOR_COURSES, REALTOR_SUBJECT_CODE, normalize_realtor_chapter,
+    normalize_realtor_course,
 )
 from core.services.mission_images import resolve_question_image
 from core.services.content_review import apply_review, load_review
@@ -158,6 +159,8 @@ def normalize_korean_row(row, *, csv_path, subject_code):
 
     number = int(number_text)
     course = (row.get("과목") or "").strip()
+    if subject_code == REALTOR_SUBJECT_CODE:
+        course = normalize_realtor_course(course)
     chapter_code, chapter_name = parse_chapter(row.get("챕터") or row.get("분류코드"))
     if subject_code == LOGISTICS_SUBJECT_CODE:
         chapter_code, chapter_name = normalize_logistics_chapter(chapter_code, chapter_name)
@@ -214,6 +217,15 @@ def normalize_korean_row(row, *, csv_path, subject_code):
         },
     }
     data.update(optional_learning_feedback(row, korean_schema=True))
+    if subject_code == REALTOR_SUBJECT_CODE:
+        source_match = re.fullmatch(r"realtor_(\d{2})-(1-1|2-1|2-2)", Path(csv_path).stem)
+        if source_match:
+            sitting_label = {"1-1": "1차", "2-1": "2차 1교시", "2-2": "2차 2교시"}[source_match.group(2)]
+            data.setdefault("source_type", "adapted")
+            data.setdefault(
+                "source_reference",
+                f"제{source_match.group(1)}회 공인중개사 {sitting_label} 기출 변형",
+            )
     return data
 
 

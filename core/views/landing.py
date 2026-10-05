@@ -16,7 +16,7 @@ from core.services.subjects import (
     set_current_subject,
 )
 from core.services.access import premium_gating_enabled
-from core.services.content_sources import logistics_source_notices
+from core.services.content_sources import logistics_source_notices, realtor_source_notices
 
 
 def landing(request):
@@ -49,6 +49,7 @@ def service_info(request):
 def content_sources(request):
     return render(request, "core/content_sources.html", {
         "logistics_sources": logistics_source_notices(),
+        "realtor_sources": realtor_source_notices(),
         "canonical_url": request.build_absolute_uri(reverse("content_sources")),
     })
 
