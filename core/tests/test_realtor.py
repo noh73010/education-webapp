@@ -40,6 +40,10 @@ class RealtorLearningTests(TestCase):
         self.assertContains(first, 'class="realtor-course-choices"')
         self.assertContains(first, 'value="RE05"')
         self.assertContains(first, 'value="RE06"')
+        self.assertContains(first, "1차 · 1과목")
+        self.assertContains(first, "2차 · 5과목")
+        self.assertContains(first, "2차 · 6과목")
+        self.assertNotContains(first, "· RE05")
         self.assertContains(first, "오늘 공부할 과목을 골라주세요")
         self.assertEqual(self.client.get(reverse("realtor_choose_course")).status_code, 405)
         self.client.post(reverse("realtor_choose_course"), {"area_code": "RE01"})
@@ -47,7 +51,8 @@ class RealtorLearningTests(TestCase):
         selected = self.client.get(reverse("realtor_home"))
         self.assertContains(selected, "이 과목의 문제는 준비 중입니다")
         self.assertNotContains(selected, "5분 학습 시작")
-        self.assertContains(selected, "RE01-01")
+        self.assertContains(selected, "1단원")
+        self.assertNotContains(selected, "<small>RE01-01</small>")
         self.assertNotContains(selected, "RE06-08")
 
     def test_realtor_quick_start_and_course_change_do_not_require_study_path(self):
@@ -208,8 +213,9 @@ class RealtorLearningTests(TestCase):
         self.assertNotContains(page, "RE06-08")
         self.client.post(reverse("realtor_choose_course"), {"area_code": "RE06"})
         selected = self.client.get(reverse("realtor_home"))
-        self.assertContains(selected, "RE06-08")
-        self.assertNotContains(selected, "RE01-01")
+        self.assertContains(selected, "8단원")
+        self.assertNotContains(selected, "<small>RE06-08</small>")
+        self.assertNotContains(selected, "부동산학 총론")
         self.assertContains(selected, "이론·문제 준비 중")
         self.assertNotContains(page, reverse("chapter_practice_start", args=[roadmap[0]["chapters"][0]["slug"]]))
 

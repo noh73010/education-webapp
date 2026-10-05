@@ -97,8 +97,16 @@ def realtor_home(request):
     if pending_work and not pending_work.mission.chapter_code.startswith(selected_area_code):
         pending_work = None
     recent_attempt = attempts.filter(mission__chapter_code__startswith=selected_area_code).order_by("-created_at").first() if selected_area else None
-    areas = [{**area, "available": eligible.filter(chapter_code__startswith=area["code"]).count()}
-             for area in REALTOR_LEARNING_AREAS if filter_stage == "all" or area["stage"] == filter_stage]
+    areas = [
+        {**area, "display_number": number,
+         "available": eligible.filter(chapter_code__startswith=area["code"]).count()}
+        for number, area in enumerate(REALTOR_LEARNING_AREAS, start=1)
+        if filter_stage == "all" or area["stage"] == filter_stage
+    ]
+    selected_area_number = next(
+        (number for number, area in enumerate(REALTOR_LEARNING_AREAS, start=1)
+         if area["code"] == selected_area_code), None,
+    )
     selected_group = next((group for group in chapter_groups if group["area_code"] == selected_area_code), None)
     first_visit = not selected_area and not recent_any_attempt and not pending_work
     return render(request, "core/realtor_home.html", {
@@ -107,6 +115,7 @@ def realtor_home(request):
         "filter_stage": filter_stage,
         "areas": areas,
         "selected_area": selected_area,
+        "selected_area_number": selected_area_number,
         "selected_group": selected_group,
         "has_focus": bool(saved_area),
         "recent_attempt": recent_attempt,

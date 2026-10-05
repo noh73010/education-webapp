@@ -1,7 +1,7 @@
 {% extends 'core/base.html' %}
 {% load static %}
 {% block title %}공인중개사 학습 | 합격한걸음{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'core/realtor.css' %}?v=20261004-2">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'core/realtor.css' %}?v=20261005-1">{% endblock %}
 {% block content %}
 <main class="realtor-page">
   <header class="realtor-hero">
@@ -14,7 +14,7 @@
 
   {% if selected_area %}
   <section class="card realtor-next-step" aria-labelledby="realtor-next-title">
-    <p class="eyebrow">오늘의 시작점 · {% if selected_area.stage == 'first' %}1차{% else %}2차{% endif %}</p>
+    <p class="eyebrow">오늘의 시작점 · {% if selected_area.stage == 'first' %}1차{% else %}2차{% endif %} {{ selected_area_number }}과목</p>
     <h2 id="realtor-next-title">{{ selected_area.title }}</h2>
     {% if pending_work %}
       <p>저장해 둔 답안이 있어요. 풀던 곳부터 이어갈 수 있습니다.</p>
@@ -43,7 +43,7 @@
       {% for area in areas %}
       <form method="post" action="{% url 'realtor_choose_course' %}">
         {% csrf_token %}<input type="hidden" name="area_code" value="{{ area.code }}">
-        <button type="submit" {% if selected_area.code == area.code %}aria-current="true"{% endif %}><small>{% if area.stage == 'first' %}1차{% else %}2차{% endif %} · {{ area.code }}</small>{{ area.title }}<small>{% if area.available %}문제 풀이 가능{% else %}문제 준비 중 · 단원 목차 확인 가능{% endif %}</small></button>
+        <button type="submit" {% if selected_area.code == area.code %}aria-current="true"{% endif %}><small>{% if area.stage == 'first' %}1차{% else %}2차{% endif %} · {{ area.display_number }}과목</small>{{ area.title }}<small>{% if area.available %}문제 풀이 가능{% else %}문제 준비 중 · 단원 목차 확인 가능{% endif %}</small></button>
       </form>
       {% endfor %}
     </div>
@@ -54,11 +54,11 @@
   <section class="card realtor-chapters" aria-labelledby="realtor-chapters-title">
     <p class="eyebrow">선택한 과목만 보기</p>
     <h2 id="realtor-chapters-title">{{ selected_group.course }} 단원 목차</h2>
-    {% if selected_group.exam_course != selected_group.course %}<p class="meta-text">학습은 공시법·세법으로 나누고, 모의고사에서는 두 영역을 합쳐 한 과목으로 채점합니다.</p>{% endif %}
+    {% if selected_group.exam_course != selected_group.course %}<p class="meta-text">학습 메뉴에서는 공시법과 세법을 5·6과목으로 나눕니다. 모의고사에서는 두 영역을 합쳐 한 과목으로 채점합니다.</p>{% endif %}
     <div class="realtor-chapter-list">
       {% for chapter in selected_group.chapters %}
         <div class="realtor-chapter-row">
-          <div><small>{{ chapter.chapter_code }}</small><b>{{ chapter.chapter_name }}</b><span>{{ chapter.status }}</span></div>
+          <div><small>{{ forloop.counter }}단원</small><b>{{ chapter.chapter_name }}</b><span>{{ chapter.status }}</span></div>
           {% if chapter.has_theory %}
             <a href="{% url 'theory_chapter' chapter.slug %}">{% if chapter.total_count %}이론과 문제 보기{% else %}이론 보기{% endif %}</a>
           {% elif chapter.total_count %}
