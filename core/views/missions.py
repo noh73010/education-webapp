@@ -1,4 +1,5 @@
 from datetime import timedelta
+from urllib.parse import urlsplit
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
@@ -780,6 +781,7 @@ def mission_detail(request, mission_id):
     mission = get_object_or_404(Mission, id=mission_id, subject=current_subject)
     pattern_training = build_pattern_training_context(request, current_subject, mission)
     wrong_reasons = WrongReason.objects.all()
+    diagnostic_before = diagnostic_state(request.user, current_subject) if request.method == "POST" else None
 
     def safe_continue_url(raw):
         return raw if raw.startswith("/") and not raw.startswith("//") and url_has_allowed_host_and_scheme(
@@ -832,14 +834,8 @@ def mission_detail(request, mission_id):
         "skill": mission.skill,
         "question_type": mission.question_type,
     }
-    active_problem_set_ids = request.session.get("problem_set_mission_ids", [])
-    if pattern_training:
-        submit_button_label = "훈련 결과 확인" if pattern_training["is_last"] else "다음 훈련 문제"
-    elif mission.question_type == "manual":
+    if mission.question_type == "manual":
         submit_button_label = "학습 결과 저장"
-    elif mission.id in active_problem_set_ids:
-        current_position = active_problem_set_ids.index(mission.id)
-        submit_button_label = "결과 확인" if current_position == len(active_problem_set_ids) - 1 else "다음 문제"
     else:
         submit_button_label = "답안 제출"
 
@@ -868,6 +864,7 @@ def mission_detail(request, mission_id):
                 "mission_id": mission.id,
                 "mission_title": mission.title,
                 "is_correct": is_correct,
+                "attempt_id": attempt.id if attempt else None,
             })
 
             request.session["wrong_retry_results"] = retry_results
@@ -996,7 +993,7 @@ def mission_detail(request, mission_id):
 
         return None
 
-    def handle_learning_type_training_progress(is_correct: bool):
+    def handle_learning_type_training_progress(is_correct: bool, attempt=None):
         mission_ids = request.session.get("learning_type_training_mission_ids", [])
         index = request.session.get("learning_type_training_index", 0)
         skill = request.session.get("learning_type_training_skill")
@@ -1015,6 +1012,7 @@ def mission_detail(request, mission_id):
             "mission_id": mission.id,
             "mission_title": mission.title,
             "is_correct": is_correct,
+            "attempt_id": attempt.id if attempt else None,
         })
 
         request.session["learning_type_training_results"] = results
@@ -1082,15 +1080,20 @@ def mission_detail(request, mission_id):
     
     def handle_after_save_redirect(is_correct: bool, attempt=None):
         """
-        저장 후 이동 처리
-
-        원칙:
-        - 일반 문제 세트: 맞아도/틀려도 다음 문제로 이동
-        - 시험 결과 추천 복습: 맞아도/틀려도 다음 문제로 이동
-        - 틀린 문제 다시 풀기: 틀려도 다음 문제로 이동
-        단, 결과 페이지에서 다시 틀린 문제를 확인하게 한다.
+        Save progress first. The receipt then shows feedback before the learner
+        follows the continuation, except for the three-question diagnostic.
         """
-        learning_type_training_redirect = handle_learning_type_training_progress(is_correct=is_correct)
+        if diagnostic_before and diagnostic_before.get("next") and diagnostic_before["next"].pk == mission.pk:
+            diagnostic_after = diagnostic_state(request.user, current_subject)
+            next_mission = diagnostic_after.get("next") if diagnostic_after else None
+            response = (redirect("mission_detail", mission_id=next_mission.pk) if next_mission
+                        else redirect("diagnostic_result"))
+            response["X-Mission-Feedback-Mode"] = "deferred"
+            return response
+
+        learning_type_training_redirect = handle_learning_type_training_progress(
+            is_correct=is_correct, attempt=attempt,
+        )
         if learning_type_training_redirect:
             return learning_type_training_redirect
 
@@ -1310,6 +1313,11 @@ def mission_detail(request, mission_id):
                 today_date,
                 subject=current_subject,
             ))
+    diagnostic_context = diagnostic_state(request.user, current_subject)
+    continue_parts = urlsplit(continue_url).path.strip("/").split("/") if continue_url else []
+    continue_label = ("다음 문제" if len(continue_parts) == 2 and
+                      continue_parts[0] == "missions" and continue_parts[1].isdigit()
+                      else "학습 결과 보기")
     return render(request, "core/mission_detail.html", {
         "mission": mission,
         "wrong_reasons": wrong_reasons,
@@ -1319,6 +1327,7 @@ def mission_detail(request, mission_id):
         "saved_attempt": saved_attempt,
         "selected_wrong_reason_ids": selected_wrong_reason_ids,
         "continue_url": continue_url,
+        "continue_label": continue_label,
         "reason_saved": request.GET.get("reason_saved") == "1",
         "schema_items": schema_items,
         "choice_items": choice_items,
@@ -1336,6 +1345,9 @@ def mission_detail(request, mission_id):
         "draft_answers": work.answers if work else {},
         "repetition_guidance": repetition_guidance(request.user, mission) if saved_is_correct is False else None,
         "progress_evidence": progress_evidence(request.user, saved_attempt),
-        "diagnostic": diagnostic_state(request.user, current_subject),
+        "diagnostic": diagnostic_context,
+        "diagnostic_active": (diagnostic_context if not saved and diagnostic_context
+                              and diagnostic_context.get("next") and diagnostic_context["next"].pk == mission.pk
+                              else None),
         "pattern_training": pattern_training,
     })

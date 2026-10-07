@@ -138,6 +138,8 @@
               </div>
               <p class="pre-line">{{ item.question_text }}</p>
               <p class="correct-answer-line">선택한 답 · {{ item.submitted_answer_display }}</p>
+              <p class="correct-answer-line">정답 · {{ item.correct_answer_display }}</p>
+              <p class="pre-line"><b>해설</b> {{ item.mission.explanation|default:"등록된 해설이 없습니다." }}</p>
             </article>
           {% endfor %}
         </div>

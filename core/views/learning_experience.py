@@ -8,7 +8,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
-from core.models import Inquiry, LearningStart, Mission, MissionWork, StudyProfile
+from core.models import Attempt, Inquiry, LearningStart, Mission, MissionWork, StudyProfile
+from core.services.learning_concepts import get_answer_display
+from core.services.learning_experience import diagnostic_state
 from core.services.subjects import get_current_subject
 
 
@@ -75,6 +77,39 @@ def learning_start(request):
         messages.info(request, "처음이라면 핵심 이론부터, 복습 중이라면 오늘 추천 문제부터 시작하세요.")
         return redirect("mission_list")
     return render(request, "core/learning_start.html", {"form": form, "subject": subject})
+
+
+@login_required
+def diagnostic_result(request):
+    subject, _ = get_current_subject(request)
+    state = diagnostic_state(request.user, subject)
+    if not state:
+        return redirect("mission_list")
+    if state["next"]:
+        return redirect("mission_detail", mission_id=state["next"].pk)
+    if not state["complete"]:
+        return redirect("mission_list")
+
+    start = get_object_or_404(LearningStart, user=request.user, subject=subject)
+    missions = list(Mission.objects.filter(
+        subject=subject, pk__in=start.diagnostic_ids, is_usable_for_set=True,
+    ).order_by("level", "pk"))
+    attempts = {}
+    for attempt in Attempt.objects.valid_for_learning().filter(
+        user=request.user, mission__in=missions, created_at__gte=start.started_at,
+    ).order_by("created_at", "pk"):
+        attempts[attempt.mission_id] = attempt
+    rows = [{
+        "mission": mission,
+        "attempt": attempts[mission.pk],
+        "selected": get_answer_display(mission, attempts[mission.pk].submitted_answer),
+        "correct": get_answer_display(mission, mission.correct_answer),
+    } for mission in missions]
+    return render(request, "core/diagnostic_result.html", {
+        "subject": subject,
+        "rows": rows,
+        "state": state,
+    })
 
 
 @login_required

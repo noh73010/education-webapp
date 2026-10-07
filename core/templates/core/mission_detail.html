@@ -9,6 +9,13 @@
 {% block content %}
 <main class="cbt-page">
 
+{% if diagnostic_active %}
+<section class="card diagnostic-banner">
+  <p class="eyebrow">{{ diagnostic_active.total }}문제 출발점 확인 · {{ diagnostic_active.done|add:1 }} / {{ diagnostic_active.total }}</p>
+  <p>정답과 해설은 마지막 문제를 제출한 뒤 함께 보여드립니다.</p>
+</section>
+{% endif %}
+
 {% if pattern_training %}
 <section class="card pattern-training-banner" aria-label="약점 집중 훈련 진행 상황">
   <div class="pattern-training-heading">
@@ -56,6 +63,11 @@
   {% if saved_is_correct %}
     <section class="card result-correct">
       <b>정답입니다.</b>
+      {% if mission.question_type != "manual" %}
+        <div class="answer-comparison compact">
+          <div class="answer-box is-correct"><span>정답</span><b>{{ correct_answer_display }}</b></div>
+        </div>
+      {% endif %}
       {% if mission.explanation %}
         <p class="pre-line"><b>해설:</b> {{ mission.explanation }}</p>
       {% else %}
@@ -155,14 +167,14 @@
         {% endfor %}
       </div>
       <div class="result-card-actions">
-        <button type="submit" class="main-button">{% if continue_url %}원인 기록하고 계속{% else %}원인 기록{% endif %}</button>
-        {% if continue_url %}<a href="{{ continue_url }}" class="sub-button">기록 없이 계속</a>{% endif %}
+        <button type="submit" class="main-button">{% if continue_url %}원인 기록하고 {{ continue_label }}{% else %}원인 기록{% endif %}</button>
+        {% if continue_url %}<a href="{{ continue_url }}" class="sub-button">기록 없이 {{ continue_label }}</a>{% endif %}
       </div>
     </form>
     {% if reason_saved %}<p class="wrong-reason-saved" role="status">오답 원인 기록을 확인했어요.</p>{% endif %}
   </section>
 {% elif saved_attempt and not saved_attempt.is_correct and continue_url %}
-  <section class="card"><a href="{{ continue_url }}" class="main-button">다음으로 계속</a></section>
+  <section class="card"><a href="{{ continue_url }}" class="main-button">{{ continue_label }}</a></section>
 {% endif %}
 
 {% if saved_attempt %}
@@ -180,6 +192,10 @@
       <p><strong>확신도를 선택하지 않았어요.</strong> 정답과 점수는 기록했습니다. 다만 확실히 아는 문제로 보지 않고 내일 다시 확인할 문제로 안내합니다.</p>
     {% endif %}
   </section>
+{% endif %}
+
+{% if saved_attempt.is_correct and continue_url %}
+  <section class="card"><p>정답과 해설을 확인했다면 이어가세요.</p><a href="{{ continue_url }}" class="main-button">{{ continue_label }}</a></section>
 {% endif %}
 
 {% if saved %}{% include 'core/includes/diagnostic_progress.html' %}{% endif %}

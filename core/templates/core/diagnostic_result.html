@@ -1,0 +1,27 @@
+{% extends 'core/base.html' %}
+{% block title %}출발점 확인 결과{% endblock %}
+{% block content %}
+<main class="page-shell compact-page">
+  <section class="card">
+    <p class="eyebrow">{{ subject.name }} · 출발점 확인</p>
+    <h1>{{ state.total }}문제 진단 결과</h1>
+    <p>{{ state.done }}문제를 풀었습니다. 이 결과는 일부 범위의 출발점이며 전체 실력이나 합격 가능성은 아닙니다.</p>
+    {% if state.weak_names %}<p>먼저 다시 볼 범위: {{ state.weak_names|join:", " }}</p>{% endif %}
+  </section>
+  {% for row in rows %}
+    <section class="card">
+      <h2>{{ forloop.counter }}번 · {% if row.attempt.is_correct %}정답{% else %}오답{% endif %}</h2>
+      <p class="pre-line">{{ row.mission.prompt }}</p>
+      <div class="answer-comparison compact">
+        <div class="answer-box"><span>내 답</span><b>{{ row.selected }}</b></div>
+        <div class="answer-box is-correct"><span>정답</span><b>{{ row.correct }}</b></div>
+      </div>
+      <p class="pre-line"><b>해설</b> {{ row.mission.explanation|default:"등록된 해설이 없습니다." }}</p>
+    </section>
+  {% endfor %}
+  <section class="card">
+    <a class="main-button" href="{% url 'mission_list' %}">오늘 학습 시작</a>
+    <a class="sub-button" href="{% url 'wrong_notes' %}">오답 복습</a>
+  </section>
+</main>
+{% endblock %}

@@ -84,9 +84,9 @@ class CbtQuestionUiTests(TestCase):
         middle_response = self.client.get(reverse("mission_detail", args=[self.mission.id]))
         last_response = self.client.get(reverse("mission_detail", args=[self.last_mission.id]))
 
-        self.assertContains(middle_response, "다음 문제")
+        self.assertContains(middle_response, "답안 제출")
         self.assertNotContains(middle_response, "정답 확인")
-        self.assertContains(last_response, "결과 확인")
+        self.assertContains(last_response, "답안 제출")
         self.assertNotContains(last_response, "정답 확인")
 
     def test_exam_question_uses_same_focused_presentation(self):

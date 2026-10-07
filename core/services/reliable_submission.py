@@ -47,9 +47,10 @@ def reliable_submission(view):
                 work.answers = {}
                 destination = response.get("Location")
                 result_url = reverse("mission_detail", args=[mission_id]) + f"?attempt={attempt.pk}"
-                if not attempt.is_correct and destination:
+                deferred_feedback = response.get("X-Mission-Feedback-Mode") == "deferred"
+                if destination and not deferred_feedback:
                     result_url += "&" + urlencode({"next": destination})
-                work.return_url = result_url if not attempt.is_correct else (destination or result_url)
+                work.return_url = destination if deferred_feedback and destination else result_url
                 work.save(update_fields=["attempt", "answers", "return_url", "updated_at"])
                 return redirect(work.return_url)
             return response

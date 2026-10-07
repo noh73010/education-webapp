@@ -35,6 +35,9 @@
         {% else %}
           <span class="text-danger">오답</span>
         {% endif %}
+        {% if row.attempt_id %}
+          · <a href="{% url 'mission_detail' row.mission_id %}?attempt={{ row.attempt_id }}">정답·해설 보기</a>
+        {% endif %}
       </li>
     {% empty %}
       <li>결과가 없습니다.</li>

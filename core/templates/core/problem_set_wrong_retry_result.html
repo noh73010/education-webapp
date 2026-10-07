@@ -34,6 +34,7 @@
           <span class="text-danger">재도전 오답</span>
         {% endif %}
         {% if row.review_attempt_count %}<span> · 누적 재도전 {{ row.review_attempt_count }}회</span>{% endif %}
+        {% if row.attempt_id %}<a href="{% url 'mission_detail' row.mission_id %}?attempt={{ row.attempt_id }}" class="sub-link">정답·해설 다시 보기</a>{% endif %}
       </li>
     {% empty %}
       <li>오답 복습 결과가 없습니다.</li>

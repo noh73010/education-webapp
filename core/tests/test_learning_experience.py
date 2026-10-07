@@ -7,7 +7,8 @@ from django.urls import reverse
 from django.utils import timezone
 
 from core.models import (Attempt, AttemptWrongReason, ConceptUnit, Inquiry, LearningStart,
-                         Mission, MissionWork, StudyProfile, Subject, WrongReason)
+                         Mission, MissionWork, ProblemSet, ProblemSetSession,
+                         ProblemSetSessionItem, StudyProfile, Subject, WrongReason)
 from core.services.account_data import reset_learning_data
 from core.services.learning_experience import progress_evidence, repetition_guidance
 from core.management.commands.import_missions import optional_learning_feedback
@@ -159,7 +160,7 @@ class LearningExperienceTests(TestCase):
         result = self.client.get(submitted.url)
         self.assertContains(result, "어디서 헷갈렸나요?")
         self.assertContains(result, "개념을 혼동함")
-        self.assertContains(result, "기록 없이 계속")
+        self.assertContains(result, "기록 없이 다음 문제")
         self.assertEqual(result.context["continue_url"], next_url)
         self.assertFalse(AttemptWrongReason.objects.filter(attempt=attempt).exists())
 
@@ -169,6 +170,79 @@ class LearningExperienceTests(TestCase):
             self.assertEqual(self.client.post(self.url, post_data).url, next_url)
         self.assertEqual(AttemptWrongReason.objects.filter(attempt=attempt, wrong_reason=reason).count(), 1)
         self.assertEqual(Attempt.objects.filter(user=self.user, mission=self.mission).count(), 1)
+
+    def test_correct_review_answer_shows_feedback_before_next_question(self):
+        session = self.client.session
+        session["review_mission_ids"] = [self.mission.pk, self.second.pk]
+        session["review_current_index"] = 0
+        session.save()
+        work = self.work()
+        submitted = self.submit(work)
+        self.assertEqual(submitted.status_code, 302)
+        self.assertIn("attempt=", submitted.url)
+        result = self.client.get(submitted.url)
+        self.assertContains(result, "정답입니다.")
+        self.assertContains(result, "테스트 해설")
+        self.assertContains(result, "다음 문제")
+        self.assertEqual(result.context["continue_url"], reverse("mission_detail", args=[self.second.pk]))
+        self.assertEqual(self.submit(work, "1").url, submitted.url)
+        self.assertEqual(Attempt.objects.filter(user=self.user, mission=self.mission).count(), 1)
+
+    def test_training_set_shows_feedback_for_correct_answers_and_full_result(self):
+        problem_set = ProblemSet.objects.create(title="학습 세트", set_type="training")
+        set_session = ProblemSetSession.objects.create(
+            user=self.user, problem_set=problem_set, total_count=2,
+        )
+        for order, mission in enumerate((self.mission, self.second), start=1):
+            ProblemSetSessionItem.objects.create(
+                problem_set_session=set_session, mission=mission, order_no=order,
+            )
+        session = self.client.session
+        session["problem_set_mission_ids"] = [self.mission.pk, self.second.pk]
+        session["problem_set_session_id"] = set_session.pk
+        session["problem_set_id"] = problem_set.pk
+        session.save()
+        for mission in (self.mission, self.second):
+            url = reverse("mission_detail", args=[mission.pk])
+            work = self.client.get(url).context["work"]
+            response = self.client.post(url, {
+                "work_token": str(work.pk), "submitted_answer": "2",
+            })
+            self.assertIn("attempt=", response.url)
+            feedback = self.client.get(response.url)
+            self.assertContains(feedback, "테스트 해설")
+            self.assertContains(feedback, "정답입니다.")
+        set_session.refresh_from_db()
+        self.assertEqual(set_session.status, "completed")
+        self.assertEqual(Attempt.objects.filter(user=self.user, mission__in=[self.mission, self.second]).count(), 2)
+        result = self.client.get(reverse("problem_set_result", args=[set_session.pk]))
+        self.assertContains(result, "테스트 해설")
+
+    def test_diagnostic_defers_explanations_until_all_answers_saved(self):
+        start_response = self.client.post(reverse("learning_start"), {
+            "experience": "new", "mode": "diagnostic",
+        })
+        self.assertEqual(start_response.status_code, 302)
+        start = LearningStart.objects.get(user=self.user, subject=self.subject)
+        self.assertEqual(len(start.diagnostic_ids), 3)
+        for index, mission_id in enumerate(start.diagnostic_ids):
+            url = reverse("mission_detail", args=[mission_id])
+            question = self.client.get(url)
+            self.assertContains(question, "정답과 해설은 마지막 문제")
+            self.assertContains(question, f"{index + 1} / 3")
+            submitted = self.client.post(url, {
+                "work_token": str(question.context["work"].pk),
+                "submitted_answer": "2",
+            })
+            self.assertEqual(submitted.status_code, 302)
+            if index < 2:
+                self.assertEqual(submitted.url, reverse("mission_detail", args=[start.diagnostic_ids[index + 1]]))
+            else:
+                self.assertEqual(submitted.url, reverse("diagnostic_result"))
+        result = self.client.get(reverse("diagnostic_result"))
+        self.assertEqual(result.status_code, 200)
+        self.assertContains(result, "테스트 해설", count=3)
+        self.assertEqual(Attempt.objects.filter(user=self.user, mission_id__in=start.diagnostic_ids).count(), 3)
 
     def test_wrong_reason_cannot_change_another_members_attempt_or_redirect_externally(self):
         reason = WrongReason.objects.create(name="선택지를 잘못 읽음")
@@ -311,6 +385,7 @@ class LearningExperienceTests(TestCase):
         wrapped = reliable_submission(submit_view)
         request = RequestFactory().post(self.url, {"work_token": str(work.pk)})
         request.user, request.session = self.user, self.client.session
-        self.assertEqual(wrapped(request, self.mission.pk).url, reverse("mission_list"))
-        self.assertEqual(wrapped(request, self.mission.pk).url, reverse("mission_list"))
+        feedback_url = self.url + f"?attempt=1&next=%2Fmissions%2F"
+        self.assertEqual(wrapped(request, self.mission.pk).url, feedback_url)
+        self.assertEqual(wrapped(request, self.mission.pk).url, feedback_url)
         self.assertEqual(Attempt.objects.filter(user=self.user).count(), 1)

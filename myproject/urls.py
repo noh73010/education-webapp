@@ -48,7 +48,7 @@ from core.views.missions import (
 from core.views.study_profile import study_profile
 from core.views.final_cards import final_cards
 from core.views.account_settings import account_settings
-from core.views.learning_experience import problem_report, learning_start, save_mission_draft
+from core.views.learning_experience import problem_report, learning_start, diagnostic_result, save_mission_draft
 from core.views.exams import exam_draft
 from core.views.seo import robots_txt, sitemap_xml
 from core.views.visit_stats import visit_stats
@@ -58,6 +58,7 @@ urlpatterns = [
     path("sitemap.xml", sitemap_xml, name="sitemap_xml"),
     path("exam/<int:exam_id>/<int:order_no>/draft/", exam_draft, name="exam_draft"),
     path("learning-start/", learning_start, name="learning_start"),
+    path("learning-start/result/", diagnostic_result, name="diagnostic_result"),
     path("missions/<int:mission_id>/report/", problem_report, name="problem_report"),
     path("missions/<int:mission_id>/draft/", save_mission_draft, name="save_mission_draft"),
     path("account-settings/", account_settings, name="account_settings"),

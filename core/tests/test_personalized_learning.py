@@ -165,7 +165,7 @@ class PersonalizedLearningTests(TestCase):
         self.assertContains(first, "약점 집중 훈련")
         self.assertContains(first, "1 / 3")
         self.assertContains(first, "현재 문제 포함 3문제")
-        self.assertContains(first, "다음 훈련 문제")
+        self.assertContains(first, "학습 결과 저장")
 
         mission_ids = self.client.session["pattern_training_mission_ids"]
         second = self.client.get(f"/missions/{mission_ids[1]}/")
@@ -175,7 +175,7 @@ class PersonalizedLearningTests(TestCase):
         last = self.client.get(f"/missions/{mission_ids[2]}/")
         self.assertTrue(last.context["pattern_training"]["is_last"])
         self.assertContains(last, "3 / 3")
-        self.assertContains(last, "훈련 결과 확인")
+        self.assertContains(last, "학습 결과 저장")
 
     def test_regular_question_ignores_unrelated_pattern_training_session(self):
         self.client.force_login(self.user)
