@@ -5,6 +5,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db import DatabaseError, transaction
 from django.db.models import Count, Q, OuterRef, Subquery
 from django.core.paginator import Paginator
 from django.utils import timezone
@@ -788,27 +789,41 @@ def mission_detail(request, mission_id):
             raw, allowed_hosts={request.get_host()}
         ) else ""
 
+    reason_post_attempt = None
+    reason_post_selected_ids = set()
+    reason_post_continue_url = ""
+    reason_error = None
     if request.method == "POST" and "reason_attempt" in request.POST:
         attempt_id = request.POST.get("reason_attempt", "")
         if not attempt_id.isdigit():
             raise Http404
         attempt = get_object_or_404(Attempt, pk=attempt_id, user=request.user, mission=mission, is_correct=False)
-        reason_ids = {int(value) for value in request.POST.getlist("wrong_reason_ids") if value.isdigit()}
-        for reason in WrongReason.objects.filter(pk__in=reason_ids):
-            AttemptWrongReason.objects.get_or_create(attempt=attempt, wrong_reason=reason)
-        continue_to = safe_continue_url(request.POST.get("next_url", ""))
-        if continue_to:
-            return redirect(continue_to)
-        result_url = reverse("mission_detail", args=[mission_id]) + f"?attempt={attempt.pk}"
-        return redirect(result_url + ("&reason_saved=1" if reason_ids else ""))
+        reason_post_selected_ids = {int(value) for value in request.POST.getlist("wrong_reason_ids") if value.isdigit()}
+        reason_post_continue_url = safe_continue_url(request.POST.get("next_url", ""))
+        valid_reason_ids = set(WrongReason.objects.filter(pk__in=reason_post_selected_ids).values_list("pk", flat=True))
+        if not valid_reason_ids:
+            reason_error = "오답 원인을 하나 이상 고르거나 ‘기록 없이 계속하기’를 눌러 주세요."
+        else:
+            try:
+                with transaction.atomic():
+                    for reason_id in valid_reason_ids:
+                        AttemptWrongReason.objects.get_or_create(attempt=attempt, wrong_reason_id=reason_id)
+            except DatabaseError:
+                reason_error = "오답 원인을 저장하지 못했어요. 선택은 유지했으니 다시 눌러 주세요."
+        if reason_error:
+            reason_post_attempt = attempt
+        elif reason_post_continue_url:
+            return redirect(reason_post_continue_url)
+        else:
+            return redirect(reverse("mission_detail", args=[mission_id]) + f"?attempt={attempt.pk}&reason_saved=1")
 
-    saved = False
+    saved = bool(reason_post_attempt)
     error = None
-    saved_is_correct = None
+    saved_is_correct = False if reason_post_attempt else None
     grading_rows = []
     next_daily_mission = None
-    saved_attempt = None
-    continue_url = ""
+    saved_attempt = reason_post_attempt
+    continue_url = reason_post_continue_url
     if request.method == "GET" and request.GET.get("attempt"):
         if not request.GET["attempt"].isdigit():
             raise Http404
@@ -1114,7 +1129,7 @@ def mission_detail(request, mission_id):
 
         return None
 
-    if request.method == "POST":
+    if request.method == "POST" and "reason_attempt" not in request.POST:
         confidence_level = request.POST.get("confidence_level", "").strip()
         if confidence_level not in {value for value, _ in Attempt.CONFIDENCE_CHOICES}:
             confidence_level = ""
@@ -1263,7 +1278,7 @@ def mission_detail(request, mission_id):
     if saved_attempt and not saved_attempt.is_correct:
         selected_wrong_reason_ids = set(
             AttemptWrongReason.objects.filter(attempt=saved_attempt).values_list("wrong_reason_id", flat=True)
-        )
+        ) | reason_post_selected_ids
     related_theory_chapter = None
     related_learning_concept = None
     mission_feedback = None
@@ -1318,6 +1333,15 @@ def mission_detail(request, mission_id):
     continue_label = ("다음 문제" if len(continue_parts) == 2 and
                       continue_parts[0] == "missions" and continue_parts[1].isdigit()
                       else "학습 결과 보기")
+    reason_continue_url = continue_url
+    reason_continue_label = continue_label
+    if not reason_continue_url and saved_attempt and not saved_attempt.is_correct:
+        if next_daily_mission:
+            reason_continue_url = reverse("mission_detail", args=[next_daily_mission.pk])
+            reason_continue_label = "다음 추천 문제"
+        else:
+            reason_continue_url = reverse("mission_list")
+            reason_continue_label = "학습 종료"
     return render(request, "core/mission_detail.html", {
         "mission": mission,
         "wrong_reasons": wrong_reasons,
@@ -1328,6 +1352,9 @@ def mission_detail(request, mission_id):
         "selected_wrong_reason_ids": selected_wrong_reason_ids,
         "continue_url": continue_url,
         "continue_label": continue_label,
+        "reason_continue_url": reason_continue_url,
+        "reason_continue_label": reason_continue_label,
+        "reason_error": reason_error,
         "reason_saved": request.GET.get("reason_saved") == "1",
         "schema_items": schema_items,
         "choice_items": choice_items,

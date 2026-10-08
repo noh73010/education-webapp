@@ -97,19 +97,11 @@
         {% endif %}
       {% endif %}
 
-      {% if mission_feedback.correction_rows %}
-        <div class="choice-feedback-list">
+      {% if mission_feedback.correction_explanations %}
+        <div class="choice-feedback-list choice-feedback-list--compact">
           <h3>30초 오답 교정</h3>
-          <p>내가 고른 답과 정답의 차이만 먼저 확인하세요.</p>
-          {% for row in mission_feedback.correction_rows %}
-            <div class="choice-feedback-row {% if row.is_correct %}is-correct{% elif row.is_selected %}is-selected-wrong{% endif %}">
-              <div>
-                <b>{{ row.key }}번</b>
-                {% if row.is_correct %}<span>정답</span>{% elif row.is_selected %}<span>내가 선택</span>{% endif %}
-              </div>
-              <p>{{ row.label }}</p>
-              {% if row.explanation %}<small>{{ row.explanation }}</small>{% endif %}
-            </div>
+          {% for row in mission_feedback.correction_explanations %}
+            <p><b>{% if row.is_correct %}정답인 이유{% else %}내 답이 틀린 이유{% endif %}</b> {{ row.explanation }}</p>
           {% endfor %}
         </div>
       {% endif %}
@@ -156,19 +148,20 @@
 {% if saved_attempt and not saved_attempt.is_correct and wrong_reasons %}
   <section class="card wrong-reason-after-grading" aria-labelledby="wrong-reason-title">
     <h2 id="wrong-reason-title">어디서 헷갈렸나요?</h2>
-    <p>채점과 해설을 확인한 뒤 원인을 골라 주세요. 선택하지 않고 다음으로 넘어가도 됩니다.</p>
+    <p>원인을 기록하면 다음 복습에 도움이 됩니다. 원하지 않으면 기록 없이 넘어가세요.</p>
     <form method="post" action="{% url 'mission_detail' mission.id %}">
       {% csrf_token %}
       <input type="hidden" name="reason_attempt" value="{{ saved_attempt.pk }}">
-      <input type="hidden" name="next_url" value="{{ continue_url }}">
+      <input type="hidden" name="next_url" value="{{ reason_continue_url }}">
       <div class="wrong-reason-choices">
         {% for wr in wrong_reasons %}
           <label><input type="checkbox" name="wrong_reason_ids" value="{{ wr.pk }}" {% if wr.pk in selected_wrong_reason_ids %}checked{% endif %}> {{ wr.name }}</label>
         {% endfor %}
       </div>
+      {% if reason_error %}<p class="wrong-reason-error" role="alert">{{ reason_error }}</p>{% endif %}
       <div class="result-card-actions">
-        <button type="submit" class="main-button">{% if continue_url %}원인 기록하고 {{ continue_label }}{% else %}원인 기록{% endif %}</button>
-        {% if continue_url %}<a href="{{ continue_url }}" class="sub-button">기록 없이 {{ continue_label }}</a>{% endif %}
+        <button type="submit" class="main-button">원인 기록하고 {{ reason_continue_label }}</button>
+        <a href="{{ reason_continue_url }}" class="sub-button">기록 없이 {{ reason_continue_label }}</a>
       </div>
     </form>
     {% if reason_saved %}<p class="wrong-reason-saved" role="status">오답 원인 기록을 확인했어요.</p>{% endif %}
@@ -200,7 +193,7 @@
 
 {% if saved %}{% include 'core/includes/diagnostic_progress.html' %}{% endif %}
 
-{% if saved and next_daily_mission and not diagnostic.next and not continue_url %}
+{% if saved and next_daily_mission and not diagnostic.next and not continue_url and saved_is_correct %}
   <section class="card">
     <p>해설을 확인했다면 다음 추천 문제로 넘어가세요.</p>
 
@@ -210,6 +203,7 @@
     </a>
   </section>
 {% elif saved and not diagnostic.next and not continue_url %}
+  {% if daily_completion or saved_is_correct %}
   <section class="card">
     {% if daily_completion %}
       <p><b>오늘 학습을 완료했습니다.</b></p>
@@ -245,15 +239,18 @@
         </div>
       {% endif %}
       <p><b>다음 학습 안내</b> {{ daily_completion.next_action }}</p>
-    {% else %}
+    {% elif saved_is_correct %}
       <p>문제 풀이를 완료했습니다.</p>
     {% endif %}
 
-    <a href="{% url 'mission_list' %}" class="sub-button">오늘 학습 종료</a>
-    {% if daily_completion.wrong %}
-      <a href="{% url 'wrong_notes' %}" class="sub-button">오답노트 확인하기</a>
+    {% if saved_is_correct %}
+      <a href="{% url 'mission_list' %}" class="sub-button">오늘 학습 종료</a>
+      {% if daily_completion.wrong %}
+        <a href="{% url 'wrong_notes' %}" class="sub-button">오답노트 확인하기</a>
+      {% endif %}
     {% endif %}
   </section>
+  {% endif %}
 {% endif %}
 
 

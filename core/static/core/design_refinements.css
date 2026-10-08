@@ -139,6 +139,11 @@ body.theme-realtor .wrong-note-filters > summary strong::before { color: #725896
 .wrong-reason-choices input { accent-color: #286791; }
 .wrong-reason-after-grading .result-card-actions { margin-top: 16px; }
 .wrong-reason-saved { margin-top: 12px; color: #23675c; font-weight: 700; }
+.wrong-reason-error { margin-top: 12px; color: #a32626; font-weight: 700; }
+.choice-feedback-list--compact { padding: 12px 15px; border: 1px solid #dbe4ef; border-radius: 12px; background: #f8fafc; }
+.choice-feedback-list--compact h3 { margin: 0 0 7px; }
+.choice-feedback-list--compact p { margin: 5px 0 0; line-height: 1.6; }
+.choice-feedback-list--compact p b { color: #263b58; }
 #draft-retry { margin-top: 10px; }
 #draft-retry[hidden] { display: none !important; }
 

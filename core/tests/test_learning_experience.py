@@ -1,7 +1,9 @@
 from datetime import timedelta
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.db import DatabaseError
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -169,6 +171,36 @@ class LearningExperienceTests(TestCase):
         for _ in range(2):
             self.assertEqual(self.client.post(self.url, post_data).url, next_url)
         self.assertEqual(AttemptWrongReason.objects.filter(attempt=attempt, wrong_reason=reason).count(), 1)
+        self.assertEqual(Attempt.objects.filter(user=self.user, mission=self.mission).count(), 1)
+
+    def test_wrong_result_does_not_repeat_choice_cards_and_offers_two_next_actions(self):
+        WrongReason.objects.create(name="개념을 혼동함")
+        submitted = self.submit(self.work(), "1")
+        result = self.client.get(submitted.url)
+        self.assertNotContains(result, "30초 오답 교정")
+        self.assertContains(result, "원인 기록하고 학습 종료")
+        self.assertContains(result, "기록 없이 학습 종료")
+        self.assertContains(result, "테스트 해설")
+        self.assertEqual(result.content.decode().count("<b>1번 · 오답</b>"), 1)
+
+    def test_wrong_reason_requires_selection_and_keeps_choice_when_save_fails(self):
+        reason = WrongReason.objects.create(name="개념을 혼동함")
+        submitted = self.submit(self.work(), "1")
+        attempt = Attempt.objects.get(user=self.user, mission=self.mission)
+        next_url = reverse("mission_list")
+        empty = self.client.post(self.url, {"reason_attempt": str(attempt.pk), "next_url": next_url})
+        self.assertContains(empty, "오답 원인을 하나 이상 고르거나")
+        self.assertFalse(AttemptWrongReason.objects.filter(attempt=attempt).exists())
+
+        data = {"reason_attempt": str(attempt.pk), "wrong_reason_ids": [str(reason.pk)], "next_url": next_url}
+        with patch("core.views.missions.AttemptWrongReason.objects.get_or_create", side_effect=DatabaseError("save failed")):
+            failed = self.client.post(self.url, data)
+        self.assertContains(failed, "오답 원인을 저장하지 못했어요")
+        self.assertContains(failed, f'value="{reason.pk}" checked')
+        self.assertFalse(AttemptWrongReason.objects.filter(attempt=attempt).exists())
+
+        self.assertEqual(self.client.post(self.url, data).url, next_url)
+        self.assertTrue(AttemptWrongReason.objects.filter(attempt=attempt, wrong_reason=reason).exists())
         self.assertEqual(Attempt.objects.filter(user=self.user, mission=self.mission).count(), 1)
 
     def test_correct_review_answer_shows_feedback_before_next_question(self):

@@ -33,6 +33,7 @@ def build_mission_feedback(mission, submitted_answer=""):
         "choice_rows": choice_feedback,
         "has_choice_explanations": any(row["explanation"] for row in choice_feedback),
         "correction_rows": correction_rows,
+        "correction_explanations": [row for row in correction_rows if row["explanation"]],
         "learning_concept": get_mission_learning_concept(mission),
         "exam_tip": (mission.exam_tip or "").strip(),
     }
