@@ -132,7 +132,7 @@
   <div class="table-scroll">
   <table class="data-table">
     <tr>
-      <th>스킬</th>
+      <th>과목·단원</th>
       <th>총 풀이</th>
       <th>정답</th>
       <th>오답</th>
@@ -140,7 +140,7 @@
     </tr>
     {% for row in skill_rows %}
       <tr>
-        <td>{{ row.skill_label }}</td>
+        <td><b>{{ row.course_label }}</b><br><span class="meta-text">{{ row.chapter_label }}</span></td>
         <td>{{ row.total }}</td>
         <td>{{ row.correct }}</td>
         <td>{{ row.wrong }}</td>
@@ -155,13 +155,22 @@
 
 <details class="card">
   <summary><b>내가 기록한 오답 원인</b></summary>
-  <ol>
+  <p class="meta-text">원인별 최근 문제 3개를 보여줍니다. 전체 기록은 각 원인에서 확인할 수 있어요.</p>
+  <ul class="clean-list stats-reason-list">
     {% for r in wrong_reason_rows %}
-      <li>{{ r.wrong_reason__name }} ({{ r.cnt }})</li>
+      <li>
+        <b>{{ r.wrong_reason__name }} · {{ r.cnt }}회</b>
+        <ul class="stats-reason-examples">
+          {% for example in r.examples %}
+            <li><a class="stats-question-link" href="{% url 'mission_detail' example.attempt.mission_id %}?attempt={{ example.attempt_id }}">{{ example.attempt.mission.prompt|truncatechars:70 }}</a> <small class="meta-text">{{ example.attempt.created_at|date:"m-d H:i" }}</small></li>
+          {% endfor %}
+        </ul>
+        {% if r.cnt > 3 %}<a class="quiet-action-link" href="{% url 'wrong_reason_attempts' r.wrong_reason_id %}?period={{ period }}">이 원인으로 기록한 문제 전체 보기</a>{% endif %}
+      </li>
     {% empty %}
       <li>아직 오답 원인이 없습니다.</li>
     {% endfor %}
-    </ol>
+  </ul>
 </details>
 
 <details class="card">
@@ -222,8 +231,8 @@
   <ul class="clean-list">
     {% for a in recent_attempts %}
       <li>
-        <b>{{ a.mission.course|default:current_subject.name }} · {{ a.mission.chapter_name|default:a.skill_label }}</b><br>
-        <span>{{ a.mission.prompt|truncatechars:70 }}</span><br>
+        <b>{{ a.course_label }} · {{ a.chapter_label }}</b><br>
+        <a class="stats-question-link" href="{% url 'mission_detail' a.mission_id %}?attempt={{ a.pk }}">{{ a.mission.prompt|truncatechars:70 }} <span aria-hidden="true">↗</span><span class="sr-only">문제와 풀이 결과 보기</span></a><br>
 
         <span class="meta-text">
           {{ a.created_at|date:"m-d H:i" }}

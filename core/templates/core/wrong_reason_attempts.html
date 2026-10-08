@@ -1,0 +1,35 @@
+{% extends 'core/base.html' %}
+
+{% block title %}오답 원인별 문제{% endblock %}
+{% block content %}
+<main class="page-shell compact-page">
+  <section class="card">
+    <p class="eyebrow">{{ current_subject.name }} · 오답 원인</p>
+    <h1>{{ reason.name }}</h1>
+    <p>이 원인으로 기록한 문제를 최근 풀이 순서로 보여드립니다.</p>
+    <a class="quiet-action-link" href="{% url 'stats' %}?period={{ period }}">← 학습 통계로 돌아가기</a>
+  </section>
+  <section class="card">
+    {% if page_obj.object_list %}
+      <ul class="clean-list stats-reason-list">
+        {% for row in page_obj %}
+          <li>
+            <b>{{ row.course_label }} · {{ row.chapter_label }}</b>
+            <a class="stats-question-link" href="{% url 'mission_detail' row.attempt.mission_id %}?attempt={{ row.attempt_id }}">{{ row.attempt.mission.prompt|truncatechars:100 }} <span aria-hidden="true">↗</span><span class="sr-only">문제와 풀이 결과 보기</span></a>
+            <small class="meta-text">{{ row.attempt.created_at|date:"Y-m-d H:i" }}</small>
+          </li>
+        {% endfor %}
+      </ul>
+      {% if page_obj.has_other_pages %}
+        <nav class="result-card-actions" aria-label="오답 원인 기록 페이지">
+          {% if page_obj.has_previous %}<a class="sub-button" href="?period={{ period }}&amp;page={{ page_obj.previous_page_number }}">이전</a>{% endif %}
+          <span>{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+          {% if page_obj.has_next %}<a class="sub-button" href="?period={{ period }}&amp;page={{ page_obj.next_page_number }}">다음</a>{% endif %}
+        </nav>
+      {% endif %}
+    {% else %}
+      <p>선택한 기간에 기록한 문제가 없습니다.</p>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}
