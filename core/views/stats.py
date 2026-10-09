@@ -13,6 +13,7 @@ from core.services.subjects import get_current_subject
 from core.services.logistics_curriculum import LOGISTICS_CHAPTER_NAMES
 from core.services.realtor_curriculum import REALTOR_CHAPTERS, REALTOR_LEARNING_AREAS
 from core.services.learning_experience import progress_evidence
+from core.services.daily_review import weekly_changes
 
 from core.models import (
     Mission,
@@ -339,6 +340,7 @@ def stats(request):
         "period": period,
         "since": since,
         "summary": summary,
+        "weekly_changes": weekly_changes(request.user, current_subject),
         "skill_rows": skill_rows,
         "wrong_reason_rows": wrong_reason_rows,
         "wrong_pattern_rows": wrong_pattern_rows,

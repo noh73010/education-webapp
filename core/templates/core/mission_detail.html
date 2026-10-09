@@ -7,6 +7,7 @@
 {% endblock %}
 
 {% block content %}
+{% if daily_review_state %}<section class="card"><p class="eyebrow">{{ daily_review_state.label }} · 오늘의 복습 {{ daily_review_number }}/{{ daily_review_state.mission_ids|length }}</p><p>제출 후 정답과 해설을 확인하고 다음 문제를 누르세요.</p></section>{% endif %}
 <main class="cbt-page">
 
 {% if diagnostic_active %}
@@ -109,16 +110,18 @@
       {% if related_learning_concept %}
         <div class="related-theory-callout">
           <div>
-            <span class="eyebrow">이 문제의 관련 개념</span>
+            <span class="eyebrow">{% if related_learning_concept.is_specific %}이 문제의 관련 개념{% else %}단원 이론으로 더 확인하기{% endif %}</span>
+            {% if related_learning_concept.is_specific %}
             <b>{{ related_learning_concept.title }}</b>
             <span>{{ related_learning_concept.summary }}</span>
+            {% else %}<span>이 문항에 별도로 연결된 개념 자료는 아직 없어요. 위 해설과 해당 단원의 이론을 함께 확인하세요.</span>{% endif %}
             {% if mission_feedback.exam_tip %}
               <span class="exam-tip"><b>시험장에서 구분하는 법</b> {{ mission_feedback.exam_tip }}</span>
             {% endif %}
           </div>
           {% if related_theory_chapter %}
             <a href="{% url 'theory_chapter' related_theory_chapter.slug %}?mission={{ mission.id }}#related-concept" class="sub-button">
-              3분 개념 복습
+              {% if related_learning_concept.is_specific %}3분 개념 복습{% else %}단원 이론 함께 보기{% endif %}
             </a>
           {% endif %}
         </div>

@@ -16,6 +16,7 @@ from core.services.problem_set_recommendations import (
 from core.services.mission_cards import prepare_mission_cards, with_user_learning_state
 from core.services.skill_labels import get_skill_label
 from core.services.subjects import get_current_subject
+from core.services.course_focus import learning_scope
 from core.services.learning_concepts import get_answer_display
 from core.services.learning_feedback import build_mission_feedback
 from core.services.learning_experience import summarize_attempt_evidence
@@ -29,8 +30,12 @@ from core.services.theory import (
 @login_required
 def problem_set_list(request):
     current_subject, _ = get_current_subject(request)
+    scope, scope_label = learning_scope(request.user, current_subject)
+    eligible = eligible_problem_sets(current_subject)
+    if scope:
+        eligible = eligible.filter(items__mission__in=Mission.objects.filter(subject=current_subject, **scope)).distinct()
     problem_sets = list(
-        eligible_problem_sets(current_subject)
+        eligible
         .prefetch_related("items__mission")
         .order_by("-created_at")[:10]
     )
@@ -45,7 +50,7 @@ def problem_set_list(request):
             if first and ps.title.startswith("[자동]")
             else ps.title.removeprefix("[자동] ")
         )
-        ps.skill_label = get_skill_label(ps.skill_group)
+        ps.skill_label = first.chapter_name or get_skill_label(ps.skill_group) if first else get_skill_label(ps.skill_group)
         ps.question_count = len(missions)
         ps.estimated_minutes = ceil(len(missions) * 0.8) if missions else 0
         ps.recommendation_reason = reason.format(skill=ps.skill_label)
@@ -61,6 +66,7 @@ def problem_set_list(request):
 
     return render(request, "core/problem_set_list.html", {
         "problem_sets": problem_sets,
+        "scope_label": scope_label,
         "today_sets": recommendation_data["today_sets"],
         "review_sets": recommendation_data["review_sets"],
         "weak_sets": recommendation_data["weak_sets"],
@@ -70,6 +76,11 @@ def problem_set_list(request):
 @login_required
 def problem_set_detail(request, set_id):
     current_subject, _ = get_current_subject(request)
+    if not eligible_problem_sets(current_subject, include_theory=True).filter(pk=set_id).exists():
+        if ProblemSetSession.objects.filter(user=request.user, problem_set_id=set_id,
+                items__mission__subject=current_subject).exists():
+            messages.info(request, "이전 세트는 현재 복습에 사용할 수 없어요. 오늘의 복습이나 단원 학습으로 이어가세요.")
+            return redirect("wrong_notes")
     problem_set = get_object_or_404(
         eligible_problem_sets(current_subject, include_theory=True).prefetch_related("items__mission"),
         id=set_id,

@@ -325,8 +325,9 @@ class TheoryLearningPathTests(TestCase):
         response = self.client.get(reverse("problem_set_result", args=[learning_session.id]))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "3분 개념 복습")
-        self.assertContains(response, "물류관리 일반 핵심 판단 기준")
+        self.assertContains(response, "단원 이론 함께 보기")
+        self.assertContains(response, "이 문항의 해설로 확인")
+        self.assertNotContains(response, "물류관리 일반 핵심 판단 기준")
         self.assertContains(response, reverse("theory_chapter", args=["물류관리론-물류관리-일반"]))
 
     def test_result_uses_question_and_choice_text_without_internal_metadata(self):

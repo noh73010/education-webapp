@@ -1,0 +1,11 @@
+<section class="card" aria-label="최근 7일 학습 변화">
+  <p class="eyebrow">{{ weekly_changes.label }} · {{ weekly_changes.start|date:'n/j' }}–{{ weekly_changes.end|date:'n/j' }}</p>
+  <h2 class="section-title">최근 7일, 이렇게 공부했어요</h2>
+  {% if weekly_changes.recent.total %}
+  <p><b>{{ weekly_changes.recent.days }}일 학습 · {{ weekly_changes.recent.total }}번 풀이 · 정답률 {{ weekly_changes.recent.rate }}%</b></p>
+  <p class="meta-text">직전 7일: {% if weekly_changes.previous.total %}{{ weekly_changes.previous.total }}번 풀이 · 정답률 {{ weekly_changes.previous.rate }}%{% else %}비교할 기록이 없어요{% endif %}. 문제 난이도와 범위가 달라 정답률 변화만으로 실력 향상을 판단하지 않습니다.</p>
+  <p>{% if weekly_changes.delayed_count %}<b>예전에 틀린 {{ weekly_changes.delayed_count }}문제를 3일 이상 지나 확신 있게 다시 맞혔어요.</b> 같은 문제의 재확인이며 다른 문제에 적용하는 실력은 더 확인해야 합니다.{% else %}시간을 두고 다시 맞힌 기록은 아직 없어요. 다음 복습에서 기억이 유지되는지 확인해요.{% endif %}</p>
+  {% for a in weekly_changes.delayed %}<p><a href="{% url 'mission_detail' a.mission_id %}?attempt={{ a.pk }}">{{ a.mission.chapter_name }} · {{ a.mission.prompt|truncatechars:65 }}</a></p>{% endfor %}
+  <p>현재 다시 확인할 문제: {{ weekly_changes.remaining }}개</p>
+  {% else %}<p>최근 7일 기록이 아직 없어요. 짧게 공부한 뒤 이곳에서 변화를 확인하세요.</p>{% endif %}
+</section>

@@ -97,7 +97,7 @@
             <section class="result-concept-card">
               <p class="eyebrow">이 문제의 관련 개념</p>
               <h3>{{ item.learning_concept.title }}</h3>
-              <p>{{ item.learning_concept.summary }}</p>
+              {% if item.learning_concept.is_specific %}<p>{{ item.learning_concept.summary }}</p>{% else %}<p>별도로 검수된 핵심 개념은 아직 연결되지 않았어요. 위 해설을 먼저 확인하고, 필요하면 단원 이론을 함께 읽어보세요.</p>{% endif %}
               {% if item.learning_concept.formula %}<p class="result-concept-formula">{{ item.learning_concept.formula }}</p>{% endif %}
               <ul>{% for point in item.learning_concept.points %}<li>{{ point }}</li>{% endfor %}</ul>
               {% if item.learning_feedback.exam_tip %}
@@ -106,7 +106,7 @@
               <div class="result-card-actions">
                 {% if item.mission.related_theory_chapter %}
                   <a href="{% url 'theory_chapter' item.mission.related_theory_chapter.slug %}?mission={{ item.mission.id }}#related-concept" class="sub-button">
-                    3분 개념 복습
+                    {% if item.learning_concept.is_specific %}3분 개념 복습{% else %}단원 이론 함께 보기{% endif %}
                   </a>
                 {% endif %}
                 <a href="{% url 'mission_detail' item.mission.id %}" class="sub-button">이 문제 다시 풀기</a>

@@ -51,6 +51,7 @@
   {% if selected_area %}</details>{% endif %}
   </section>
 
+  {% if selected_area %}{% include 'core/includes/review_start.html' %}{% include 'core/includes/weekly_changes.html' %}{% endif %}
   {% if selected_group %}
   {% if selected_group_has_content %}<section class="card realtor-chapters" aria-labelledby="realtor-chapters-title">
     <p class="eyebrow">선택한 과목만 보기</p>

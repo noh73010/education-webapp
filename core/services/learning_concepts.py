@@ -407,6 +407,11 @@ CONCEPT_RULES = (
 
 
 def get_mission_learning_concept(mission):
+    from core.services.learning_experience import reviewed_concept
+    unit = reviewed_concept(mission)
+    if unit:
+        return {"title": unit.title, "summary": unit.comparison, "formula": "",
+                "points": (), "is_specific": True, "is_curated": True, "anchor": "related-concept"}
     stored_summary = (getattr(mission, "concept_summary", "") or "").strip()
     stored_tip = (getattr(mission, "exam_tip", "") or "").strip()
     if stored_summary:
@@ -421,17 +426,24 @@ def get_mission_learning_concept(mission):
             "anchor": "related-concept",
         }
 
-    searchable = " ".join((mission.prompt, mission.explanation, mission.answer_schema, mission.correct_answer))
-    for rule in CONCEPT_RULES:
+    # Distractor choices and broad explanations must not decide the linked concept.
+    searchable = mission.prompt
+    subject_code = mission.subject.code
+    rules = CONCEPT_RULES if subject_code == "logistics" else ()
+    if subject_code == "logistics" and re.search(r"FEFO|FIFO|先入|선입선출|유효기간|사용기한|유통기한", searchable, re.I):
+        return {"title": "FEFO와 FIFO의 출고 기준", "summary": "FEFO는 사용·유효기한이 먼저 끝나는 재고를, FIFO는 먼저 입고된 재고를 먼저 출고합니다.",
+                "formula": "FEFO: 기한 순서 / FIFO: 입고 순서", "points": ("입고일과 사용기한의 순서가 다르면 출고 대상도 달라질 수 있습니다.",),
+                "is_specific": True, "anchor": "related-concept"}
+    for rule in rules:
         if re.search(rule["pattern"], searchable, flags=re.IGNORECASE):
             return {**rule, "is_specific": True, "anchor": "related-concept"}
 
     chapter_name = mission.chapter_name or mission.course or "관련 개념"
     return {
-        "title": f"{chapter_name} 핵심 판단 기준",
-        "summary": "문제 해설의 핵심 용어와 판단 기준을 확인한 뒤, 이 챕터의 개념 비교와 자주 틀리는 함정을 다시 읽어보세요.",
+        "title": "이 문항의 해설로 확인",
+        "summary": (mission.explanation or "이 문항의 핵심 개념 자료는 준비 중입니다. 등록된 정답과 해설을 먼저 확인해 주세요."),
         "formula": "",
-        "points": ("문제에서 묻는 대상·조건·예외를 먼저 표시합니다.",),
+        "points": (),
         "is_specific": False,
         "anchor": "related-concept",
     }

@@ -58,6 +58,7 @@ from core.services.realtor_curriculum import (
 from core.services.mission_cards import load_mission_cards, prepare_mission_cards, with_user_learning_state
 from core.services.personal_coach import build_personal_coach_context
 from core.services.course_focus import available_courses, chosen_course, course_weakness
+from core.services.daily_review import review_plan, weekly_changes
 from core.services.pattern_training_context import build_pattern_training_context
 from core.services.subjects import LOGISTICS_SUBJECT_CODE, get_current_subject, get_default_subject
 from core.services.theory import build_subject_theory_roadmap, get_theory_chapter_context
@@ -726,6 +727,8 @@ def mission_list(request):
         "course_options": course_options,
         "selected_course": selected_course,
         "selected_area": selected_area,
+        "today_review": review_plan(request.user, current_subject),
+        "weekly_changes": weekly_changes(request.user, current_subject),
         "selected_course_weakness": selected_course_weakness,
         "focus_roadmap": focus_roadmap,
         "focus_roadmaps": focus_roadmaps,
@@ -955,7 +958,7 @@ def mission_detail(request, mission_id):
 
         return redirect("problem_set_list")
 
-    def handle_review_progress():
+    def handle_review_progress(attempt=None):
         review_ids = request.session.get("review_mission_ids", [])
         return_exam_id = request.session.get("review_return_exam_id")
 
@@ -963,7 +966,18 @@ def mission_detail(request, mission_id):
             return None
 
         current_index = review_ids.index(mission.id)
+        daily_state = request.session.get("daily_review_state", {})
+        is_daily_review = (daily_state.get("subject_id") == current_subject.pk
+                           and daily_state.get("mission_ids") == review_ids)
+        if is_daily_review and attempt:
+            daily_state["attempt_ids"] = list(dict.fromkeys(daily_state.get("attempt_ids", []) + [attempt.pk]))
+            request.session["daily_review_state"] = daily_state
         next_index = current_index + 1
+        if is_daily_review:
+            allowed = set(Mission.objects.filter(pk__in=review_ids[next_index:], subject=current_subject,
+                          is_usable_for_set=True).exclude(review_status=Mission.REVIEW_CONFIRMED_ERROR).values_list("pk", flat=True))
+            while next_index < len(review_ids) and review_ids[next_index] not in allowed:
+                next_index += 1
 
         if next_index < len(review_ids):
             next_mission_id = review_ids[next_index]
@@ -973,6 +987,9 @@ def mission_detail(request, mission_id):
         request.session.pop("review_mission_ids", None)
         request.session.pop("review_current_index", None)
         request.session.pop("review_return_exam_id", None)
+
+        if is_daily_review:
+            return redirect("daily_review_result")
 
         if return_exam_id:
             return redirect("exam_result", exam_id=return_exam_id)
@@ -1123,7 +1140,7 @@ def mission_detail(request, mission_id):
         if problem_set_redirect:
             return problem_set_redirect
 
-        review_redirect = handle_review_progress()
+        review_redirect = handle_review_progress(attempt=attempt)
         if review_redirect:
             return review_redirect
 
@@ -1344,6 +1361,8 @@ def mission_detail(request, mission_id):
             reason_continue_label = "학습 종료"
     return render(request, "core/mission_detail.html", {
         "mission": mission,
+        "daily_review_state": request.session.get("daily_review_state") if mission.pk in request.session.get("review_mission_ids", []) else None,
+        "daily_review_number": request.session.get("review_mission_ids", []).index(mission.pk) + 1 if mission.pk in request.session.get("review_mission_ids", []) else None,
         "wrong_reasons": wrong_reasons,
         "saved": saved,
         "error": error,

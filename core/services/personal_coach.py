@@ -18,10 +18,15 @@ STATUS_LABELS = {
 
 
 def build_personal_coach_context(user, subject, streak=None):
+    from core.services.course_focus import learning_scope
+    from core.models import Mission
+    scope, _ = learning_scope(user, subject)
+    scope_codes = set(Mission.objects.filter(subject=subject, **scope).values_list("chapter_code", flat=True)) if scope else None
     profile, _ = StudyProfile.objects.get_or_create(user=user)
     weakness_by_skill = {
         row.wrong_pattern.skill: row
         for row in UserWeakness.objects.filter(user=user, subject=subject).select_related("wrong_pattern")
+        if scope_codes is None or row.wrong_pattern.skill in scope_codes
     }
     if subject.code == LOGISTICS_SUBJECT_CODE:
         curriculum = LOGISTICS_CURRICULUM
@@ -134,6 +139,7 @@ def build_personal_coach_context(user, subject, streak=None):
     else:
         recent_correct = Attempt.objects.valid_for_learning().filter(
             user=user, mission__subject=subject, is_correct=True,
+            **{"mission__" + key: value for key, value in scope.items()},
         ).select_related("mission").order_by("-created_at", "-pk")[:20]
         for attempt in recent_correct:
             prior_wrong = Attempt.objects.valid_for_learning().filter(

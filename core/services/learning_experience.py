@@ -118,9 +118,12 @@ def diagnostic_state(user, subject):
 
 
 def experience_home(user, subject):
+    from core.services.course_focus import learning_scope
+    scope, _ = learning_scope(user, subject)
+    related_scope = {"mission__" + key: value for key, value in scope.items()}
     start = LearningStart.objects.filter(user=user, subject=subject).first()
     work = MissionWork.objects.filter(user=user, mission__subject=subject,
-        mission__is_usable_for_set=True, attempt__isnull=True).exclude(answers={}).select_related("mission").order_by("-updated_at").first()
+        mission__is_usable_for_set=True, attempt__isnull=True, **related_scope).exclude(answers={}).select_related("mission").order_by("-updated_at").first()
     latest = Attempt.objects.valid_for_learning().filter(
         user=user, mission__subject=subject
     ).select_related("mission__concept_unit").order_by("-created_at", "-pk").first()

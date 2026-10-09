@@ -6,6 +6,21 @@ from core.services.realtor_curriculum import (
 from core.services.subjects import LOGISTICS_SUBJECT_CODE
 
 
+def learning_scope(user, subject):
+    focus = CourseFocus.objects.filter(user=user, subject=subject).first()
+    courses = available_courses(subject)
+    course = focus.course if focus and focus.course in {row["name"] for row in courses} else None
+    filters = {"course": course} if course else {}
+    label = course or subject.name
+    if subject.code == REALTOR_SUBJECT_CODE and focus:
+        from core.services.realtor_curriculum import area_for_focus
+        area = area_for_focus(focus)
+        if area:
+            filters["chapter_code__startswith"] = area["code"] + "-"
+            label = area["title"]
+    return filters, label
+
+
 def available_courses(subject):
     """Return names and chapter codes; the qualification remains the Subject."""
     if subject.code == LOGISTICS_SUBJECT_CODE:

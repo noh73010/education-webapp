@@ -9,6 +9,7 @@ from core.models import (
     ProblemSetSession,
 )
 from core.services.theory import THEORY_SET_PREFIX
+from core.services.course_focus import learning_scope
 
 
 def eligible_problem_sets(subject=None, *, include_theory=False):
@@ -72,12 +73,14 @@ def get_target_level(user, subject=None):
     return 1
 
 
-def get_weak_patterns(user, limit=3, subject=None):
+def get_weak_patterns(user, limit=3, subject=None, scope=None):
     qs = AttemptWrongPattern.objects.filter(
         attempt__user=user, attempt__grading_valid=True
     )
     if subject is not None:
         qs = qs.filter(attempt__mission__subject=subject)
+    if scope:
+        qs = qs.filter(**{"attempt__mission__" + key: value for key, value in scope.items()})
 
     rows = (
         qs
@@ -93,7 +96,7 @@ def get_weak_patterns(user, limit=3, subject=None):
     return list(rows)
 
 
-def get_pattern_recommend_missions(user, weak_patterns, limit=5, subject=None):
+def get_pattern_recommend_missions(user, weak_patterns, limit=5, subject=None, scope=None):
     pattern_codes = [
         row["wrong_pattern__code"]
         for row in weak_patterns
@@ -132,6 +135,8 @@ def get_pattern_recommend_missions(user, weak_patterns, limit=5, subject=None):
     )
     if subject is not None:
         base_qs = base_qs.filter(subject=subject)
+    if scope:
+        base_qs = base_qs.filter(**scope)
 
     other_missions = list(
         base_qs
@@ -154,6 +159,10 @@ def get_pattern_recommend_missions(user, weak_patterns, limit=5, subject=None):
 
 def get_problem_set_recommendations(user, limit_today=3, limit_review=3, limit_weak=3, subject=None):
     active_sets = eligible_problem_sets(subject)
+    scope = learning_scope(user, subject)[0] if subject else {}
+    if scope:
+        scoped_missions = Mission.objects.filter(subject=subject, **scope)
+        active_sets = active_sets.filter(items__mission__in=scoped_missions).distinct()
 
     target_level = get_target_level(user, subject=subject)
 
@@ -196,6 +205,7 @@ def get_problem_set_recommendations(user, limit_today=3, limit_review=3, limit_w
     review_sessions = list(
         attempted_sessions
         .filter(status="completed")
+        .filter(problem_set__in=active_sets)
         .select_related("problem_set")
         .order_by("score", "-started_at")[:20]
     )
@@ -215,6 +225,8 @@ def get_problem_set_recommendations(user, limit_today=3, limit_review=3, limit_w
     weak_attempt_qs = Attempt.objects.valid_for_learning().filter(user=user)
     if subject is not None:
         weak_attempt_qs = weak_attempt_qs.filter(mission__subject=subject)
+    if scope:
+        weak_attempt_qs = weak_attempt_qs.filter(**{"mission__" + key: value for key, value in scope.items()})
 
     weak_skill_rows = (
         weak_attempt_qs
@@ -250,12 +262,19 @@ def get_problem_set_recommendations(user, limit_today=3, limit_review=3, limit_w
         if len(weak_sets) >= limit_weak:
             break
 
-    weak_patterns = get_weak_patterns(user, subject=subject)
+    weak_patterns = get_weak_patterns(user, subject=subject, scope=scope)
+    if scope:
+        skills = set(scoped_missions.values_list("skill", flat=True))
+        weak_patterns = [row for row in weak_patterns if row["wrong_pattern__skill"] in skills]
     pattern_missions = get_pattern_recommend_missions(
         user=user,
         weak_patterns=weak_patterns,
         subject=subject,
+        scope=scope,
     )
+    if scope:
+        allowed = set(scoped_missions.values_list("pk", flat=True))
+        pattern_missions = [mission for mission in pattern_missions if mission.pk in allowed]
 
     return {
         "today_sets": today_sets,

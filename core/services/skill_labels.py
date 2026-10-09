@@ -89,6 +89,11 @@ def get_skill_label(skill):
         return ""
 
     skill = str(skill).strip()
+    if skill.startswith("RE"):
+        from core.services.realtor_curriculum import REALTOR_CHAPTERS
+        chapter = REALTOR_CHAPTERS.get(skill)
+        if chapter:
+            return chapter[1]
 
     return SKILL_LABELS.get(
         skill,

@@ -1,0 +1,9 @@
+{% if today_review.size %}
+<section class="card" aria-label="오늘의 복습">
+  <p class="eyebrow">{{ today_review.label }} · 오늘의 복습</p>
+  <h2 class="section-title">지금 다시 확인할 {{ today_review.size }}문제</h2>
+  <p>오답과 확신 없이 맞힌 문제를 한 문제씩 확인해요. 제출 후 해설을 읽고 다음 문제로 넘어갑니다.</p>
+  <form method="post" action="{% url 'daily_review_start' %}">{% csrf_token %}<button class="main-button" type="submit">약 {{ today_review.minutes }}분 복습 시작</button></form>
+  {% if today_review.count > today_review.size %}<p class="meta-text">나머지는 다음 복습에서 이어 확인할 수 있어요.</p>{% endif %}
+</section>
+{% endif %}

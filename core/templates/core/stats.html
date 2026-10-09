@@ -14,6 +14,7 @@
     <a href="{% url 'account_settings' %}" class="quiet-action-link">계정 및 학습 기록 관리</a>
     <p>내 풀이 기록, 반복 오답, 패턴 훈련 기록을 확인합니다.</p>
   </section>
+  {% include 'core/includes/weekly_changes.html' %}
   {% if not has_learning_history %}
   <section class="card learning-empty-state learning-empty-state--illustrated" aria-labelledby="stats-empty-title">
     <img src="{% static 'core/illustrations/learning-start.png' %}" width="160" height="160" alt="" loading="lazy" decoding="async">

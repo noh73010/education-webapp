@@ -18,6 +18,7 @@ from core.views import (
     mission_detail,
     stats,
     wrong_notes,
+    daily_review_start, daily_review_result,
     pattern_training,
 
     exam_start,
@@ -186,6 +187,8 @@ urlpatterns = [
 
     # stats
     path("stats/", stats, name="stats"),
+    path("daily-review/start/", daily_review_start, name="daily_review_start"),
+    path("daily-review/result/", daily_review_result, name="daily_review_result"),
     path("stats/wrong-reasons/<int:reason_id>/", wrong_reason_attempts, name="wrong_reason_attempts"),
 
     path(

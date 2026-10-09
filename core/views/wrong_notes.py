@@ -13,6 +13,7 @@ from core.models import Mission, Attempt, AttemptWrongReason
 from core.services.access import get_user_access, has_full_learning_access
 from core.services.subjects import get_current_subject
 from core.services.skill_labels import get_skill_label
+from core.services.daily_review import review_plan
 
 
 WRONG_NOTES_PAGE_SIZE = 20
@@ -133,6 +134,7 @@ def wrong_notes(request):
 
     return render(request, "core/wrong_notes.html", {
         "wrong_items": wrong_items,
+        "today_review": review_plan(request.user, current_subject),
         "page_obj": page_obj,
         "filter_query": filter_query,
         "mode": mode,

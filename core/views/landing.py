@@ -68,6 +68,7 @@ def select_subject(request, subject_code):
 
 @login_required
 def realtor_home(request):
+    from core.services.daily_review import review_plan, weekly_changes
     subject = Subject.objects.filter(code=REALTOR_SUBJECT_CODE, is_active=True).first()
     if subject is None:
         return redirect("landing")
@@ -116,6 +117,8 @@ def realtor_home(request):
     first_visit = not selected_area and not recent_any_attempt and not pending_work
     return render(request, "core/realtor_home.html", {
         "current_subject": subject,
+        "today_review": review_plan(request.user, subject),
+        "weekly_changes": weekly_changes(request.user, subject),
         "study_path": path,
         "filter_stage": filter_stage,
         "areas": areas,

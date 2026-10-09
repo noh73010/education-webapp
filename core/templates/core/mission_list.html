@@ -40,7 +40,7 @@
 <section class="card daily-focus-card coach-summary-card coach-summary-action {% if daily_progress.total and daily_progress.done == daily_progress.total %}is-complete{% endif %}">
   <p class="eyebrow">오늘 학습</p>
   <h1 class="section-title">{% if subject_mission_count == 0 %}준비된 과목부터 시작해요{% elif recent_attempts %}지난 학습을 이어가요{% else %}오늘 {{ selected_daily_minutes }}분만 시작해요{% endif %}</h1>
-  <p class="subject-label">{% if selected_course %}집중 과목: <b>{{ selected_course }}</b>{% else %}현재 과목: <b>{{ current_subject.name }}</b>{% endif %}</p>
+  <p class="subject-label">{% if selected_course %}집중 과목: <b>{% if selected_area %}{{ selected_area.title }}{% else %}{{ selected_course }}{% endif %}</b>{% else %}현재 과목: <b>{{ current_subject.name }}</b>{% endif %}</p>
   {% if is_realtor_subject %}<p><a href="{% url 'realtor_home' %}">1차·2차 과목 목차와 학습 목표 보기</a></p>{% endif %}
   {% if ongoing_exam %}
     <div class="coach-inline-notice">
@@ -141,8 +141,10 @@
 
 {% if recent_attempts %}
 {% if is_logistics_subject %}<div class="home-insight-stack">{% endif %}
+{% include 'core/includes/review_start.html' %}
+{% include 'core/includes/weekly_changes.html' %}
 <section class="card coach-summary-card coach-summary-warning {% if selected_course %}{% if selected_course_weakness.state != 'found' %}is-empty{% endif %}{% elif not personal_coach.priority_weakness %}is-empty{% endif %}">
-  <p class="eyebrow">{% if selected_course %}{{ selected_course }}의 약점{% else %}지금 가장 위험한 약점{% endif %}</p>
+  <p class="eyebrow">{% if selected_area %}{{ selected_area.title }}의 약점{% elif selected_course %}{{ selected_course }}의 약점{% else %}지금 가장 위험한 약점{% endif %}</p>
   {% if selected_course and selected_course_weakness.state == 'found' %}
     <h2 class="section-title">{{ selected_course_weakness.label }}</h2>
     <span class="coach-status-chip">{{ selected_course_weakness.status }}</span>

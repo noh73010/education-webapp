@@ -1,6 +1,7 @@
 from .missions import mission_list, mission_detail
 from .stats import stats
 from .wrong_notes import wrong_notes
+from .daily_review import daily_review_start, daily_review_result
 from .exams import (
     exam_start,
     exam_create,
