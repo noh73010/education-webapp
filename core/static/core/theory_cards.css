@@ -1,4 +1,17 @@
 /* Shared chapter reading layout; the Markdown remains the content source. */
+.theory-realtor-currency { display: flex; gap: 12px; align-items: flex-start; margin: 18px 0 24px; padding: 15px 18px; border: 1px solid #e6d9b5; border-radius: 18px; background: #fffaf0; color: #483d53; font-size: 14px; line-height: 1.65; }
+.theory-realtor-currency p { margin: 0; }
+.theory-realtor-currency > span { display: inline-grid; flex: 0 0 25px; height: 25px; place-items: center; border-radius: 50%; background: #f6e3ba; font-weight: 800; }
+.theory-realtor-currency a { color: #553e82; font-weight: 750; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+body.theme-realtor .theory-lesson-hero { border-color: #e4d8ef; background: radial-gradient(circle at 87% 10%, #ffe6d0 0, transparent 34%), linear-gradient(125deg, #f4effa, #fcfbff 74%); }
+body.theme-realtor .theory-lesson-kicker, body.theme-realtor .theory-lesson-step { color: #705393; }
+body.theme-realtor .theory-page--cards .theory-lesson-card { border-color: #e9e1f3; background: #f5f0fc; }
+body.theme-realtor .theory-page--cards .theory-lesson-card--2 { border-color: #dcece7; background: #edf8f5; }
+body.theme-realtor .theory-page--cards .theory-lesson-card--3 { border-color: #f3dfd4; background: #fff4ee; }
+body.theme-realtor .theory-page--cards .theory-lesson-card--4 { border-color: #e6e5f1; background: #f3f3fa; }
+body.theme-realtor .theory-page--cards .theory-lesson-card--5 { border-color: #e6e1d6; background: #faf7ef; }
+body.theme-realtor .theory-page--cards .theory-lesson-card h2 { color: #33294b; }
+body.theme-realtor .theory-page--cards .theory-lesson-card li { background: rgba(255, 255, 255, .84); }
 .theory-page--cards {
     width: min(100%, 1080px);
     color: #20314d;

@@ -62,12 +62,11 @@
     <div class="realtor-chapter-list">
       {% for chapter in selected_group.chapters %}
         <div class="realtor-chapter-row">
-          <div><small>{{ forloop.counter }}단원</small><b>{{ chapter.chapter_name }}</b><span>{{ chapter.status }}</span></div>
-          {% if chapter.has_theory %}
-            <a href="{% url 'theory_chapter' chapter.slug %}">{% if chapter.total_count %}이론과 문제 보기{% else %}이론 보기{% endif %}</a>
-          {% elif chapter.total_count %}
-            <a href="{% url 'chapter_practice_start' chapter.slug %}">문제 풀기</a>
-          {% else %}<span class="realtor-chapter-pending">이론·문제 준비 중</span>{% endif %}
+          <div class="realtor-chapter-copy"><small>{{ forloop.counter }}단원</small><b>{{ chapter.chapter_name }}</b>{% if chapter.theory_summary %}<p>{{ chapter.theory_summary }}</p>{% endif %}<span>{{ chapter.status }}</span></div>
+          <div class="realtor-chapter-actions">
+            {% if chapter.has_theory %}<a href="{% url 'theory_chapter' chapter.slug %}">핵심 이론</a>{% endif %}
+            {% if chapter.total_count %}<a class="realtor-chapter-practice" href="{% url 'chapter_practice_start' chapter.slug %}">문제 풀기</a>{% else %}<span class="realtor-chapter-pending">문제 준비 중</span>{% endif %}
+          </div>
         </div>
       {% endfor %}
     </div>

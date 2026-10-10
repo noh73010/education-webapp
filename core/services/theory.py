@@ -37,6 +37,24 @@ def has_theory(subject_code: str, chapter_code: str) -> bool:
     return load_theory_markdown(subject_code, chapter_code) is not None
 
 
+def theory_chapter_summary(source: str | None) -> str:
+    """Use the chapter's own opening sentence for its roadmap preview."""
+    if not source:
+        return ""
+    in_opening = False
+    for raw_line in source.splitlines():
+        line = raw_line.strip()
+        if line == "## 먼저 이해하기":
+            in_opening = True
+            continue
+        if in_opening and line.startswith("## "):
+            break
+        if in_opening and line:
+            plain = re.sub(r"\*\*|`", "", line)
+            return re.split(r"(?<=[.!?])\s", plain, maxsplit=1)[0]
+    return ""
+
+
 def _inline_markdown(text: str) -> str:
     escaped = html.escape(text, quote=True)
     escaped = re.sub(r"`([^`]+)`", r"<code>\1</code>", escaped)
@@ -276,6 +294,7 @@ def build_subject_theory_roadmap(user, subject):
         else:
             status = "미시작"
 
+        theory_source = load_theory_markdown(subject.code, row["chapter_code"])
         chapter = {
             **row,
             "slug": slugify(
@@ -286,7 +305,8 @@ def build_subject_theory_roadmap(user, subject):
             "mastery_pct": round((solved / total) * 100, 1) if total else 0,
             "remaining_count": max(total - attempted, 0),
             "status": status,
-            "has_theory": has_theory(subject.code, row["chapter_code"]),
+            "has_theory": theory_source is not None,
+            "theory_summary": theory_chapter_summary(theory_source) if subject.code == "realtor" else "",
         }
         area_name = row.get("area_name") or row["course"] or subject.name
         if area_name not in course_map:

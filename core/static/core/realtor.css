@@ -179,10 +179,12 @@ body.theme-realtor .realtor-actions a:hover {
   padding: 13px 0;
   border-top: 1px solid #eeeaf3;
 }
-.realtor-chapter-row > div { display: grid; gap: 3px; min-width: 0; }
+.realtor-chapter-copy { display: grid; gap: 4px; min-width: 0; }
+.realtor-chapter-copy p { margin: 3px 0; color: #43536c; font-size: .91rem; line-height: 1.55; }
 .realtor-chapter-row small,
 .realtor-chapter-row span { color: #56647a; }
 .realtor-chapter-row b { line-height: 1.45; }
+.realtor-chapter-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; flex-shrink: 0; }
 .realtor-chapter-row a {
   flex-shrink: 0;
   padding: 9px 13px;
@@ -193,12 +195,15 @@ body.theme-realtor .realtor-actions a:hover {
   text-decoration: none;
 }
 .realtor-chapter-row a:hover { background: #e4d9f4; }
+.realtor-chapter-row .realtor-chapter-practice { background: #e4f3ef; color: #205d58; }
+.realtor-chapter-row .realtor-chapter-practice:hover { background: #d3eae3; }
+.realtor-chapter-row a:focus-visible { outline: 3px solid #a77dce; outline-offset: 3px; }
 .realtor-chapter-pending { font-size: .88rem; text-align: right; }
 @media (max-width: 600px) {
   .realtor-hero { padding: 24px; border-radius: 26px 26px 42px 26px; }
   .realtor-hero-illustration { width: 76px; height: 76px; }
   .realtor-chapter-group summary { align-items: flex-start; }
   .realtor-chapter-row { align-items: flex-start; flex-direction: column; gap: 8px; }
-  .realtor-chapter-row a { align-self: flex-start; }
+  .realtor-chapter-actions { justify-content: flex-start; }
   .realtor-chapter-pending { text-align: left; }
 }

@@ -5,14 +5,31 @@
   </defs>
   <circle cx="282" cy="72" r="58" fill="#f8dca8" opacity=".57"/>
   <circle cx="92" cy="188" r="68" fill="#b7dcd2" opacity=".5"/>
+  {% if current_subject.code == 'realtor' %}
+  <path d="M44 211c53-40 92-43 145-19 48 21 86 14 125-15" fill="none" stroke="#d8c5e7" stroke-width="22" stroke-linecap="round"/>
+  <path d="M44 211c53-40 92-43 145-19 48 21 86 14 125-15" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 10"/>
+  <circle cx="69" cy="109" r="23" fill="#fffaf4" stroke="#c5afd6" stroke-width="3"/>
+  <path d="m59 110 8 8 14-18" fill="none" stroke="#719b8f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  {% else %}
   <path d="M34 212C108 222 107 125 179 130c54 4 46 69 129 35" fill="none" stroke="url(#theoryRoad)" stroke-width="27" stroke-linecap="round"/>
   <path d="M34 212C108 222 107 125 179 130c54 4 46 69 129 35" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-dasharray="6 11"/>
   <path d="M52 126v-37l30-17 30 17v37l-30 17z" fill="#fff" stroke="#9cb6dd" stroke-width="3"/>
   <path d="M82 72v35m-30-18 30 18 30-18" fill="none" stroke="#b1c4df" stroke-width="2"/>
   <circle cx="303" cy="117" r="19" fill="#fff" stroke="#e2a94f" stroke-width="3"/>
   <circle cx="303" cy="117" r="6" fill="#e2a94f"/>
+  {% endif %}
 
-  {% if chapter.course == '물류관련법규' %}
+  {% if current_subject.code == 'realtor' %}
+  <g transform="translate(138 91)">
+    <path d="m22 82 79-57 79 57v102H22z" fill="#fffaf5" stroke="#76649d" stroke-width="4" stroke-linejoin="round"/>
+    <path d="m10 86 91-67 91 67" fill="none" stroke="#9a80bd" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="79" y="115" width="47" height="69" rx="7" fill="#d8eee6" stroke="#6b9c91" stroke-width="3"/>
+    <rect x="40" y="108" width="25" height="28" rx="5" fill="#cfdcf5" stroke="#8a9fc3" stroke-width="3"/>
+    <rect x="141" y="108" width="25" height="28" rx="5" fill="#cfdcf5" stroke="#8a9fc3" stroke-width="3"/>
+    <path d="M7 194h188" stroke="#79679d" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="159" cy="28" r="17" fill="#f8d6ad"/>
+  </g>
+  {% elif chapter.course == '물류관련법규' %}
   <g transform="translate(163 109) rotate(7 65 65)">
     <rect x="7" y="6" width="116" height="132" rx="18" fill="#fff" stroke="#a7bfe4" stroke-width="3"/>
     <rect x="25" y="26" width="63" height="11" rx="5" fill="#d6e4fa"/>

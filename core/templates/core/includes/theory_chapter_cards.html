@@ -5,6 +5,7 @@
     <h1>{% if focused_concept %}오답 개념 복습{% else %}{{ chapter.chapter_name }}{% endif %}</h1>
     <p class="theory-lesson-lead">
       {% if focused_concept %}방금 헷갈린 개념을 짧게 확인하고, 다시 풀어보세요.
+      {% elif current_subject.code == 'realtor' %}{{ chapter.chapter_name }}의 원리와 구별 기준을 사례로 익힌 뒤 문제에 적용해 보세요.
       {% else %}{{ chapter.chapter_name }}의 핵심을 짧게 읽고, 바로 문제로 확인해 봐요.{% endif %}
     </p>
     <div class="theory-lesson-hero-actions">
@@ -24,6 +25,13 @@
   </div>
   {% include 'core/includes/theory_chapter_illustration.html' %}
 </header>
+
+{% if current_subject.code == 'realtor' %}
+<aside class="theory-realtor-currency" aria-label="학습 자료 적용 기준">
+  <span aria-hidden="true">ⓘ</span>
+  <p>이 이론은 개념 학습용입니다. 법령·세율·금액·기한은 시험 적용 기준에 따라 달라질 수 있으니 <a href="https://www.law.go.kr/" target="_blank" rel="noopener noreferrer">국가법령정보센터</a>와 <a href="https://www.q-net.or.kr/man001.do?gId=08&amp;gSite=L" target="_blank" rel="noopener noreferrer">Q-Net 공인중개사 시험 안내</a>에서 최신 내용을 확인하세요.</p>
+</aside>
+{% endif %}
 
 {% if focused_concept %}
 <section class="theory-lesson-focus theory-content" id="related-concept" tabindex="-1">

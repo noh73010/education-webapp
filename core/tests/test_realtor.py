@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase, override_settings
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 
 from core.management.commands.import_missions import normalize_korean_row, parse_chapter
@@ -11,7 +11,24 @@ from core.services.course_focus import available_courses as focus_courses
 from core.services.realtor_curriculum import (
     REALTOR_CHAPTERS, REALTOR_COURSES, REALTOR_LEARNING_AREAS, courses_for_path,
 )
-from core.services.theory import build_subject_theory_roadmap
+from core.services.theory import build_subject_theory_roadmap, load_theory_markdown, split_theory_sections
+
+
+class RealtorTheoryContentTests(SimpleTestCase):
+    def test_every_registered_chapter_has_substantive_theory_and_two_checks(self):
+        for area in REALTOR_LEARNING_AREAS:
+            for code, title in area["chapters"]:
+                with self.subTest(chapter=code):
+                    source = load_theory_markdown("realtor", code)
+                    self.assertIsNotNone(source)
+                    self.assertTrue(source.startswith(f"# {title}\n"))
+                    self.assertGreaterEqual(len(source), 450)
+                    self.assertIn("## 먼저 이해하기", source)
+                    self.assertIn("## 핵심 구조", source)
+                    self.assertIn("## 사례로 적용하기", source)
+                    self.assertIn("## 개념 확인", source)
+                    self.assertEqual(source.count("정답:"), 2)
+                    self.assertEqual(len(split_theory_sections(source)), 4)
 
 
 @override_settings(PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"])
@@ -52,7 +69,9 @@ class RealtorLearningTests(TestCase):
         self.assertContains(selected, "부동산학개론 문제는 준비 중이에요")
         self.assertNotContains(selected, "5분 학습 시작")
         self.assertContains(selected, "1단원")
-        self.assertContains(selected, 'class="card realtor-chapters realtor-chapters--pending"')
+        self.assertContains(selected, 'class="card realtor-chapters"')
+        self.assertContains(selected, "핵심 이론")
+        self.assertContains(selected, "문제 준비 중")
         self.assertNotContains(selected, "<small>RE01-01</small>")
         self.assertNotContains(selected, "RE06-08")
 
@@ -253,8 +272,27 @@ class RealtorLearningTests(TestCase):
         self.assertContains(selected, "8단원")
         self.assertNotContains(selected, "<small>RE06-08</small>")
         self.assertNotContains(selected, "부동산학 총론")
-        self.assertContains(selected, "자료 준비 중")
+        self.assertContains(selected, "핵심 이론")
+        self.assertContains(selected, "문제 준비 중")
         self.assertNotContains(page, reverse("chapter_practice_start", args=[roadmap[0]["chapters"][0]["slug"]]))
+
+    def test_all_realtor_theory_pages_render_and_chapter_actions_are_distinct(self):
+        self.client.post(reverse("realtor_choose_course"), {"area_code": "RE01"})
+        roadmap = build_subject_theory_roadmap(self.user, self.realtor)
+        home = self.client.get(reverse("realtor_home"))
+        self.assertContains(home, "부동산학은 토지")
+        self.assertContains(home, "핵심 이론")
+        self.assertNotContains(home, "이론과 문제 보기")
+        for area in roadmap:
+            for chapter in area["chapters"]:
+                with self.subTest(chapter=chapter["chapter_code"]):
+                    page = self.client.get(reverse("theory_chapter", args=[chapter["slug"]]))
+                    self.assertEqual(page.status_code, 200)
+                    self.assertContains(page, chapter["chapter_name"])
+                    self.assertContains(page, "정답과 설명 확인", count=2)
+                    self.assertContains(page, "국가법령정보센터")
+                    self.assertContains(page, "theory-realtor-currency")
+                    self.assertNotContains(page, "물류관리사 학습 일러스트")
 
     def test_realtor_chapter_questions_open_from_their_own_unit(self):
         RealtorStudyPath.objects.create(user=self.user, path="second")
