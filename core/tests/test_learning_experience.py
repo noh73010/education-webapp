@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from core.models import (Attempt, AttemptWrongReason, ConceptUnit, Inquiry, LearningStart,
                          Mission, MissionWork, ProblemSet, ProblemSetSession,
-                         ProblemSetSessionItem, StudyProfile, Subject, WrongReason)
+                         ProblemSetSessionItem, StudyProfile, Subject, SubjectExamGoal, WrongReason)
 from core.services.account_data import reset_learning_data
 from core.services.learning_experience import progress_evidence, repetition_guidance
 from core.management.commands.import_missions import optional_learning_feedback
@@ -339,7 +339,7 @@ class LearningExperienceTests(TestCase):
         self.assertEqual(len(start.diagnostic_ids), 3)
         self.assertNotIn(self.foreign.pk, start.diagnostic_ids)
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(str(StudyProfile.objects.get(user=self.user).target_exam_date), "2026-12-01")
+        self.assertEqual(str(SubjectExamGoal.objects.get(user=self.user, subject=self.subject).target_date), "2026-12-01")
         response = self.client.get(reverse("mission_list"))
         self.assertContains(response, "처음이라면")
         self.assertContains(response, "합격 예측이 아닙니다")

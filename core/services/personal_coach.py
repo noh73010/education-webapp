@@ -1,7 +1,8 @@
 from django.db.models import Q
 from django.utils import timezone
 
-from core.models import Attempt, ConfusionCard, StudyProfile, UserWeakness
+from core.models import Attempt, ConfusionCard, UserWeakness
+from core.services.exam_dates import exam_countdown
 from core.services.logistics_curriculum import LOGISTICS_CURRICULUM
 from core.services.subjects import LOGISTICS_SUBJECT_CODE
 from core.services.learning_concepts import get_answer_display
@@ -22,7 +23,7 @@ def build_personal_coach_context(user, subject, streak=None):
     from core.models import Mission
     scope, _ = learning_scope(user, subject)
     scope_codes = set(Mission.objects.filter(subject=subject, **scope).values_list("chapter_code", flat=True)) if scope else None
-    profile, _ = StudyProfile.objects.get_or_create(user=user)
+    countdown = exam_countdown(user, subject)
     weakness_by_skill = {
         row.wrong_pattern.skill: row
         for row in UserWeakness.objects.filter(user=user, subject=subject).select_related("wrong_pattern")
@@ -55,29 +56,6 @@ def build_personal_coach_context(user, subject, streak=None):
         weakness_map.append({"course": course["course"], "chapters": chapters})
 
     today = timezone.localdate()
-    days_left = None
-    dday_label = "시험일 설정"
-    dday_message = "시험일을 설정하면 남은 기간에 맞춰 학습 우선순위를 조정합니다."
-    if profile.target_exam_date:
-        days_left = (profile.target_exam_date - today).days
-        dday_label = "D-Day" if days_left == 0 else f"D-{days_left}" if days_left > 0 else f"D+{abs(days_left)}"
-        if days_left <= 7:
-            dday_message = "새 범위보다 과락 위험·오답·실전 점검을 우선하세요."
-        elif days_left <= 30:
-            dday_message = "약점 훈련과 모의고사를 번갈아 진행할 시기입니다."
-        else:
-            dday_message = "로드맵 순서로 기본기를 쌓고 매일 약점을 복습하세요."
-
-    if days_left is None:
-        dday_phase = "standard"
-    elif days_left <= 3:
-        dday_phase = "final"
-    elif days_left <= 7:
-        dday_phase = "review"
-    elif days_left <= 30:
-        dday_phase = "intensive"
-    else:
-        dday_phase = "foundation"
 
     return_days = 0
     if streak and streak.last_solved_date and streak.last_solved_date < today:
@@ -162,12 +140,8 @@ def build_personal_coach_context(user, subject, streak=None):
             "detail": f"지금까지의 최고 기록은 {streak.best_streak}일이에요.",
         }
     return {
-        "profile": profile,
         "weakness_map": weakness_map,
-        "dday_label": dday_label,
-        "dday_message": dday_message,
-        "days_left": days_left,
-        "dday_phase": dday_phase,
+        **countdown,
         "return_mode": return_days >= 3,
         "return_days": return_days,
         "confusion_cards": cards,

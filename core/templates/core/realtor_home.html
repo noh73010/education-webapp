@@ -12,6 +12,8 @@
     <a href="{% url 'landing' %}">다른 자격증 선택</a>
   </header>
 
+  {% include 'core/includes/exam_countdown.html' %}
+
   {% if selected_area %}
   <section class="card realtor-next-step" aria-labelledby="realtor-next-title">
     <p class="eyebrow">오늘의 시작점 · {% if selected_area.stage == 'first' %}1차{% else %}2차{% endif %} {{ selected_area_number }}과목</p>

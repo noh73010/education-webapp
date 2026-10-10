@@ -1,0 +1,19 @@
+{% if exam_countdown.exam_target_date %}
+<section class="exam-countdown exam-countdown--{{ exam_countdown.dday_phase }}" aria-label="{{ current_subject.name }} 목표 시험일까지 남은 기간">
+  <div>
+    <p class="eyebrow">{{ current_subject.name }} 목표 시험일 · {{ exam_countdown.exam_target_date|date:'Y년 n월 j일' }}</p>
+    <strong>{{ exam_countdown.dday_label }}</strong>
+    <span>{{ exam_countdown.dday_message }}</span>
+  </div>
+  <a href="{% url 'study_profile' %}">날짜 변경</a>
+</section>
+{% elif exam_countdown.suggested_exam %}
+<section class="exam-countdown exam-countdown--suggestion" aria-label="{{ current_subject.name }} 공식 시험일 제안">
+  <div>
+    <p class="eyebrow">확인된 공식 시험일</p>
+    <strong>{{ exam_countdown.suggested_exam.exam_date|date:'Y년 n월 j일' }}</strong>
+    <span>응시할 예정인가요? 확인 후 목표일로 설정할 수 있어요.</span>
+  </div>
+  <a href="{% url 'study_profile' %}">시험일 확인·설정</a>
+</section>
+{% endif %}

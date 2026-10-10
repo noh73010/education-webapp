@@ -5,6 +5,8 @@
 
 {% block content %}
 
+{% include 'core/includes/exam_countdown.html' with exam_countdown=personal_coach %}
+
 {% if selected_course %}
 <section class="card selected-course-banner" aria-label="현재 공부 중인 과목">
   <div>

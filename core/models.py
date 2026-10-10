@@ -478,6 +478,29 @@ class StudyProfile(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 
+class SubjectExamGoal(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    target_date = models.DateField()
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["user", "subject"], name="unique_subject_exam_goal")]
+
+
+class OfficialExamDate(models.Model):
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    label = models.CharField(max_length=120)
+    exam_date = models.DateField()
+    source_url = models.URLField()
+    verified_on = models.DateField()
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["exam_date", "label"]
+        constraints = [models.UniqueConstraint(fields=["subject", "label", "exam_date"], name="unique_official_exam_date")]
+
+
 class RealtorStudyPath(models.Model):
     FIRST = "first"
     SECOND = "second"

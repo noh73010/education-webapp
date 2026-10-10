@@ -17,6 +17,7 @@ from core.services.subjects import (
 )
 from core.services.access import premium_gating_enabled
 from core.services.content_sources import logistics_source_notices, realtor_source_notices
+from core.services.exam_dates import exam_countdown
 
 
 def landing(request):
@@ -135,6 +136,7 @@ def realtor_home(request):
         "pending_work": pending_work,
         "first_visit": first_visit,
         "exam_guide_url": REALTOR_EXAM_GUIDE,
+        "exam_countdown": exam_countdown(request.user, subject),
     })
 
 

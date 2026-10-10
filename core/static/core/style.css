@@ -2287,6 +2287,24 @@ button:hover {
 .quick-wrong-reasons { margin-top: 18px; padding: 12px; border-radius: 12px; background: #f6f8fc; }
 .quick-wrong-reasons label { display: block; padding: 7px 0; }
 .mobile-coach-strip { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.exam-countdown { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0 0 16px; padding: 14px 20px; border: 1px solid #cfdeeb; border-radius: 18px; background: #eef5fa; color: #17324c; }
+.exam-countdown > div { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 14px; }
+.exam-countdown .eyebrow { width: 100%; margin: 0; color: #365b76; }
+.exam-countdown strong { font-size: 1.5rem; line-height: 1.2; }
+.exam-countdown a { flex-shrink: 0; color: #173e67; font-weight: 700; }
+.exam-countdown--intensive { border-color: #e9d9aa; background: #fff8e7; }
+.exam-countdown--review, .exam-countdown--final { border-color: #e5b78c; background: #fff0dd; color: #683800; }
+.exam-countdown--review .eyebrow, .exam-countdown--final .eyebrow { color: #683800; }
+.exam-countdown--review strong, .exam-countdown--final strong { font-size: 1.8rem; }
+.exam-countdown--suggestion strong { font-size: 1.1rem; }
+body.theme-realtor .exam-countdown { border-color: #dcd3e9; background: #f5f0fa; color: #3f3158; }
+body.theme-realtor .exam-countdown .eyebrow, body.theme-realtor .exam-countdown a { color: #5b437a; }
+body.theme-realtor .exam-countdown--intensive { border-color: #e7d7ad; background: #fdf7e9; }
+body.theme-realtor .exam-countdown--review, body.theme-realtor .exam-countdown--final { border-color: #e7bb9b; background: #fff1e6; color: #683800; }
+body.theme-realtor .exam-countdown--review .eyebrow, body.theme-realtor .exam-countdown--final .eyebrow { color: #683800; }
+.exam-date-suggestion { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 12px 0; padding: 14px; border: 1px solid #d6e2ed; border-radius: 14px; }
+.exam-date-suggestion p { margin: 6px 0 0; }
+.exam-goal-current { padding: 14px; border-radius: 12px; background: #eef5fa; }
 .confusion-card-list { display: grid; gap: 10px; }
 .confusion-card { display: grid; gap: 5px; padding: 14px; border: 1px solid #dbe5f3; border-radius: 14px; text-decoration: none; color: inherit; }
 .confusion-card span { color: #315076; }
@@ -2297,6 +2315,7 @@ button:hover {
 .weakness-status-training, .weakness-status-review_due { background: #fff8e6; }
 .weakness-status-mastered { background: #ecf9f1; }
 @media (max-width: 768px) {
+  .exam-countdown, .exam-date-suggestion { align-items: flex-start; flex-direction: column; }
   .mobile-coach-strip { align-items: flex-start; flex-direction: column; }
   .weakness-map-row { font-size: .88rem; }
 }

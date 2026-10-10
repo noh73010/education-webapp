@@ -8,7 +8,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
-from core.models import Attempt, Inquiry, LearningStart, Mission, MissionWork, StudyProfile
+from core.models import Attempt, Inquiry, LearningStart, Mission, MissionWork
+from core.services.exam_dates import goal_for, save_goal
 from core.services.learning_concepts import get_answer_display
 from core.services.learning_experience import diagnostic_state
 from core.services.subjects import get_current_subject
@@ -50,8 +51,8 @@ class LearningStartForm(forms.Form):
 @require_http_methods(["GET", "POST"])
 def learning_start(request):
     subject, _ = get_current_subject(request)
-    profile, _ = StudyProfile.objects.get_or_create(user=request.user)
-    form = LearningStartForm(request.POST or None, initial={"mode": "direct", "target_exam_date": profile.target_exam_date})
+    goal = goal_for(request.user, subject)
+    form = LearningStartForm(request.POST or None, initial={"mode": "direct", "target_exam_date": goal.target_date if goal else None})
     if request.method == "POST" and form.is_valid():
         ids = []
         if form.cleaned_data["mode"] == "diagnostic":
@@ -70,8 +71,8 @@ def learning_start(request):
             LearningStart.objects.update_or_create(user=request.user, subject=subject, defaults={
                 "experience": form.cleaned_data["experience"], "diagnostic_ids": ids, "started_at": timezone.now(),
             })
-            profile.target_exam_date = form.cleaned_data["target_exam_date"]
-            profile.save(update_fields=["target_exam_date", "updated_at"])
+            if form.cleaned_data["target_exam_date"]:
+                save_goal(request.user, subject, form.cleaned_data["target_exam_date"])
         if ids:
             return redirect("mission_detail", mission_id=ids[0])
         messages.info(request, "처음이라면 핵심 이론부터, 복습 중이라면 오늘 추천 문제부터 시작하세요.")

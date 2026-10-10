@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from core.management.commands.import_missions import normalize_korean_row
-from core.models import Attempt, ConfusionCard, Mission, StudyProfile, UserStreak, UserWeakness
+from core.models import Attempt, ConfusionCard, Mission, SubjectExamGoal, UserStreak, UserWeakness
 from core.services.attempts import save_attempt
 from core.services.learning_dashboard import get_pass_readiness
 from core.services.personal_coach import build_personal_coach_context
@@ -207,8 +207,8 @@ class PersonalizedLearningTests(TestCase):
         self.assertContains(response, self.mission.title)
 
     def test_dday_enters_final_mode_within_three_days(self):
-        StudyProfile.objects.create(
-            user=self.user, target_exam_date=timezone.localdate() + timedelta(days=2)
+        SubjectExamGoal.objects.create(
+            user=self.user, subject=self.subject, target_date=timezone.localdate() + timedelta(days=2)
         )
         context = build_personal_coach_context(self.user, self.subject)
         self.assertEqual(context["dday_phase"], "final")

@@ -25,7 +25,23 @@ from .models import (
     CertificationArea,
     UserEvent,
     ConceptUnit,
+    OfficialExamDate,
+    SubjectExamGoal,
 )
+
+
+@admin.register(OfficialExamDate)
+class OfficialExamDateAdmin(admin.ModelAdmin):
+    list_display = ("subject", "label", "exam_date", "verified_on", "is_active")
+    list_filter = ("subject", "is_active")
+    search_fields = ("label", "subject__name")
+
+
+@admin.register(SubjectExamGoal)
+class SubjectExamGoalAdmin(admin.ModelAdmin):
+    list_display = ("user", "subject", "target_date", "updated_at")
+    list_filter = ("subject",)
+    search_fields = ("user__username", "user__email")
 
 
 class MissionImageInline(admin.StackedInline):
