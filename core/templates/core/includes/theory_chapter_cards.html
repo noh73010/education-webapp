@@ -5,11 +5,11 @@
     <h1>{% if focused_concept %}오답 개념 복습{% else %}{{ chapter.chapter_name }}{% endif %}</h1>
     <p class="theory-lesson-lead">
       {% if focused_concept %}방금 헷갈린 개념을 짧게 확인하고, 다시 풀어보세요.
-      {% elif current_subject.code == 'realtor' %}{{ chapter.chapter_name }}의 원리와 구별 기준을 사례로 익힌 뒤 문제에 적용해 보세요.
+      {% elif current_subject.code == 'realtor' %}생활 속 장면에서 출발해 원리를 이해하고, 헷갈리는 선택지를 직접 구별해 보세요.
       {% else %}{{ chapter.chapter_name }}의 핵심을 짧게 읽고, 바로 문제로 확인해 봐요.{% endif %}
     </p>
     <div class="theory-lesson-hero-actions">
-      <a class="theory-lesson-primary" href="{% if focused_concept %}#related-concept{% else %}#theory-lesson-lessons{% endif %}">핵심부터 읽기 <span aria-hidden="true">↗</span></a>
+      <a class="theory-lesson-primary" href="{% if focused_concept %}#related-concept{% else %}#theory-lesson-lessons{% endif %}">{% if current_subject.code == 'realtor' %}이야기로 개념 익히기{% else %}핵심부터 읽기{% endif %} <span aria-hidden="true">↗</span></a>
       {% if focused_concept %}
         <a class="theory-lesson-secondary" href="{% url 'mission_detail' focused_mission.id %}">이 문제 다시 풀기</a>
       {% elif practice_plan.total_count %}
@@ -55,12 +55,20 @@
   <span aria-hidden="true">→</span>
   <span><b>3</b> 문제로 연습하기</span>
 </div>
+{% if current_subject.code == 'realtor' %}
+<nav class="theory-lesson-chapter-nav" aria-label="이 단원에서 읽을 내용">
+  <p>오늘의 읽기 순서 <span>궁금한 부분부터 눌러도 좋아요</span></p>
+  <div>
+    {% for section in theory_sections %}<a href="#theory-section-{{ forloop.counter }}">{{ section.title }}</a>{% endfor %}
+  </div>
+</nav>
+{% endif %}
 {% endif %}
 
 <div id="theory-lesson-lessons" class="theory-lesson-lessons">
   {% if theory_sections %}
   {% for section in theory_sections %}
-    <section class="theory-lesson-card theory-lesson-card--{{ forloop.counter }} theory-content" aria-label="{{ section.title }}">
+    <section class="theory-lesson-card theory-lesson-card--{{ forloop.counter }} theory-content" id="theory-section-{{ forloop.counter }}" aria-label="{{ section.title }}">
       <p class="theory-lesson-step">STEP {{ forloop.counter|stringformat:'02d' }}</p>
       {{ section.html }}
     </section>

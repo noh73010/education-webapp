@@ -10,8 +10,22 @@ body.theme-realtor .theory-page--cards .theory-lesson-card--2 { border-color: #d
 body.theme-realtor .theory-page--cards .theory-lesson-card--3 { border-color: #f3dfd4; background: #fff4ee; }
 body.theme-realtor .theory-page--cards .theory-lesson-card--4 { border-color: #e6e5f1; background: #f3f3fa; }
 body.theme-realtor .theory-page--cards .theory-lesson-card--5 { border-color: #e6e1d6; background: #faf7ef; }
+body.theme-realtor .theory-page--cards .theory-lesson-card--6 { border-color: #d6e9eb; background: #eef9fa; }
+body.theme-realtor .theory-page--cards .theory-lesson-card--7 { border-color: #e4def1; background: #f6f2fc; }
 body.theme-realtor .theory-page--cards .theory-lesson-card h2 { color: #33294b; }
 body.theme-realtor .theory-page--cards .theory-lesson-card li { background: rgba(255, 255, 255, .84); }
+body.theme-realtor .theory-lesson-lessons { grid-template-columns: minmax(0, 1fr); max-width: 820px; margin-inline: auto; gap: 20px; }
+body.theme-realtor .theory-page--cards .theory-lesson-card { grid-column: auto; padding: clamp(25px, 4vw, 42px); font-size: 17px; line-height: 1.85; scroll-margin-top: 24px; }
+body.theme-realtor .theory-page--cards .theory-lesson-card p { max-width: 70ch; }
+body.theme-realtor .theory-page--cards .theory-lesson-card--1 { border-color: #ecd9c5; background: #fff7ed; }
+body.theme-realtor .theory-page--cards .theory-lesson-card--4 { border-color: #dcece7; background: #edf8f5; }
+body.theme-realtor .theory-page--cards .theory-lesson-card--6 { border-width: 2px; }
+.theory-lesson-chapter-nav { margin: 8px auto 23px; padding: 18px 20px; max-width: 820px; border: 1px solid #e6dfee; border-radius: 22px; background: #fffdfa; }
+.theory-lesson-chapter-nav p { margin: 0 0 12px; color: #33294b; font-size: 15px; font-weight: 800; }
+.theory-lesson-chapter-nav p span { margin-left: 8px; color: #665a75; font-size: 13px; font-weight: 500; }
+.theory-lesson-chapter-nav > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.theory-lesson-chapter-nav a { padding: 7px 12px; border: 1px solid #e2d9ec; border-radius: 999px; background: #f8f4fc; color: #483869; font-size: 13px; font-weight: 700; text-decoration: none; }
+.theory-lesson-chapter-nav a:hover, .theory-lesson-chapter-nav a:focus-visible { border-color: #8766ab; background: #ede1f7; outline-offset: 2px; }
 .theory-page--cards {
     width: min(100%, 1080px);
     color: #20314d;

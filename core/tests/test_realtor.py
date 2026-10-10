@@ -15,20 +15,23 @@ from core.services.theory import build_subject_theory_roadmap, load_theory_markd
 
 
 class RealtorTheoryContentTests(SimpleTestCase):
-    def test_every_registered_chapter_has_substantive_theory_and_two_checks(self):
+    def test_every_registered_chapter_has_expanded_theory_and_three_checks(self):
         for area in REALTOR_LEARNING_AREAS:
             for code, title in area["chapters"]:
                 with self.subTest(chapter=code):
                     source = load_theory_markdown("realtor", code)
                     self.assertIsNotNone(source)
                     self.assertTrue(source.startswith(f"# {title}\n"))
-                    self.assertGreaterEqual(len(source), 450)
+                    self.assertGreaterEqual(len(source), 1000)
                     self.assertIn("## 먼저 이해하기", source)
                     self.assertIn("## 핵심 구조", source)
                     self.assertIn("## 사례로 적용하기", source)
+                    self.assertIn("## 한 걸음 더 이해하기", source)
+                    self.assertIn("## 시험에서 구별하기", source)
+                    self.assertIn("## 잠깐, 직접 판단해 보기", source)
                     self.assertIn("## 개념 확인", source)
-                    self.assertEqual(source.count("정답:"), 2)
-                    self.assertEqual(len(split_theory_sections(source)), 4)
+                    self.assertEqual(source.count("정답:"), 3)
+                    self.assertEqual(len(split_theory_sections(source)), 7)
 
 
 @override_settings(PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"])
@@ -289,7 +292,8 @@ class RealtorLearningTests(TestCase):
                     page = self.client.get(reverse("theory_chapter", args=[chapter["slug"]]))
                     self.assertEqual(page.status_code, 200)
                     self.assertContains(page, chapter["chapter_name"])
-                    self.assertContains(page, "정답과 설명 확인", count=2)
+                    self.assertContains(page, "정답과 설명 확인", count=3)
+                    self.assertContains(page, "오늘의 읽기 순서")
                     self.assertContains(page, "국가법령정보센터")
                     self.assertContains(page, "theory-realtor-currency")
                     self.assertNotContains(page, "물류관리사 학습 일러스트")
