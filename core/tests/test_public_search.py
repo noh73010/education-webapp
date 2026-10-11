@@ -7,7 +7,7 @@ from django.urls import reverse
 class PublicSearchTests(TestCase):
     @override_settings(ALLOWED_HOSTS=["example.com", "testserver"])
     def test_public_pages_have_search_metadata(self):
-        for name in ("landing", "service_info", "content_sources"):
+        for name in ("landing", "service_info", "content_sources", "privacy_info"):
             with self.subTest(name=name):
                 response = self.client.get(reverse(name), HTTP_HOST="example.com")
                 self.assertEqual(response.status_code, 200)
@@ -46,6 +46,6 @@ class PublicSearchTests(TestCase):
         self.assertEqual(
             locations,
             {f"http://example.com{reverse(name)}" for name in (
-                "landing", "service_info", "content_sources"
+                "landing", "service_info", "content_sources", "privacy_info"
             )},
         )
