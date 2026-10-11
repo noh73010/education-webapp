@@ -1,0 +1,47 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}개인정보·광고 안내 | 합격한걸음{% endblock %}
+{% block meta_description %}합격한걸음의 계정·학습 기록과 광고·쿠키 이용에 관한 안내입니다.{% endblock %}
+{% block meta_robots %}index, follow{% endblock %}
+{% block seo_links %}<link rel="canonical" href="{{ canonical_url }}">{% endblock %}
+{% block body_class %}landing-page service-info-page{% endblock %}
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'core/landing.css' %}">
+  <link rel="stylesheet" href="{% static 'core/service_info.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="service-main">
+  <section class="service-hero">
+    <p class="service-eyebrow">서비스 이용 안내</p>
+    <h1>개인정보·광고 안내</h1>
+    <p class="service-hero-copy">계정과 학습 기록의 이용, 광고가 표시될 때 사용될 수 있는 쿠키를 안내합니다.</p>
+  </section>
+
+  <section class="service-section">
+    <div class="service-section-heading"><h2>계정과 학습 기록</h2></div>
+    <div class="reason-copy">
+      <p>회원가입 또는 소셜 로그인으로 계정을 만들면 로그인에 필요한 계정 정보가 저장됩니다. 문제 풀이·오답·모의고사·학습 통계 기능을 제공하기 위해 답안과 학습 기록을 계정에 연결해 보관합니다. 로그인 상태 유지에는 쿠키를 사용합니다.</p>
+      <p>계정 관리 화면에서 자격증별 학습 기록 초기화 또는 회원 탈퇴를 요청할 수 있습니다. 서비스 이용이나 기록 처리에 관한 문의는 <a href="{% url 'inquiry' %}">문의하기</a>를 이용해 주세요.</p>
+    </div>
+  </section>
+
+  <section class="service-section">
+    <div class="service-section-heading"><h2>광고와 제3자 쿠키</h2></div>
+    <div class="reason-copy">
+      <p>광고가 활성화되면 물류관리사와 공인중개사 학습 홈의 하단에 Google AdSense 광고가 표시될 수 있습니다. 문제 풀이·해설·모의고사 화면에는 광고를 배치하지 않습니다.</p>
+      <p>Google을 포함한 제3자 제공업체는 사용자가 이 사이트나 다른 사이트를 방문한 기록을 바탕으로 광고를 게재하기 위해 쿠키 또는 유사한 식별자를 사용할 수 있습니다. Google 광고 쿠키가 사용되면 Google 및 그 파트너가 방문 기록을 바탕으로 광고를 게재할 수 있습니다.</p>
+      <p>맞춤 광고 설정과 해제는 <a href="https://myadcenter.google.com/" rel="noopener noreferrer" target="_blank">Google 광고 설정</a>에서 관리할 수 있습니다. 제3자 광고 쿠키에 관한 추가 선택지는 <a href="https://www.aboutads.info/choices/" rel="noopener noreferrer" target="_blank">AboutAds</a>를 참고해 주세요. 브라우저에서도 쿠키를 관리할 수 있으나, 필수 쿠키를 차단하면 로그인이 동작하지 않을 수 있습니다.</p>
+      <p>Google의 광고 데이터 사용 방식은 <a href="https://policies.google.com/technologies/partner-sites" rel="noopener noreferrer" target="_blank">Google 파트너 사이트 안내</a>에서 확인할 수 있습니다.</p>
+    </div>
+  </section>
+
+  <footer class="service-footer" aria-label="서비스 안내">
+    <a href="{% url 'landing' %}">첫 화면</a>
+    <a href="{% url 'service_info' %}">서비스 소개</a>
+    <a href="{% url 'content_sources' %}">콘텐츠 출처</a>
+    <a href="{% url 'inquiry' %}">문의하기</a>
+  </footer>
+</main>
+{% endblock %}

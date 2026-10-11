@@ -35,6 +35,24 @@ class HomeAdPlacementTests(TestCase):
     def setUp(self):
         self.client.force_login(self.user)
 
+    def test_ads_txt_is_public_and_exact(self):
+        self.client.logout()
+        response = self.client.get(reverse("ads_txt"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.content,
+            b"google.com, pub-7309766716223051, DIRECT, f08c47fec0942fa0\n",
+        )
+
+    def test_public_privacy_and_advertising_notice(self):
+        self.client.logout()
+        landing = self.client.get(reverse("landing"))
+        self.assertContains(landing, reverse("privacy_info"))
+        notice = self.client.get(reverse("privacy_info"))
+        self.assertEqual(notice.status_code, 200)
+        self.assertContains(notice, "Google AdSense")
+        self.assertContains(notice, "쿠키")
+
     @override_settings(**AD_SETTINGS)
     def test_manual_unit_appears_once_at_bottom_of_each_home_only(self):
         logistics = self.client.get(reverse("mission_list"))

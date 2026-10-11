@@ -17,7 +17,7 @@ from .accounts import AnalyticsLoginView, signup
 from .admin_dashboard import admin_dashboard
 from .inquiry import inquiry, inquiry_done
 from .landing import (content_sources, landing, realtor_choose_course, realtor_choose_path,
-                      realtor_home, select_subject, service_info)
+                      realtor_home, select_subject, service_info, privacy_info)
 from .theory import theory_chapter, chapter_practice_start
 from .problem_sets import (
     problem_set_list,

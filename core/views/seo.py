@@ -4,7 +4,15 @@ from django.utils.html import escape
 from django.views.decorators.http import require_safe
 
 
-PUBLIC_PAGES = ("landing", "service_info", "content_sources")
+PUBLIC_PAGES = ("landing", "service_info", "content_sources", "privacy_info")
+
+
+@require_safe
+def ads_txt(request):
+    return HttpResponse(
+        "google.com, pub-7309766716223051, DIRECT, f08c47fec0942fa0\n",
+        content_type="text/plain; charset=utf-8",
+    )
 
 
 @require_safe

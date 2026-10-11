@@ -10,6 +10,7 @@ from core.views import (
     landing,
     content_sources,
     service_info,
+    privacy_info,
     select_subject,
     realtor_home,
     realtor_choose_path,
@@ -51,11 +52,12 @@ from core.views.final_cards import final_cards
 from core.views.account_settings import account_settings
 from core.views.learning_experience import problem_report, learning_start, diagnostic_result, save_mission_draft
 from core.views.exams import exam_draft
-from core.views.seo import robots_txt, sitemap_xml
+from core.views.seo import ads_txt, robots_txt, sitemap_xml
 from core.views.visit_stats import visit_stats
 from core.views.stats import wrong_reason_attempts
 
 urlpatterns = [
+    path("ads.txt", ads_txt, name="ads_txt"),
     path("robots.txt", robots_txt, name="robots_txt"),
     path("sitemap.xml", sitemap_xml, name="sitemap_xml"),
     path("exam/<int:exam_id>/<int:order_no>/draft/", exam_draft, name="exam_draft"),
@@ -67,6 +69,7 @@ urlpatterns = [
     path("visit-stats/", visit_stats, name="visit_stats"),
     path("", landing, name="landing"),
     path("service/", service_info, name="service_info"),
+    path("privacy/", privacy_info, name="privacy_info"),
     path("content-sources/", content_sources, name="content_sources"),
     path("study-profile/", study_profile, name="study_profile"),
     path("final-cards/", final_cards, name="final_cards"),

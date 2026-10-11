@@ -47,6 +47,12 @@ def service_info(request):
     })
 
 
+def privacy_info(request):
+    return render(request, "core/privacy_info.html", {
+        "canonical_url": request.build_absolute_uri(reverse("privacy_info")),
+    })
+
+
 def content_sources(request):
     return render(request, "core/content_sources.html", {
         "logistics_sources": logistics_source_notices(),
