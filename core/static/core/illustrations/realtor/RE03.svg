@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 264" fill="none">
+  <title>공인중개사법령 및 중개실무: 상담과 확인의 흐름</title>
+  <ellipse cx="178" cy="228" rx="143" ry="17" fill="#F2E5DC"/>
+  <circle cx="181" cy="119" r="105" fill="#FFF1E8"/>
+  <path d="M50 74c0-15 12-27 27-27h103c15 0 27 12 27 27v51c0 15-12 27-27 27h-43l-28 20v-20H77c-15 0-27-12-27-27V74Z" fill="#fff" stroke="#B77C70" stroke-width="4"/>
+  <path d="M77 78h79M77 98h102M77 118h65" stroke="#E8C9BD" stroke-width="7" stroke-linecap="round"/>
+  <rect x="197" y="99" width="108" height="112" rx="17" fill="#fff" stroke="#B77C70" stroke-width="4"/>
+  <path d="m210 142 41-30 42 30" stroke="#B77C70" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M215 142v44h73v-44" fill="#FCE8D7" stroke="#B77C70" stroke-width="4"/>
+  <rect x="244" y="158" width="18" height="28" rx="4" fill="#BFD9D1"/>
+  <circle cx="105" cy="199" r="18" fill="#FFE0A5" stroke="#A97863" stroke-width="4"/>
+  <path d="M122 199h56m-9 0v12m-13-12v9" stroke="#A97863" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="293" cy="56" r="10" fill="#BDDED3"/>
+</svg>

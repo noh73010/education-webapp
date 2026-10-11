@@ -23,7 +23,11 @@
       {% else %}연결된 연습문제가 준비되기 전에도 핵심 개념부터 읽어볼 수 있어요.{% endif %}
     </p>
   </div>
-  {% include 'core/includes/theory_chapter_illustration.html' %}
+  {% if realtor_area %}
+    <img class="theory-lesson-art" src="{% static realtor_art_path %}" alt="{{ realtor_area.title }} 학습 장면 일러스트" width="360" height="264">
+  {% else %}
+    {% include 'core/includes/theory_chapter_illustration.html' %}
+  {% endif %}
 </header>
 
 {% if current_subject.code == 'realtor' %}
@@ -56,6 +60,10 @@
   <span><b>3</b> 문제로 연습하기</span>
 </div>
 {% if current_subject.code == 'realtor' %}
+<section class="theory-realtor-reading-note" aria-label="이 단원 공부 방법">
+  <span class="theory-realtor-reading-note-icon" aria-hidden="true">✦</span>
+  <div><strong>{{ realtor_area.title }}를 읽는 방법</strong><p>사례 속 당사자·대상·시점을 먼저 찾고, 어떤 조건 하나가 바뀌면 결론이 달라지는지 확인하세요. 마지막의 개념 확인은 답을 펼치기 전에 먼저 스스로 설명해 보세요.</p></div>
+</section>
 <nav class="theory-lesson-chapter-nav" aria-label="이 단원에서 읽을 내용">
   <p>오늘의 읽기 순서 <span>궁금한 부분부터 눌러도 좋아요</span></p>
   <div>

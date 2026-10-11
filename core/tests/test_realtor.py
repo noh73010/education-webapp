@@ -1,4 +1,7 @@
 from pathlib import Path
+from xml.etree import ElementTree
+
+from django.conf import settings
 
 from django.contrib.auth import get_user_model
 from django.test import SimpleTestCase, TestCase, override_settings
@@ -15,7 +18,7 @@ from core.services.theory import build_subject_theory_roadmap, load_theory_markd
 
 
 class RealtorTheoryContentTests(SimpleTestCase):
-    def test_every_registered_chapter_has_expanded_theory_and_three_checks(self):
+    def test_every_registered_chapter_has_expanded_theory_and_four_checks(self):
         for area in REALTOR_LEARNING_AREAS:
             for code, title in area["chapters"]:
                 with self.subTest(chapter=code):
@@ -29,9 +32,18 @@ class RealtorTheoryContentTests(SimpleTestCase):
                     self.assertIn("## 한 걸음 더 이해하기", source)
                     self.assertIn("## 시험에서 구별하기", source)
                     self.assertIn("## 잠깐, 직접 판단해 보기", source)
+                    self.assertIn("## 한 장면 더 살펴보기", source)
                     self.assertIn("## 개념 확인", source)
-                    self.assertEqual(source.count("정답:"), 3)
-                    self.assertEqual(len(split_theory_sections(source)), 7)
+                    self.assertEqual(source.count("정답:"), 4)
+                    self.assertEqual(len(split_theory_sections(source)), 8)
+
+    def test_six_learning_areas_have_distinct_valid_illustrations(self):
+        paths = [Path(settings.BASE_DIR) / "core" / "static" / "core" / "illustrations" / "realtor" / f"{area['code']}.svg" for area in REALTOR_LEARNING_AREAS]
+        self.assertEqual(len(paths), 6)
+        self.assertEqual(len({path.read_bytes() for path in paths}), 6)
+        for path in paths:
+            with self.subTest(path=path.name):
+                self.assertEqual(ElementTree.parse(path).getroot().tag, "{http://www.w3.org/2000/svg}svg")
 
 
 @override_settings(PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"])
@@ -292,8 +304,10 @@ class RealtorLearningTests(TestCase):
                     page = self.client.get(reverse("theory_chapter", args=[chapter["slug"]]))
                     self.assertEqual(page.status_code, 200)
                     self.assertContains(page, chapter["chapter_name"])
-                    self.assertContains(page, "정답과 설명 확인", count=3)
+                    self.assertContains(page, "정답과 설명 확인", count=4)
                     self.assertContains(page, "오늘의 읽기 순서")
+                    self.assertContains(page, "한 장면 더 살펴보기")
+                    self.assertContains(page, f"/static/core/illustrations/realtor/{area['area_code']}.svg")
                     self.assertContains(page, "국가법령정보센터")
                     self.assertContains(page, "theory-realtor-currency")
                     self.assertNotContains(page, "물류관리사 학습 일러스트")

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 264" fill="none">
+  <title>부동산학개론: 집과 시장의 흐름을 살펴보는 장면</title>
+  <ellipse cx="181" cy="226" rx="146" ry="19" fill="#E7DDF2"/>
+  <circle cx="180" cy="122" r="108" fill="#F5ECFB"/>
+  <path d="M56 188c41-16 64-42 88-75 18-26 35-34 53-25 17 9 28 30 47 19 18-11 29-43 62-62" stroke="#BEA6D9" stroke-width="9" stroke-linecap="round"/>
+  <path d="m293 41 18 2-3 18" stroke="#BEA6D9" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="64" y="94" width="179" height="120" rx="19" fill="#fff" stroke="#725C98" stroke-width="4"/>
+  <path d="M70 128 153 69l83 59" fill="#EEE0F6" stroke="#725C98" stroke-width="5" stroke-linejoin="round"/>
+  <rect x="136" y="149" width="37" height="65" rx="6" fill="#D3F0E5" stroke="#6D9D91" stroke-width="4"/>
+  <rect x="83" y="149" width="35" height="32" rx="5" fill="#DCE5FA" stroke="#8EA1C5" stroke-width="3"/>
+  <rect x="190" y="149" width="35" height="32" rx="5" fill="#DCE5FA" stroke="#8EA1C5" stroke-width="3"/>
+  <rect x="251" y="146" width="62" height="63" rx="12" fill="#fff" stroke="#725C98" stroke-width="4"/>
+  <path d="M263 191v-17l12-11 12 9 15-18" stroke="#63A68F" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="74" cy="52" r="9" fill="#F4C988"/><circle cx="287" cy="95" r="6" fill="#F4C988"/>
+</svg>

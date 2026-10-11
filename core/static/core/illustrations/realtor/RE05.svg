@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 264" fill="none">
+  <title>부동산공시법: 토지 경계와 등기 기록을 확인하는 장면</title>
+  <ellipse cx="180" cy="228" rx="145" ry="18" fill="#DDE8F3"/>
+  <circle cx="180" cy="121" r="108" fill="#ECF3FB"/>
+  <rect x="51" y="74" width="170" height="134" rx="18" fill="#fff" stroke="#6F89AD" stroke-width="4"/>
+  <path d="M68 112h136M122 90v102M68 157h136" stroke="#C4D6E9" stroke-width="5"/>
+  <path d="m70 92 53-1-1 63-55 2Z" fill="#D9EAF2" stroke="#89A7BE" stroke-width="2"/>
+  <path d="m124 159 80 0-1 34-79 0Z" fill="#DDF0E6" stroke="#89B09E" stroke-width="2"/>
+  <circle cx="122" cy="156" r="8" fill="#D59587"/><circle cx="204" cy="156" r="8" fill="#D59587"/>
+  <g transform="rotate(7 258 130)"><rect x="211" y="46" width="98" height="155" rx="12" fill="#fff" stroke="#6F89AD" stroke-width="4"/>
+  <rect x="230" y="66" width="59" height="12" rx="6" fill="#AFC6E2"/>
+  <path d="M230 102h57M230 123h57M230 144h40" stroke="#C7D7E7" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="272" cy="174" r="18" fill="#F9E4CF" stroke="#C89577" stroke-width="3"/></g>
+</svg>

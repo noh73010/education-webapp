@@ -17,6 +17,7 @@ from core.services.theory import (
     THEORY_SET_PREFIX,
     build_chapter_practice_plan,
 )
+from core.services.realtor_curriculum import learning_area
 
 @login_required
 def theory_chapter(request, chapter_slug):
@@ -26,6 +27,7 @@ def theory_chapter(request, chapter_slug):
         raise Http404("현재 과목에 없는 챕터입니다.")
 
     chapter_code = context["chapter"]["chapter_code"]
+    realtor_area = learning_area(chapter_code[:4]) if current_subject.code == "realtor" else None
     source = load_theory_markdown(current_subject.code, chapter_code)
     if source is None:
         raise Http404("아직 핵심 이론이 준비되지 않은 챕터입니다.")
@@ -71,6 +73,8 @@ def theory_chapter(request, chapter_slug):
         "focused_mission": focused_mission,
         "focused_concept": focused_concept,
         "practice_plan": practice_plan,
+        "realtor_area": realtor_area,
+        "realtor_art_path": f"core/illustrations/realtor/{realtor_area['code']}.svg" if realtor_area else "",
     })
 
 

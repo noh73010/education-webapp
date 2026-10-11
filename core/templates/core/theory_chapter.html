@@ -4,11 +4,11 @@
 {% block title %}{{ chapter.chapter_name }} 핵심 이론{% endblock %}
 
 {% block extra_css %}
-  <link rel="stylesheet" href="{% static 'core/theory_cards.css' %}?v=2">
+  <link rel="stylesheet" href="{% static 'core/theory_cards.css' %}?v=3">
 {% endblock %}
 
 {% block content %}
-<main class="theory-page theory-page--cards">
+<main class="theory-page theory-page--cards{% if realtor_area %} theory-area-{{ realtor_area.code }}{% endif %}">
   <nav class="theory-breadcrumb" aria-label="현재 위치">
     {% if current_subject.code == 'realtor' %}<a href="{% url 'realtor_home' %}">공인중개사 단원 목차</a>{% else %}<a href="{% url 'mission_list' %}#learning-roadmap">학습 로드맵</a>{% endif %}
     <span aria-hidden="true">›</span>
