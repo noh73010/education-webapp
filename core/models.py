@@ -622,6 +622,8 @@ class Inquiry(models.Model):
         default="question",
     )
     message = models.TextField()
+    staff_reply = models.TextField(blank=True)
+    replied_at = models.DateTimeField(null=True, blank=True)
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,

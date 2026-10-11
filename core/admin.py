@@ -1,5 +1,6 @@
 ﻿from django.contrib import admin
 from django.utils import timezone
+from core.services.inquiry_access import is_inquiry_owner
 from datetime import timedelta
 from .models import (
     Subject,
@@ -241,6 +242,21 @@ class InquiryAdmin(admin.ModelAdmin):
     list_select_related = ("user",)
     ordering = ("-created_at",)
     list_per_page = 50
+
+    def has_module_permission(self, request):
+        return is_inquiry_owner(request.user)
+
+    def has_view_permission(self, request, obj=None):
+        return is_inquiry_owner(request.user)
+
+    def has_change_permission(self, request, obj=None):
+        return is_inquiry_owner(request.user)
+
+    def has_add_permission(self, request):
+        return is_inquiry_owner(request.user)
+
+    def has_delete_permission(self, request, obj=None):
+        return is_inquiry_owner(request.user)
 
 
 @admin.register(ProblemSet)

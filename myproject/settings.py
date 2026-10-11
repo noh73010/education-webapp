@@ -142,6 +142,8 @@ GENERATED_MISSION_WATCH_INTERVAL_SECONDS = env_positive_int(
 )
 # Only the configured, Google-connected account can see visit statistics.
 VISITOR_STATS_OWNER_EMAIL = os.environ.get("DJANGO_VISITOR_STATS_OWNER_EMAIL", "").strip().lower()
+# Defaults to the already configured owner; may be configured independently.
+INQUIRY_OWNER_EMAIL = os.environ.get("DJANGO_INQUIRY_OWNER_EMAIL", VISITOR_STATS_OWNER_EMAIL).strip().lower()
 
 if env_bool("DJANGO_SECURE_PROXY_SSL_HEADER", False) or (DEBUG and TUNNEL_HOST):
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

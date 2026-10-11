@@ -1,0 +1,19 @@
+{% extends 'core/base.html' %}
+{% block title %}내 문의{% endblock %}
+{% block content %}
+<main class="page-shell compact-page">
+  <section class="card">
+    <h1 class="section-title">내 문의</h1>
+    <p>내가 보낸 문의와 답변은 이 계정에서만 확인할 수 있습니다.</p>
+    <a href="{% url 'inquiry' %}" class="main-button">새 문의 남기기</a>
+  </section>
+  <section class="card">
+    {% for item in inquiries %}
+      <p><a href="{% url 'inquiry_detail' item.id %}">{{ item.get_inquiry_type_display }} · {{ item.message|truncatechars:70 }}</a><br>
+      <small>{{ item.created_at|date:'Y-m-d H:i' }} · {{ item.get_status_display }}{% if item.staff_reply %} · 답변 있음{% endif %}</small></p>
+    {% empty %}<p>아직 남긴 문의가 없습니다.</p>{% endfor %}
+    {% if inquiries.has_previous %}<a href="?page={{ inquiries.previous_page_number }}">이전</a>{% endif %}
+    {% if inquiries.has_next %}<a href="?page={{ inquiries.next_page_number }}">다음</a>{% endif %}
+  </section>
+</main>
+{% endblock %}

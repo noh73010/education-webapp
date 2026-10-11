@@ -1,0 +1,29 @@
+{% extends 'core/base.html' %}
+{% block title %}문의 내용{% endblock %}
+{% block content %}
+<main class="page-shell compact-page">
+  <section class="card">
+    <h1 class="section-title">{{ inquiry.get_inquiry_type_display }}</h1>
+    <p>{{ inquiry.created_at|date:'Y-m-d H:i' }} · {{ inquiry.get_status_display }}</p>
+    <div class="info-box">{{ inquiry.message|linebreaksbr }}</div>
+    {% if is_inquiry_owner %}<p>작성자: {{ inquiry.name }} · {% if inquiry.user_id %}회원 #{{ inquiry.user_id }}{% else %}비회원{% endif %}<br>별도 연락처: {{ inquiry.contact|default:'없음' }}</p>{% endif %}
+  </section>
+  <section class="card">
+    <h2>운영자 답변</h2>
+    {% if inquiry.staff_reply %}<p>{{ inquiry.staff_reply|linebreaksbr }}</p><small>{{ inquiry.replied_at|date:'Y-m-d H:i' }}</small>
+    {% else %}<p>아직 답변이 등록되지 않았습니다.</p>{% endif %}
+    {% if is_inquiry_owner %}
+      {% if not inquiry.user_id %}<p class="info-box">비회원은 이 답변을 웹에서 볼 수 없습니다. 이메일로 별도 연락한 뒤 완료 내용을 기록하세요.</p>{% endif %}
+      <form method="post" action="{% url 'inquiry_reply' inquiry.id %}">
+        {% csrf_token %}
+        <label for="reply"><b>답변 작성·수정</b></label>
+        <textarea id="reply" name="reply" rows="6" maxlength="10000" required>{{ inquiry.staff_reply }}</textarea>
+        {% if not inquiry.user_id %}<p><label><input type="checkbox" name="guest_contacted" value="yes" required> 비회원에게 이메일로 별도 연락했습니다</label></p>{% endif %}
+        {% if reply_error %}<p role="alert">{{ reply_error }}</p>{% endif %}
+        <button type="submit" class="main-button">답변 저장하고 완료 표시</button>
+      </form>
+      <p><a href="{% url 'inquiry_inbox' %}">운영자 문의함으로</a></p>
+    {% else %}<p><a href="{% url 'my_inquiries' %}">내 문의로</a></p>{% endif %}
+  </section>
+</main>
+{% endblock %}

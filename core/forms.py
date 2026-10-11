@@ -48,13 +48,35 @@ class SocialSignupForm(AllauthSocialSignupForm):
 
 
 class InquiryForm(forms.ModelForm):
-    def __init__(self, *args, premium_gating_enabled=False, **kwargs):
+    def __init__(self, *args, premium_gating_enabled=False, user=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.user = user
+        self.fields["name"].required = False
+        self.fields["contact"].required = not (user and user.is_authenticated)
+        self.fields["contact"].label = "답변 받을 이메일" if self.fields["contact"].required else "별도 연락받을 이메일 (선택)"
+        self.fields["contact"].help_text = (
+            "비회원에게는 웹 답변함이 제공되지 않습니다. 운영자가 별도로 답할 이메일을 입력하세요."
+            if self.fields["contact"].required else "답변은 내 문의에서 확인할 수 있습니다. 별도 연락을 원할 때만 이메일을 남기세요."
+        )
         if not premium_gating_enabled:
             self.fields["inquiry_type"].choices = [
                 choice for choice in self.fields["inquiry_type"].choices
                 if choice[0] != "premium"
             ]
+
+    def clean_contact(self):
+        contact = self.cleaned_data["contact"].strip()
+        if not (self.user and self.user.is_authenticated):
+            return forms.EmailField(error_messages={"invalid": "답변 받을 이메일 주소를 입력하세요."}).clean(contact)
+        return contact
+
+    def save(self, commit=True):
+        inquiry = super().save(commit=False)
+        if not inquiry.name:
+            inquiry.name = self.user.get_username() if self.user and self.user.is_authenticated else "비회원"
+        if commit:
+            inquiry.save()
+        return inquiry
 
     class Meta:
         model = Inquiry
@@ -66,11 +88,11 @@ class InquiryForm(forms.ModelForm):
             "message": "문의 내용",
         }
         help_texts = {
-            "contact": "이메일, 전화번호, 카카오톡 ID 등 연락 가능한 수단을 입력하세요.",
+            "contact": "답변 연락처",
             "message": "오류 상황이나 궁금한 점을 적어 주세요.",
         }
         widgets = {
             "name": forms.TextInput(attrs={"placeholder": "이름 또는 닉네임"}),
-            "contact": forms.TextInput(attrs={"placeholder": "연락 가능한 이메일 또는 연락처"}),
+            "contact": forms.EmailInput(attrs={"placeholder": "email@example.com"}),
             "message": forms.Textarea(attrs={"rows": 6, "placeholder": "문의 내용을 입력하세요."}),
         }

@@ -4,6 +4,7 @@ from allauth.account import app_settings
 from allauth.account.authentication import get_authentication_records
 from allauth.socialaccount.models import SocialAccount
 from core.services.visit_stats import is_visit_stats_owner
+from core.services.inquiry_access import is_inquiry_owner
 from django import forms
 from django.conf import settings
 from django.contrib import messages
@@ -133,4 +134,5 @@ def account_settings(request):
         "needs_login": needs_login,
         "social_login_options": _social_login_options(request.user),
         "can_view_visit_stats": is_visit_stats_owner(request.user),
+        "can_view_inquiry_inbox": is_inquiry_owner(request.user),
     }, status=400 if request.method == "POST" else 200)

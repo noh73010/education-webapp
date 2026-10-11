@@ -1,0 +1,15 @@
+{% extends 'core/base.html' %}
+{% block title %}운영자 문의함{% endblock %}
+{% block content %}
+<main class="page-shell compact-page">
+  <section class="card"><h1 class="section-title">운영자 문의함</h1><p>회원과 비회원 문의를 확인합니다. 비회원에게는 웹 답변이 공개되지 않으므로 이메일로 별도 연락해 주세요.</p></section>
+  <section class="card">
+    {% for item in inquiries %}
+      <p><a href="{% url 'inquiry_detail' item.id %}">#{{ item.id }} · {{ item.get_inquiry_type_display }} · {{ item.message|truncatechars:70 }}</a><br>
+      <small>{{ item.created_at|date:'Y-m-d H:i' }} · {{ item.get_status_display }} · {% if item.user_id %}회원{% else %}비회원{% endif %}</small></p>
+    {% empty %}<p>접수된 문의가 없습니다.</p>{% endfor %}
+    {% if inquiries.has_previous %}<a href="?page={{ inquiries.previous_page_number }}">이전</a>{% endif %}
+    {% if inquiries.has_next %}<a href="?page={{ inquiries.next_page_number }}">다음</a>{% endif %}
+  </section>
+</main>
+{% endblock %}

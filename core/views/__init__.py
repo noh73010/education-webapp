@@ -15,7 +15,7 @@ from .exams import (
 from .billing import premium_info
 from .accounts import AnalyticsLoginView, signup
 from .admin_dashboard import admin_dashboard
-from .inquiry import inquiry, inquiry_done
+from .inquiry import inquiry, inquiry_done, my_inquiries, inquiry_detail, inquiry_inbox, inquiry_reply
 from .landing import (content_sources, landing, realtor_choose_course, realtor_choose_path,
                       realtor_home, select_subject, service_info, privacy_info)
 from .theory import theory_chapter, chapter_practice_start
