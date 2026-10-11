@@ -1,7 +1,7 @@
 {% extends 'core/base.html' %}
-{% load static %}
+{% load static home_ads %}
 {% block title %}공인중개사 학습 | 합격한걸음{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'core/realtor.css' %}?v=20261005-1">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'core/realtor.css' %}?v=20261005-1"><link rel="stylesheet" href="{% static 'core/home_ads.css' %}">{% endblock %}
 {% block content %}
 <main class="realtor-page">
   <header class="realtor-hero">
@@ -92,5 +92,6 @@
       <p class="meta-text">시험 구성 참고: <a href="{{ exam_guide_url }}" target="_blank" rel="noopener noreferrer">Q-Net 공인중개사 시험 안내</a>. 법령·시험 범위는 응시 연도의 공식 공고를 확인하세요.</p>
     </section>
   </details>
+  {% home_ad 'realtor' %}
 </main>
 {% endblock %}

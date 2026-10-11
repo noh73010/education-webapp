@@ -1,0 +1,26 @@
+.home-ad {
+  box-sizing: border-box;
+  width: min(100%, 960px);
+  margin: 48px auto 40px;
+  padding: 18px;
+  border-top: 1px solid rgba(67, 90, 119, .18);
+  color: #50627d;
+}
+
+.home-ad-label {
+  margin: 0 0 14px;
+  font-size: .82rem;
+  font-weight: 600;
+}
+
+.home-ad-unit {
+  min-height: 100px;
+}
+
+@media (max-width: 768px) {
+  .home-ad {
+    margin-top: 40px;
+    margin-bottom: 112px;
+    padding-inline: 16px;
+  }
+}

@@ -47,6 +47,13 @@ def env_bool(name, default=False):
     }
 
 
+# Manual AdSense units only. No ad code is loaded until explicitly enabled.
+ADSENSE_ENABLED = env_bool("DJANGO_ADSENSE_ENABLED", False)
+ADSENSE_CLIENT_ID = os.environ.get("DJANGO_ADSENSE_CLIENT_ID", "").strip()
+ADSENSE_LOGISTICS_HOME_SLOT = os.environ.get("DJANGO_ADSENSE_LOGISTICS_HOME_SLOT", "").strip()
+ADSENSE_REALTOR_HOME_SLOT = os.environ.get("DJANGO_ADSENSE_REALTOR_HOME_SLOT", "").strip()
+
+
 def env_list(name, default=""):
     return [
         item.strip()
