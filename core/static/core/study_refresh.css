@@ -1,0 +1,212 @@
+/* A shared reading and action hierarchy with separate qualification identities. */
+body.theme-logistics,
+body.theme-realtor {
+  font-family: "Malgun Gothic", "Apple SD Gothic Neo", Arial, sans-serif;
+  --study-radius: 22px;
+  --study-ink: #20344b;
+  --study-muted: #53677b;
+  --study-border: #dbe5e8;
+  --study-action: #245f73;
+  --study-action-dark: #184b5d;
+  --study-wash: #eaf3f4;
+}
+
+body.theme-realtor {
+  --study-ink: #302c43;
+  --study-muted: #625b70;
+  --study-border: #e5ddec;
+  --study-action: #684d86;
+  --study-action-dark: #533a70;
+  --study-wash: #f4eef8;
+}
+
+body.theme-logistics .card,
+body.theme-realtor .card { border-radius: var(--study-radius); }
+body.theme-logistics :is(.section-title, .card-title),
+body.theme-realtor :is(.section-title, .card-title) { line-height: 1.28; letter-spacing: -.025em; }
+body.theme-logistics :is(.main-button, .sub-button):focus-visible,
+body.theme-realtor :is(.main-button, .sub-button):focus-visible {
+  outline: 3px solid var(--study-action);
+  outline-offset: 3px;
+}
+body.theme-logistics .main-button,
+body.theme-realtor .main-button {
+  min-height: 48px;
+  background: var(--study-action);
+  color: #fff;
+}
+body.theme-logistics .main-button:hover,
+body.theme-realtor .main-button:hover { background: var(--study-action-dark); }
+
+/* The first decision on either home receives the only strong action treatment. */
+.study-home-hero { overflow: hidden; border: 1px solid var(--study-border) !important; }
+.study-home-hero--logistics {
+  min-height: 315px;
+  padding: clamp(24px, 3.8vw, 42px);
+  background: linear-gradient(125deg, #fbfdfd 4%, #edf5f5 100%) !important;
+  box-shadow: 0 18px 42px rgba(38, 78, 91, .1) !important;
+}
+.study-home-hero--logistics::before { background: var(--study-action); }
+.study-home-hero--logistics > :is(.eyebrow, .section-title, .subject-label, .coach-inline-notice, .study-time-picker, .primary-action-wrap, .info-box) {
+  position: relative;
+  z-index: 1;
+  max-width: 60%;
+}
+.study-home-hero--logistics .section-title { font-size: clamp(1.7rem, 3.2vw, 2.35rem); }
+.study-home-hero--logistics .primary-action-wrap { margin-top: 18px; }
+.study-home-hero--logistics .study-home-art {
+  position: absolute;
+  top: 4px;
+  right: -4px;
+  width: min(44%, 455px);
+  height: 305px;
+  object-fit: contain;
+  object-position: right center;
+  pointer-events: none;
+}
+.study-home-hero--logistics > :is(.home-plan-details, .home-quick-tools, .study-course-switch) {
+  position: relative;
+  z-index: 1;
+}
+.study-home-hero--logistics .study-course-switch { display: inline-block; margin-top: 12px; }
+.study-home-hero--logistics .study-course-switch > summary { color: var(--study-action); font-weight: 700; cursor: pointer; }
+.study-home-hero--logistics .study-course-switch .course-switcher-options {
+  padding: 13px;
+  border: 1px solid var(--study-border);
+  border-radius: 15px;
+  background: #fff;
+}
+
+body.theme-realtor .realtor-hero {
+  padding: 7px 5px 2px;
+  border-radius: 0;
+  background: none;
+}
+body.theme-realtor .realtor-hero h1 { margin: 3px 0 4px; font-size: clamp(1.65rem, 3.2vw, 2.2rem); }
+body.theme-realtor .realtor-hero p { margin: 0 0 6px; }
+body.theme-realtor .realtor-hero a { color: var(--study-action); font-weight: 700; text-decoration: none; }
+body.theme-realtor .realtor-next-step.study-home-hero--realtor {
+  padding: clamp(23px, 3.4vw, 36px);
+  background: linear-gradient(125deg, #fffdf9 3%, #f4eff9 100%);
+  box-shadow: 0 18px 42px rgba(80, 55, 107, .085);
+}
+.study-home-hero--realtor .study-home-hero-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(235px, .9fr);
+  align-items: center;
+  column-gap: 18px;
+  min-height: 260px;
+}
+.study-home-hero--realtor .study-home-hero-main > :not(.study-home-art) { grid-column: 1; }
+.study-home-hero--realtor .study-home-art {
+  grid-column: 2;
+  grid-row: 1 / span 5;
+  width: 100%;
+  max-height: 285px;
+  object-fit: contain;
+  object-position: right center;
+}
+.study-home-hero--realtor .study-home-hero-main > .eyebrow { align-self: end; }
+.study-home-hero--realtor .study-home-hero-main > :is(a.main-button, form) { align-self: start; }
+.study-home-hero--realtor .realtor-change { margin-top: 12px; }
+.study-home-hero--realtor .realtor-stage-filters,
+.study-home-hero--realtor .realtor-course-choices { margin-top: 16px; }
+
+/* Supporting evidence is compact and never competes with the study start. */
+body.theme-logistics .study-support-card,
+body.theme-realtor .study-support-card { padding: 20px 23px; box-shadow: none; }
+.study-support-card .section-title { margin: 3px 0 8px; font-size: clamp(1.08rem, 2vw, 1.28rem); }
+.study-support-card p { margin: 5px 0 9px; font-size: .92rem; line-height: 1.6; }
+.study-support-card .sub-button { min-height: 42px; padding: 9px 15px; }
+body.theme-logistics .study-review-card { background: #f7fbfb; }
+body.theme-realtor .study-review-card { background: #fcf9fe; }
+body.theme-logistics .study-weekly-card,
+body.theme-realtor .study-weekly-card { background: #fff; }
+body.theme-logistics .exam-countdown,
+body.theme-realtor .exam-countdown { margin-block: 0 16px; padding: 12px 19px; border-radius: 18px; box-shadow: none; }
+body.theme-realtor .realtor-page .exam-countdown { margin-block: 0; }
+
+/* The realtor outline is a scannable list until a chapter is opened. */
+body.theme-realtor .realtor-chapter-list { display: grid; gap: 7px; padding: 0 18px 16px; }
+body.theme-realtor .realtor-chapter-row {
+  display: block;
+  padding: 0;
+  border: 1px solid #e9e2ef;
+  border-radius: 15px;
+  background: #fff;
+}
+body.theme-realtor .realtor-chapter-row[open] { border-color: #d7c8e6; background: #fdfbff; }
+body.theme-realtor .realtor-chapter-row > summary {
+  display: grid;
+  grid-template-columns: 65px minmax(0, 1fr) auto 18px;
+  align-items: center;
+  gap: 11px;
+  min-height: 62px;
+  padding: 11px 17px;
+  cursor: pointer;
+  list-style: none;
+}
+body.theme-realtor .realtor-chapter-row > summary::-webkit-details-marker { display: none; }
+body.theme-realtor .realtor-chapter-row > summary::after { content: "⌄"; color: var(--study-action); font-weight: 800; }
+body.theme-realtor .realtor-chapter-row[open] > summary::after { transform: rotate(180deg); }
+body.theme-realtor .realtor-chapter-row > summary:focus-visible { outline: 3px solid var(--study-action); outline-offset: 2px; border-radius: 12px; }
+body.theme-realtor .realtor-chapter-row > summary small { color: var(--study-action); font-weight: 750; }
+body.theme-realtor .realtor-chapter-row > summary span { font-size: .84rem; white-space: nowrap; }
+body.theme-realtor .realtor-chapter-expanded { padding: 0 17px 16px 93px; }
+body.theme-realtor .realtor-chapter-expanded p { margin: 1px 0 12px; color: var(--study-muted); font-size: .92rem; line-height: 1.65; }
+body.theme-realtor .realtor-chapter-actions { justify-content: flex-start; }
+
+/* Long reading and answering remain quiet, with the same semantic feedback. */
+body.theme-logistics .theory-page--cards .theory-lesson-card,
+body.theme-realtor .theory-page--cards .theory-lesson-card { line-height: 1.8; }
+body.theme-logistics .cbt-question-text,
+body.theme-realtor .cbt-question-text { max-width: 76ch; font-size: clamp(1.09rem, 2vw, 1.2rem); line-height: 1.8; }
+body.theme-logistics .cbt-choice-option,
+body.theme-realtor .cbt-choice-option { min-height: 56px; padding: 14px 17px; line-height: 1.65; }
+body.theme-logistics .cbt-exam-page .card,
+body.theme-realtor .cbt-exam-page .card { background: #fff; box-shadow: none; }
+body.theme-logistics .exam-result-page .exam-result-hero,
+body.theme-realtor .exam-result-page .exam-result-hero { border-color: var(--study-border); background: var(--study-wash); }
+body.theme-logistics .study-result-next-action,
+body.theme-realtor .study-result-next-action {
+  border: 1px solid var(--study-border);
+  background: var(--study-wash);
+}
+.study-result-next-action .card-title { margin: 4px 0 17px; }
+body.theme-logistics #wrong-note-list > .info-box,
+body.theme-realtor #wrong-note-list > .info-box { border-radius: 16px; line-height: 1.65; }
+
+@media (max-width: 760px) {
+  .study-home-hero--logistics { min-height: 0; padding: 22px 19px; }
+  .study-home-hero--logistics > :is(.eyebrow, .section-title, .subject-label, .coach-inline-notice, .study-time-picker, .primary-action-wrap, .info-box) { max-width: none; }
+  .study-home-hero--logistics .study-home-art {
+    position: static;
+    display: block;
+    width: min(100%, 350px);
+    height: auto;
+    max-height: 205px;
+    margin: -8px auto 5px;
+  }
+  .study-home-hero--realtor .study-home-hero-main { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .study-home-hero--realtor .study-home-hero-main > :not(.study-home-art) { grid-column: 1; }
+  .study-home-hero--realtor .study-home-art {
+    grid-column: 1;
+    grid-row: auto;
+    width: min(100%, 350px);
+    max-height: 205px;
+    margin: -4px auto 0;
+  }
+  body.theme-realtor .realtor-chapter-row > summary { grid-template-columns: 54px minmax(0, 1fr) 15px; }
+  body.theme-realtor .realtor-chapter-row > summary span { grid-column: 2; font-size: .8rem; }
+  body.theme-realtor .realtor-chapter-row > summary::after { grid-column: 3; grid-row: 1 / span 2; }
+  body.theme-realtor .realtor-chapter-expanded { padding: 0 15px 15px; }
+}
+
+@media (max-width: 480px) {
+  body.theme-logistics .study-home-hero .main-button,
+  body.theme-realtor .study-home-hero .main-button { width: 100%; }
+  body.theme-logistics .study-support-card,
+  body.theme-realtor .study-support-card { padding: 17px 18px; }
+  .study-home-hero--logistics .study-home-art,
+  .study-home-hero--realtor .study-home-art { max-height: 170px; }
+}

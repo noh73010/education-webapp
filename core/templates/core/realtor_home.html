@@ -5,17 +5,15 @@
 {% block content %}
 <main class="realtor-page">
   <header class="realtor-hero">
-    {% if first_visit %}<img class="realtor-hero-illustration" src="{% static 'core/illustrations/learning-start.png' %}" alt="" width="112" height="112">{% endif %}
     <p class="eyebrow">공인중개사 학습</p>
     <h1>{% if recent_attempt or pending_work %}지난 학습에서 한 걸음 더 가요{% else %}무엇부터 공부할까요?{% endif %}</h1>
     <p>{% if recent_attempt or pending_work %}오늘 공부할 과목을 정하고 이어가세요.{% else %}원하는 과목부터 골라 시작할 수 있어요.{% endif %}</p>
     <a href="{% url 'landing' %}">다른 자격증 선택</a>
   </header>
 
-  {% include 'core/includes/exam_countdown.html' %}
-
   {% if selected_area %}
-  <section class="card realtor-next-step" aria-labelledby="realtor-next-title">
+  <section class="card realtor-next-step study-home-hero study-home-hero--realtor" aria-labelledby="realtor-next-title">
+    <div class="study-home-hero-main">
     <p class="eyebrow">오늘의 시작점 · {% if selected_area.stage == 'first' %}1차{% else %}2차{% endif %} {{ selected_area_number }}과목</p>
     <h2 id="realtor-next-title">{{ selected_area.title }}</h2>
     {% if pending_work %}
@@ -29,12 +27,17 @@
       <p class="realtor-unavailable">{{ selected_area.title }} 문제는 준비 중이에요.{% if selected_group_has_content %} 지금은 단원 이론부터 살펴볼 수 있어요.{% else %} 다른 과목을 골라 학습을 시작해 보세요.{% endif %}</p>
       {% if recommended_area %}<form method="post" action="{% url 'realtor_choose_course' %}" class="realtor-ready-suggestion">{% csrf_token %}<input type="hidden" name="area_code" value="{{ recommended_area.code }}"><input type="hidden" name="start" value="1"><button class="main-button" type="submit">{{ recommended_area.title }} 5분 학습 시작</button></form>{% endif %}
     {% endif %}
+    <img class="study-home-art" src="{% static 'core/illustrations/home-realtor.webp' %}" width="1536" height="1024" alt="동네 지도와 집을 살펴보며 공부하는 수험생" decoding="async">
+    </div>
     <details class="realtor-change" {% if filter_stage != 'all' %}open{% endif %}><summary>다른 과목 선택하기</summary>
   {% else %}
-  <section class="card realtor-next-step" aria-labelledby="realtor-next-title">
+  <section class="card realtor-next-step study-home-hero study-home-hero--realtor" aria-labelledby="realtor-next-title">
+    <div class="study-home-hero-main">
     <p class="eyebrow">첫 번째 선택</p>
     <h2 id="realtor-next-title">오늘 공부할 과목을 골라주세요</h2>
     <p>선택은 언제든 바꿀 수 있고, 기존 학습 기록은 그대로 남습니다.</p>
+    <img class="study-home-art" src="{% static 'core/illustrations/home-realtor.webp' %}" width="1536" height="1024" alt="동네 지도와 집을 살펴보며 공부하는 수험생" decoding="async">
+    </div>
   {% endif %}
 
     <nav class="realtor-stage-filters" aria-label="과목 보기 범위">
@@ -53,6 +56,8 @@
   {% if selected_area %}</details>{% endif %}
   </section>
 
+  {% include 'core/includes/exam_countdown.html' %}
+
   {% if selected_area %}{% include 'core/includes/review_start.html' %}{% include 'core/includes/weekly_changes.html' %}{% endif %}
   {% if selected_group %}
   {% if selected_group_has_content %}<section class="card realtor-chapters" aria-labelledby="realtor-chapters-title">
@@ -61,13 +66,13 @@
     {% if selected_group.exam_course != selected_group.course %}<p class="meta-text">학습 메뉴에서는 공시법과 세법을 5·6과목으로 나눕니다. 모의고사에서는 두 영역을 합쳐 한 과목으로 채점합니다.</p>{% endif %}
     <div class="realtor-chapter-list">
       {% for chapter in selected_group.chapters %}
-        <div class="realtor-chapter-row">
-          <div class="realtor-chapter-copy"><small>{{ forloop.counter }}단원</small><b>{{ chapter.chapter_name }}</b>{% if chapter.theory_summary %}<p>{{ chapter.theory_summary }}</p>{% endif %}<span>{{ chapter.status }}</span></div>
-          <div class="realtor-chapter-actions">
+        <details class="realtor-chapter-row" {% if forloop.first %}open{% endif %}>
+          <summary><small>{{ forloop.counter }}단원</small><b>{{ chapter.chapter_name }}</b><span>{{ chapter.status }}</span></summary>
+          <div class="realtor-chapter-expanded">{% if chapter.theory_summary %}<p>{{ chapter.theory_summary }}</p>{% endif %}<div class="realtor-chapter-actions">
             {% if chapter.has_theory %}<a href="{% url 'theory_chapter' chapter.slug %}">핵심 이론</a>{% endif %}
             {% if chapter.total_count %}<a class="realtor-chapter-practice" href="{% url 'chapter_practice_start' chapter.slug %}">문제 풀기</a>{% else %}<span class="realtor-chapter-pending">문제 준비 중</span>{% endif %}
-          </div>
-        </div>
+          </div></div>
+        </details>
       {% endfor %}
     </div>
   </section>{% else %}<details class="card realtor-chapters realtor-chapters--pending"><summary>{{ selected_group.course }} 단원 목차 보기 <span>자료 준비 중</span></summary><div class="realtor-chapter-list">

@@ -8,40 +8,9 @@
 
 {% include 'core/includes/exam_countdown.html' with exam_countdown=personal_coach %}
 
-{% if selected_course %}
-<section class="card selected-course-banner" aria-label="현재 공부 중인 과목">
-  <div>
-    <p class="eyebrow">{{ current_subject.name }} · 오늘의 집중 과목</p>
-    <h1>{% if selected_area %}{{ selected_area.title }}{% else %}{{ selected_course }}{% endif %}</h1>
-    <p>오늘은 이 과목부터 시작해요. 다른 과목은 언제든 선택할 수 있습니다.</p>
-  </div>
-  {% if is_realtor_subject %}
-    <a href="{% url 'realtor_home' %}">다른 과목 선택</a>
-  {% else %}
-  <div class="selected-course-actions">
-  <details class="course-switcher">
-    <summary>과목·자격증 바꾸기</summary>
-    <div class="course-switcher-options">
-      {% for option in course_options %}
-        {% if option.name != selected_course %}
-          <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="course" value="{{ option.name }}">
-            <button type="submit" class="sub-button">{{ option.name }}</button>
-          </form>
-        {% endif %}
-      {% endfor %}
-      <a href="{% url 'landing' %}" class="sub-button qualification-switch-link">다른 자격증 선택</a>
-    </div>
-  </details>
-  </div>
-  {% endif %}
-</section>
-{% endif %}
-
 <div class="home-primary-grid">
-<section class="card daily-focus-card coach-summary-card coach-summary-action {% if daily_progress.total and daily_progress.done == daily_progress.total %}is-complete{% endif %}">
-  <p class="eyebrow">오늘 학습</p>
+<section class="card daily-focus-card coach-summary-card coach-summary-action study-home-hero{% if is_logistics_subject %} study-home-hero--logistics{% endif %} {% if daily_progress.total and daily_progress.done == daily_progress.total %}is-complete{% endif %}">
+  <p class="eyebrow">{{ current_subject.name }} · 오늘 학습{% if selected_course %} · {% if selected_area %}{{ selected_area.title }}{% else %}{{ selected_course }}{% endif %}{% endif %}</p>
   <h1 class="section-title">{% if subject_mission_count == 0 %}준비된 과목부터 시작해요{% elif recent_attempts %}지난 학습을 이어가요{% else %}오늘 {{ selected_daily_minutes }}분만 시작해요{% endif %}</h1>
   <p class="subject-label">{% if selected_course %}집중 과목: <b>{% if selected_area %}{{ selected_area.title }}{% else %}{{ selected_course }}{% endif %}</b>{% else %}현재 과목: <b>{{ current_subject.name }}</b>{% endif %}</p>
   {% if is_realtor_subject %}<p><a href="{% url 'realtor_home' %}">1차·2차 과목 목차와 학습 목표 보기</a></p>{% endif %}
@@ -94,6 +63,8 @@
       {% endif %}
     </p>
 
+    {% if is_logistics_subject %}<img class="study-home-art" src="{% static 'core/illustrations/home-logistics.webp' %}" width="1536" height="1024" alt="창고에서 화물차와 항만으로 이어지는 학습 경로를 살펴보는 수험생" decoding="async">{% endif %}
+
     {% if learning_experience.needs_start %}<p class="meta-text">처음이라면 <a href="{% url 'learning_start' %}">3문제 진단</a>으로 출발점을 확인할 수도 있어요.</p>{% endif %}
     <details class="home-plan-details"><summary>오늘 학습 안내와 진행 상황 보기</summary>
     <div class="info-box daily-guide-box"><b>{{ today_guide_message }}</b></div>
@@ -132,6 +103,16 @@
     <p class="meta-text">{{ daily_progress.pct }}% 완료</p>
     </details>
 
+  {% endif %}
+
+  {% if selected_course %}
+    {% if is_realtor_subject %}<a class="study-course-switch" href="{% url 'realtor_home' %}">다른 과목 선택</a>
+    {% else %}<details class="course-switcher study-course-switch"><summary>과목·자격증 바꾸기</summary>
+      <div class="course-switcher-options">
+      {% for option in course_options %}{% if option.name != selected_course %}<form method="post">{% csrf_token %}<input type="hidden" name="course" value="{{ option.name }}"><button type="submit" class="sub-button">{{ option.name }}</button></form>{% endif %}{% endfor %}
+      <a href="{% url 'landing' %}" class="sub-button qualification-switch-link">다른 자격증 선택</a>
+      </div>
+    </details>{% endif %}
   {% endif %}
 
   <details class="home-quick-tools"><summary>다른 학습 방법 보기</summary><div class="quick-action-row">

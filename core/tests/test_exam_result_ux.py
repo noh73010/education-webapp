@@ -67,6 +67,9 @@ class ExamResultUxTests(TestCase):
         self.assertContains(response, "가장 위험한 약점 3개")
         self.assertContains(response, "해설 보기", count=5)
         self.assertContains(response, "전체 오답 보기")
+        if response.context["recommend_missions"]:
+            content = response.content.decode()
+            self.assertLess(content.index("다음에 할 공부"), content.index("이번 시험 요약"))
 
     def test_full_wrong_list_is_paginated_twenty_at_a_time(self):
         url = reverse("exam_wrong_answers", args=[self.exam.pk])

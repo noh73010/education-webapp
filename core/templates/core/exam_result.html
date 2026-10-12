@@ -26,6 +26,14 @@
     {% endif %}
   </section>
 
+  {% if recommend_missions %}
+  <section class="card study-result-next-action">
+    <p class="eyebrow">다음에 할 공부</p>
+    <h2 class="card-title">약했던 영역을 5문제로 다시 확인해 보세요</h2>
+    <a href="{% url 'exam_recommend_start' exam.id %}" class="main-button">추천 복습 시작</a>
+  </section>
+  {% endif %}
+
   <section class="card">
     <h2 class="card-title">이번 시험 요약</h2>
     <p>{{ result_title }}</p>
@@ -69,16 +77,6 @@
       <p>{{ unanswered_count }}문제는 시험 점수에는 0점으로 계산되지만 오답노트와 약점 분석에는 반영하지 않았습니다.</p>
     </section>
   {% endif %}
-
-  <section class="card">
-    <h2 class="card-title">다른 문제로 약점 확인</h2>
-    {% if recommend_missions %}
-      <p>이번 시험에서 약했던 영역의 다른 문제 5개로 짧게 확인해 보세요.</p>
-      <a href="{% url 'exam_recommend_start' exam.id %}" class="main-button">추천 복습 시작</a>
-    {% else %}
-      <p>지금은 위의 대표 오답 해설부터 확인해 주세요.</p>
-    {% endif %}
-  </section>
 
   <section class="card">
     <a href="{% url 'exam_start' %}" class="sub-link">모의고사</a> ·
