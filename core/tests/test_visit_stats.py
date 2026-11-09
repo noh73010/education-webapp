@@ -48,6 +48,30 @@ class VisitStatsTests(TestCase):
         self.assertEqual(DailyVisit.objects.filter(user=self.learner).count(), 1)
         self.assertEqual(DailyVisitTotal.objects.get(day=timezone.localdate()).count, 1)
 
+    def test_owner_can_see_registered_members_and_selected_day_visitors(self):
+        self.learner.email = "learner@example.com"
+        self.learner.save(update_fields=["email"])
+        DailyVisit.objects.create(user=self.learner, day=timezone.localdate())
+        DailyVisitTotal.objects.create(day=timezone.localdate(), count=1)
+        self.client.force_login(self.owner)
+
+        response = self.client.get(
+            reverse("visit_stats"),
+            {"day": timezone.localdate().isoformat()},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "가입 회원 목록")
+        self.assertContains(response, "learner@example.com")
+        self.assertContains(response, "방문 회원")
+
+    def test_other_member_cannot_access_member_or_visitor_lists(self):
+        self.client.force_login(self.learner)
+
+        response = self.client.get(reverse("visit_stats"))
+
+        self.assertEqual(response.status_code, 404)
+
     def test_new_day_and_account_switch_are_recorded(self):
         today = timezone.localdate()
         with patch("core.middleware.timezone.localdate", return_value=today - timedelta(days=1)):

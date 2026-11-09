@@ -21,7 +21,11 @@
         <thead><tr><th>날짜</th><th>계정 수</th><th>기록 기준</th></tr></thead>
         <tbody>
           {% for row in rows %}
-            <tr><td>{{ row.day|date:"Y-m-d" }}</td><td>{{ row.count }}명</td><td>{% if row.exact %}방문 집계{% else %}기존 활동 기록 · 최소 수{% endif %}</td></tr>
+            <tr>
+              <td>{{ row.day|date:"Y-m-d" }}</td>
+              <td>{{ row.count }}명</td>
+              <td>{% if row.exact %}방문 집계 · <a href="?before={{ rows.0.day|date:'Y-m-d' }}&day={{ row.day|date:'Y-m-d' }}">명단 보기</a>{% else %}기존 활동 기록 · 최소 수{% endif %}</td>
+            </tr>
           {% endfor %}
         </tbody>
       </table>
@@ -30,6 +34,60 @@
       <a href="?before={{ older_end_day }}">이전 30일</a>
       {% if has_newer %}<a href="?before={{ newer_end_day }}">다음 30일</a>{% endif %}
     </div>
+  </section>
+
+  <section class="card">
+    <h2 class="card-title">{{ selected_day|date:"Y년 n월 j일" }} 방문 회원</h2>
+    <form method="get" class="inline-form" aria-label="방문 회원 날짜 선택">
+      <label for="visitor-day">확인할 날짜</label>
+      <input id="visitor-day" type="date" name="day" value="{{ selected_day|date:'Y-m-d' }}" max="{% now 'Y-m-d' %}">
+      <button type="submit" class="sub-button">명단 조회</button>
+    </form>
+    <p class="meta-text">로그인한 학습 계정만 표시합니다. 비회원은 개인을 식별하지 않습니다.</p>
+    {% if daily_visitors %}
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead><tr><th>아이디</th><th>이메일</th></tr></thead>
+          <tbody>
+            {% for visit in daily_visitors %}
+              <tr><td>{{ visit.user.username }}</td><td>{{ visit.user.email|default:"미등록" }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="info-box">이 날짜에 확인된 로그인 방문 회원이 없습니다.</div>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h2 class="card-title">가입 회원 목록</h2>
+    <p class="meta-text">총 {{ member_page.paginator.count }}명 · 최근 가입 순 · 한 페이지에 50명</p>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>아이디</th><th>이메일</th><th>가입일</th><th>최근 로그인</th><th>상태</th></tr></thead>
+        <tbody>
+          {% for member in member_page %}
+            <tr>
+              <td>{{ member.username }}</td>
+              <td>{{ member.email|default:"미등록" }}</td>
+              <td>{{ member.date_joined|date:"Y-m-d H:i" }}</td>
+              <td>{% if member.last_login %}{{ member.last_login|date:"Y-m-d H:i" }}{% else %}기록 없음{% endif %}</td>
+              <td>{% if not member.is_active %}비활성{% elif member.is_staff %}운영자{% else %}일반 회원{% endif %}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5">가입 회원이 없습니다.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if member_page.has_other_pages %}
+      <nav class="pagination" aria-label="가입 회원 목록 페이지">
+        {% if member_page.has_previous %}<a href="?day={{ selected_day|date:'Y-m-d' }}&member_page={{ member_page.previous_page_number }}">이전</a>{% endif %}
+        <span>{{ member_page.number }} / {{ member_page.paginator.num_pages }}</span>
+        {% if member_page.has_next %}<a href="?day={{ selected_day|date:'Y-m-d' }}&member_page={{ member_page.next_page_number }}">다음</a>{% endif %}
+      </nav>
+    {% endif %}
   </section>
 </main>
 {% endblock %}
