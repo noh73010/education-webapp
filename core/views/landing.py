@@ -33,7 +33,18 @@ def landing(request):
 
         messages.warning(request, "선택할 수 있는 과목을 다시 확인해 주세요.")
 
+    from core.views.guest_practice import sample_questions
+    from core.services.grading import parse_choice_schema
+    trials = []
+    for subject in subjects:
+        if subject.code not in ("realtor", "logistics"):
+            continue
+        sample = sample_questions(subject.code)
+        if sample:
+            trials.append({"subject": subject, "course": sample[0].course,
+                           "mission": sample[0], "choices": parse_choice_schema(sample[0].answer_schema)})
     return render(request, "core/landing.html", {
+        "trials": trials,
         "subjects": subjects,
         "selected_subject_code": request.session.get(CURRENT_SUBJECT_SESSION_KEY, ""),
         "canonical_url": request.build_absolute_uri(reverse("landing")),

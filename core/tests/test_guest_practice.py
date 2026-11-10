@@ -43,3 +43,28 @@ class GuestPracticeTests(TestCase):
         self.assertRedirects(self.client.post(url, {"action": "save"}), reverse("wrong_notes"), fetch_redirect_response=False)
         self.client.post(url, {"action": "save"})
         self.assertEqual(Attempt.objects.filter(user=user, mission__subject__code="realtor").count(), 5)
+
+    def test_landing_starts_complete_subject_sample_without_course(self):
+        subject, _ = Subject.objects.get_or_create(code="realtor", defaults={"name": "공인중개사"})
+        for course, count in (("Incomplete", 2), ("부동산학개론", 5)):
+            for index in range(count):
+                Mission.objects.create(
+                    subject=subject, course=course, external_id=f"{course}-{index}",
+                    title="Preview", prompt=f"Preview {course} {index}", question_type="choice_one",
+                    correct_answer="1", answer_schema="1|One\n2|Two\n3|Three\n4|Four\n5|Five",
+                    explanation="Preview explanation",
+                )
+        landing = self.client.get(reverse("landing"))
+        self.assertContains(landing, "Preview 부동산학개론 0")
+        self.assertContains(landing, 'name="subject" value="realtor"')
+        self.assertContains(landing, "선택한 자격증 5문제 풀어보기")
+        self.client.post(reverse("guest_practice"), {"action": "start", "subject": "realtor"})
+        state = self.client.session["guest_practice"]
+        self.assertEqual(len(state["questions"]), 5)
+        self.assertEqual(set(Mission.objects.filter(pk__in=[q[0] for q in state["questions"]]).values_list("course", flat=True)), {"부동산학개론"})
+        self.assertContains(self.client.get(reverse("guest_practice")), "Preview 부동산학개론 0")
+
+    def test_incomplete_subject_sample_does_not_start(self):
+        response = self.client.post(reverse("guest_practice"), {"action": "start", "subject": "unavailable"})
+        self.assertNotIn("guest_practice", self.client.session)
+        self.assertContains(response, "아직 준비 중입니다")

@@ -23,6 +23,33 @@ def eligible():
     ).exclude(review_status=Mission.REVIEW_CONFIRMED_ERROR).exclude(course="").exclude(explanation="")
 
 
+def sample_questions(subject, course=""):
+    candidates = eligible().filter(subject__code=subject)
+    if course:
+        candidates = candidates.filter(course=course)
+    else:
+        from django.db.models import Case, IntegerField, Value, When
+        preferred = {"realtor": "부동산학개론", "logistics": "물류관리론"}.get(subject, "")
+        candidates = candidates.annotate(priority=Case(
+            When(course=preferred, then=Value(0)), default=Value(1), output_field=IntegerField(),
+        )).order_by("priority", "course", "pk")
+    if course:
+        candidates = candidates.order_by("pk")
+    selected = []
+    current_course = None
+    for mission in candidates.iterator():
+        if mission.course != current_course:
+            selected = []
+            current_course = mission.course
+        choices = parse_choice_schema(mission.answer_schema)
+        keys = {choice["key"] for choice in choices}
+        if len(choices) == 5 and len(keys) == 5 and mission.correct_answer in keys and mission.explanation.strip():
+            selected.append(mission)
+            if len(selected) == SIZE:
+                return selected
+    return []
+
+
 @never_cache
 @require_http_methods(["GET", "POST"])
 def guest_practice(request):
@@ -30,17 +57,8 @@ def guest_practice(request):
     action = request.POST.get("action")
     error = ""
     if action == "start":
-        candidates = eligible().filter(
-            subject__code=request.POST.get("subject"), course=request.POST.get("course")
-        ).order_by("pk")
-        selected = []
-        for mission in candidates.iterator():
-            choices = parse_choice_schema(mission.answer_schema)
-            keys = {choice["key"] for choice in choices}
-            if len(choices) == 5 and len(keys) == 5 and mission.correct_answer in keys and mission.explanation.strip():
-                selected.append([mission.pk, mission.content_version])
-                if len(selected) == SIZE:
-                    break
+        sample = sample_questions(request.POST.get("subject"), request.POST.get("course", ""))
+        selected = [[mission.pk, mission.content_version] for mission in sample]
         if len(selected) == SIZE:
             request.session[KEY] = {"id": uuid4().hex, "questions": selected, "answers": [], "step": 0}
             return redirect("guest_practice")

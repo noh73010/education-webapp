@@ -6,29 +6,59 @@
 {% block meta_robots %}index, follow{% endblock %}
 {% block seo_links %}<link rel="canonical" href="{{ canonical_url }}">{% endblock %}
 {% block body_class %}landing-page{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'core/landing.css' %}?v=20261003-2">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'core/landing.css' %}?v=20261111-2">{% endblock %}
 
 {% block content %}
 
 <main class="landing-main">
 <section class="landing-hero" aria-labelledby="landing-title">
   <div class="landing-copy">
-    <p class="landing-eyebrow">문제풀이에서 끝나지 않는 학습</p>
-    <h1 id="landing-title">틀린 이유를 찾고,<br>다시 맞힐 때까지.</h1>
-    <p class="landing-lead">오늘 가능한 시간만 고르면 오답 기록과 복습 시점에 맞춰 다음 학습을 안내합니다.</p>
+    <p class="landing-eyebrow">합격한걸음 · 가볍게 시작하는 자격증 공부</p>
+    <h1 id="landing-title">내 자격증 실력,<br><em>5문제</em>로 확인해 보세요.</h1>
+    <p class="landing-lead">가입 없이 풀고, 정답과 해설까지 바로.<br>오늘의 첫 공부는 이 정도면 충분해요.</p>
     {% if user.is_authenticated %}
       <a class="landing-hero-action" href="#subject-selection-title">학습할 자격증 고르기 <span aria-hidden="true">↓</span></a>
+      <a class="trial-secondary-link" href="{% url 'guest_practice' %}">5문제 맛보기 체험하기 →</a>
+    {% elif trials %}
+      <form method="post" action="{% url 'guest_practice' %}" class="landing-trial-form">
+        {% csrf_token %}<input type="hidden" name="action" value="start">
+        <fieldset class="trial-subjects"><legend>어떤 시험을 준비하고 있나요?</legend>
+          {% for trial in trials %}<label class="trial-subject"><input type="radio" name="subject" value="{{ trial.subject.code }}" {% if forloop.first %}checked{% endif %} required><span><strong>{{ trial.subject.name }}</strong><small>{{ trial.course }}부터</small></span></label>{% endfor %}
+        </fieldset>
+        <button type="submit" class="landing-hero-action">선택한 자격증 5문제 풀어보기 <span aria-hidden="true">→</span></button>
+        <p class="trial-reassurance">로그인 없이 시작 · 5문제 전체 해설 · 결과 리포트</p>
+      </form>
     {% else %}
-      <a class="landing-hero-action" href="{% url 'guest_practice' %}">로그인 없이 5문제 풀기</a>
+      <a class="landing-hero-action" href="{% url 'guest_practice' %}">로그인 없이 5문제 풀기 →</a>
     {% endif %}
   </div>
-  <img class="landing-hero-illustration" src="{% static 'core/illustrations/learning-journey.png' %}" width="1672" height="941" alt="문제를 풀며 헷갈린 개념을 익히고 다시 맞히는 학습 과정" decoding="async" fetchpriority="high">
+  {% if trials %}
+  <aside class="trial-preview-shell" aria-label="실제 맛보기 문제 미리보기">
+    {% for trial in trials %}
+    <article class="trial-preview" data-subject="{{ trial.subject.code }}">
+      <div class="trial-preview-top"><span>문제 미리보기</span><span>{{ trial.subject.name }}</span></div>
+      <p class="trial-preview-course">{{ trial.course }} · 실제 맛보기 문제</p>
+      <h2>{{ trial.mission.prompt }}</h2>
+      <div class="trial-preview-choices">{% for choice in trial.choices|slice:":2" %}<p><span>{{ choice.key }}</span>{{ choice.label }}</p>{% endfor %}</div>
+      <p class="trial-preview-note">5개 보기 중 일부예요. 체험에서 전체 문제를 풀어보세요.</p>
+      <details class="trial-preview-explanation"><summary>어떤 해설을 볼 수 있나요?</summary><p><strong>정답 {{ trial.mission.correct_answer }}번</strong><br>{{ trial.mission.explanation|linebreaksbr }}</p></details>
+      <div class="trial-preview-footer"><span>문제 풀기</span><b aria-hidden="true">→</b><span>해설 확인</span><b aria-hidden="true">→</b><span>5문제 리포트</span></div>
+    </article>
+    {% endfor %}
+  </aside>
+  {% endif %}
+</section>
+
+<section class="landing-benefits" aria-label="맛보기에서 확인할 수 있는 것">
+  <article><span>01</span><div><h2>풀면서 바로 이해</h2><p>정답과 해설을 한 문제씩 확인해요.</p></div></article>
+  <article><span>02</span><div><h2>5문제를 한눈에</h2><p>내 답·정답·해설이 담긴 리포트를 받아요.</p></div></article>
+  <article><span>03</span><div><h2>다음 공부도 자연스럽게</h2><p>로그인 후 기록을 저장하고 복습을 이어가요.</p></div></article>
 </section>
 
 <section class="subject-selection" aria-labelledby="subject-selection-title">
   <div class="subject-section-heading">
-    <h2 id="subject-selection-title">자격증 선택</h2>
-    <p>학습할 자격증을 선택하면 오늘의 개인 학습 계획으로 이동합니다.</p>
+    <h2 id="subject-selection-title">자격증 선택 · 본격적으로 공부하기</h2>
+    <p>회원 학습에서는 단원별 문제와 모의고사, 오답 복습을 이어갈 수 있어요.</p>
   </div>
 
   {% if subjects %}
@@ -58,23 +88,6 @@
   {% else %}
     <div class="landing-empty-state">현재 선택 가능한 과목이 없습니다. 기본 과목을 준비 중입니다.</div>
   {% endif %}
-</section>
-
-<section class="landing-proof" aria-label="개인화 학습 예시">
-  <article><span>01</span><b>오답 원인 확인</b><p>내 답과 정답을 가르는 기준부터 짧게 확인합니다.</p></article>
-  <article><span>02</span><b>약점은 신중하게 판정</b><p>한 번의 실수는 관찰하고, 반복 근거가 쌓일 때만 약점으로 안내합니다.</p></article>
-  <article><span>03</span><b>시간을 두고 재평가</b><p>다시 맞힌 순간이 아니라 며칠 뒤에도 기억하는지 확인합니다.</p></article>
-</section>
-
-<section class="landing-example" aria-label="학습 변화 예시">
-  <p class="landing-eyebrow">이렇게 달라집니다 · 예시</p>
-  <h2>틀린 문제에서 다음 공부까지</h2>
-  <ol class="landing-example-steps">
-    <li><b>문제를 틀렸다면</b><p>예: 재고관리에서 안전재고와 재주문점을 헷갈렸어요.</p></li>
-    <li><b>왜 틀렸는지 확인하고</b><p>두 개념을 구분하는 기준을 짧게 비교해요.</p></li>
-    <li><b>다시 확인해요</b><p>관련 문제를 복습하고, 시간이 지난 뒤에도 기억하는지 살펴봐요.</p></li>
-  </ol>
-  <p class="landing-example-note">실제 학습 안내는 나의 풀이 기록에 따라 달라집니다.</p>
 </section>
 
 <footer class="landing-footer" aria-label="서비스 안내">

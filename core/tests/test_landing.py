@@ -16,10 +16,8 @@ class LandingPageTests(TestCase):
         response = self.client.get(reverse("landing"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "틀린 이유를 찾고")
-        self.assertContains(response, "core/illustrations/learning-journey.png")
-        self.assertIsNotNone(finders.find("core/illustrations/learning-journey.png"))
-        self.assertContains(response, "안전재고와 재주문점을 헷갈렸어요")
+        self.assertContains(response, "내 자격증 실력")
+        self.assertNotContains(response, "core/illustrations/learning-journey.png")
         self.assertContains(response, f'href="{reverse("guest_practice")}"')
         self.assertContains(response, "자격증 선택")
         self.assertContains(response, "물류관리사")
@@ -29,7 +27,7 @@ class LandingPageTests(TestCase):
         self.assertNotContains(response, "컴활 2급")
         self.assertContains(response, "학습 시작")
         html = response.content.decode()
-        self.assertLess(html.index('class="subject-selection"'), html.index('class="landing-proof"'))
+        self.assertLess(html.index('class="subject-selection"'), html.index('class="landing-footer"'))
         self.assertContains(response, reverse("signup"))
         self.assertContains(response, reverse("login"))
 
