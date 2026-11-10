@@ -26,7 +26,7 @@
           {% for trial in trials %}<label class="trial-subject"><input type="radio" name="subject" value="{{ trial.subject.code }}" {% if forloop.first %}checked{% endif %} required><span><strong>{{ trial.subject.name }}</strong><small>{{ trial.course }}부터</small></span></label>{% endfor %}
         </fieldset>
         <button type="submit" class="landing-hero-action">선택한 자격증 5문제 풀어보기 <span aria-hidden="true">→</span></button>
-        <p class="trial-reassurance">로그인 없이 시작 · 5문제 전체 해설 · 결과 리포트</p>
+        <p class="trial-reassurance">로그인 없이 시작 · 매일 바뀌는 5문제 · 전체 해설</p>
       </form>
     {% else %}
       <a class="landing-hero-action" href="{% url 'guest_practice' %}">로그인 없이 5문제 풀기 →</a>

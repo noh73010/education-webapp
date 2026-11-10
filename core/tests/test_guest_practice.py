@@ -1,3 +1,6 @@
+from datetime import date, datetime, timezone as dt_timezone
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -20,9 +23,10 @@ class GuestPracticeTests(TestCase):
         self.assertContains(self.client.get(url), 'value="logistics"')
         self.assertContains(self.client.get(url), 'value="realtor"')
         self.client.post(url, {"action": "start", "subject": "realtor", "course": "Sample"})
-        for index in range(5):
+        question_ids = [row[0] for row in self.client.session["guest_practice"]["questions"]]
+        for index, pk in enumerate(question_ids):
             response = self.client.get(url)
-            self.assertContains(response, f"Question {index}")
+            self.assertContains(response, Mission.objects.get(pk=pk).prompt)
             self.assertNotContains(response, "A private explanation until graded")
             self.client.post(url, {"action": "answer", "step": index, "answer": "1", "confidence": "guessed"})
             self.assertContains(self.client.get(url), "A private explanation until graded")
@@ -30,8 +34,8 @@ class GuestPracticeTests(TestCase):
         self.assertContains(self.client.get(url), "5문제 중 5문제 정답")
         result = self.client.get(url)
         self.assertEqual(len(result.context["review"]), 5)
-        for index in range(5):
-            self.assertContains(result, f"Question {index}")
+        for pk in question_ids:
+            self.assertContains(result, Mission.objects.get(pk=pk).prompt)
         self.assertContains(result, "A private explanation until graded", count=5)
         self.assertEqual(result.context["review_count"], 5)
         self.assertContains(result, "정답 · 다시 확인", count=5)
@@ -55,16 +59,44 @@ class GuestPracticeTests(TestCase):
                     explanation="Preview explanation",
                 )
         landing = self.client.get(reverse("landing"))
-        self.assertContains(landing, "Preview 부동산학개론 0")
+        self.assertContains(landing, "Preview 부동산학개론")
         self.assertContains(landing, 'name="subject" value="realtor"')
         self.assertContains(landing, "선택한 자격증 5문제 풀어보기")
         self.client.post(reverse("guest_practice"), {"action": "start", "subject": "realtor"})
         state = self.client.session["guest_practice"]
         self.assertEqual(len(state["questions"]), 5)
         self.assertEqual(set(Mission.objects.filter(pk__in=[q[0] for q in state["questions"]]).values_list("course", flat=True)), {"부동산학개론"})
-        self.assertContains(self.client.get(reverse("guest_practice")), "Preview 부동산학개론 0")
+        self.assertContains(self.client.get(reverse("guest_practice")), "Preview 부동산학개론")
 
     def test_incomplete_subject_sample_does_not_start(self):
         response = self.client.post(reverse("guest_practice"), {"action": "start", "subject": "unavailable"})
         self.assertNotIn("guest_practice", self.client.session)
         self.assertContains(response, "아직 준비 중입니다")
+
+    def test_daily_sample_is_stable_rotates_and_preserves_in_progress_run(self):
+        from core.views.guest_practice import sample_questions
+        subject, _ = Subject.objects.get_or_create(code="realtor", defaults={"name": "공인중개사"})
+        for index in range(12):
+            Mission.objects.create(subject=subject, course="Daily", external_id=f"daily-{index}",
+                title="Daily", prompt=f"Daily {index}", question_type="choice_one", correct_answer="1",
+                answer_schema="1|One\n2|Two\n3|Three\n4|Four\n5|Five", explanation="Daily explanation")
+        url = reverse("guest_practice")
+        with patch("core.views.guest_practice.timezone.now", return_value=datetime(2026, 11, 10, 14, 59, tzinfo=dt_timezone.utc)):
+            first = [m.pk for m in sample_questions("realtor", "Daily")]
+            self.assertEqual(first, [m.pk for m in sample_questions("realtor", "Daily")])
+            self.client.post(url, {"action": "start", "subject": "realtor", "course": "Daily"})
+            self.assertEqual(first, [q[0] for q in self.client.session["guest_practice"]["questions"]])
+        with patch("core.views.guest_practice.timezone.now", return_value=datetime(2026, 11, 10, 15, 0, tzinfo=dt_timezone.utc)):
+            second = [m.pk for m in sample_questions("realtor", "Daily")]
+            self.assertEqual(len(set(second)), 5)
+            self.assertTrue(set(first).isdisjoint(second))
+            self.assertEqual(self.client.get(url).context["mission"].pk, first[0])
+            self.client.post(url, {"action": "start", "subject": "realtor", "course": "Daily"})
+            self.assertEqual(second, [q[0] for q in self.client.session["guest_practice"]["questions"]])
+
+    def test_exactly_five_available_questions_remain_usable(self):
+        from core.views.guest_practice import daily_sample
+        from types import SimpleNamespace
+        missions = [SimpleNamespace(pk=i, subject=SimpleNamespace(code="realtor"), course="Only five") for i in range(5)]
+        self.assertEqual({m.pk for m in daily_sample(missions)}, set(range(5)))
+        self.assertEqual(daily_sample(missions[:4]), [])

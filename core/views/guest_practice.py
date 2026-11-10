@@ -1,9 +1,12 @@
+from hashlib import sha256
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.views import redirect_to_login
 from django.db import transaction
 from django.shortcuts import redirect, render
+from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
 
@@ -23,6 +26,19 @@ def eligible():
     ).exclude(review_status=Mission.REVIEW_CONFIRMED_ERROR).exclude(course="").exclude(explanation="")
 
 
+def daily_sample(missions):
+    if len(missions) < SIZE:
+        return []
+    # A stable shuffled pool rotates by five each Korean calendar day.
+    # Unlike independently random daily draws, consecutive days cannot be identical
+    # when more than five valid questions are available.
+    pool = sorted(missions, key=lambda m: sha256(
+        f"guest-daily-v1:{m.subject.code}:{m.course}:{m.pk}".encode()
+    ).digest())
+    start = timezone.localdate(timezone=ZoneInfo("Asia/Seoul")).toordinal() * SIZE % len(pool)
+    return [pool[(start + index) % len(pool)] for index in range(SIZE)]
+
+
 def sample_questions(subject, course=""):
     candidates = eligible().filter(subject__code=subject)
     if course:
@@ -39,15 +55,15 @@ def sample_questions(subject, course=""):
     current_course = None
     for mission in candidates.iterator():
         if mission.course != current_course:
+            if len(selected) >= SIZE:
+                return daily_sample(selected)
             selected = []
             current_course = mission.course
         choices = parse_choice_schema(mission.answer_schema)
         keys = {choice["key"] for choice in choices}
         if len(choices) == 5 and len(keys) == 5 and mission.correct_answer in keys and mission.explanation.strip():
             selected.append(mission)
-            if len(selected) == SIZE:
-                return selected
-    return []
+    return daily_sample(selected)
 
 
 @never_cache
