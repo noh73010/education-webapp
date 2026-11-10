@@ -1,6 +1,6 @@
 {% extends 'core/base.html' %}
 {% block title %}시험 결과{% endblock %}
-{% block content %}
+{% block content %}<section class="card"><p>문제 구성: {% if exam.mode_config.purpose == 'practice' %}새 문제 중심 연습{% else %}실전 점검{% endif %}</p><p>이미 풀어본 문제 {{ exam.mode_config.seen_count|default:0 }} / {{ exam.total_questions }}개 ({{ exam.mode_config.seen_percent|default:0 }}%) · 실전 점검은 숙달 문제도 포함할 수 있습니다.</p></section>
 <main class="cbt-page exam-result-page">
   <section class="card exam-result-hero">
     <p class="meta-text">최종 판정</p>

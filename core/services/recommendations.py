@@ -213,11 +213,14 @@ def get_recommended_missions(
     - extra_seed가 있으면 같은 날에도 다른 추천 생성 가능
     """
     recommendation_limit = max(1, min(int(recommendation_limit), 10))
+    from core.services.efficient_learning import suppressed_ids
+    annotated_qs = annotated_qs.exclude(pk__in=suppressed_ids(user))
     annotated_qs = annotated_qs.filter(is_usable_for_set=True).exclude(
         review_status=Mission.REVIEW_CONFIRMED_ERROR,
     )
 
-    today = date.today().isoformat()
+    from django.utils import timezone
+    today = timezone.localdate().isoformat()
     seed = f"{user.id}:{today}:{extra_seed}"
 
     def stable_key(prefix: str, mission_id: int) -> str:
@@ -243,9 +246,27 @@ def get_recommended_missions(
             .values_list("wrong_pattern__code", flat=True)
         )
 
-    chapter_candidates = list(annotated_qs[:candidate_limit])
+    chapter_candidates = list(annotated_qs.order_by("my_total", "id")[:candidate_limit])
+    review_candidates = list(annotated_qs.filter(my_total__gt=0).order_by("my_last_is_correct", "id")[:candidate_limit])
+    candidate_ids = {m.pk for m in chapter_candidates}
+    chapter_candidates += [m for m in review_candidates if m.pk not in candidate_ids]
     decorate_missions_for_display(chapter_candidates)
     decorate_missions_with_review_state(user, chapter_candidates)
+    # Keep fresh learning moving; a recent correct answer is not repeated
+    # immediately just because the learner did not fill out a confidence form.
+    chapter_candidates = [m for m in chapter_candidates if not (
+        m.my_review_status in ("confirm", "wrong", "uncertain") and not m.my_review_is_due)]
+    due = sorted([m for m in chapter_candidates if m.my_review_is_due],
+                 key=lambda m:(m.my_review_priority, m.my_review_due_date, stable_key("due",m.pk)))
+    if due:
+        review_budget = max(1, recommendation_limit // 3)
+        picked = due[:review_budget]
+        new = [m for m in chapter_candidates if (m.my_total or 0) == 0]
+        new.sort(key=lambda m:(m.chapter_code or "", stable_key("new",m.pk)))
+        picked += new[:recommendation_limit-len(picked)]
+        # When no fresh questions remain, use only actually due review work.
+        picked += [m for m in due[review_budget:] if m not in picked][:recommendation_limit-len(picked)]
+        return picked, today
     chapter_selection = _chapter_progression_recommendations(
         chapter_candidates,
         level,
@@ -273,6 +294,7 @@ def get_recommended_missions(
     decorate_missions_for_display(candidates)
     decorate_missions_with_review_state(user, candidates)
 
+    candidates = [m for m in candidates if not (m.my_review_status in ("confirm", "wrong", "uncertain") and not m.my_review_is_due)]
     # -------- 약점 스킬 계산 --------
     skill_attempt_qs = Attempt.objects.valid_for_learning().filter(user=user)
     if subject is not None:

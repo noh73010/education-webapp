@@ -16,7 +16,9 @@
 
   {% if items %}
     <p class="mt-medium">
-      <a href="{% url 'problem_set_start' problem_set.id %}" class="main-button">세트 시작하기</a>
+      <a href="{% url 'problem_set_start' problem_set.id %}?mode=new" class="main-button">새 문제로 세트 시작</a>
+      <a href="{% url 'problem_set_start' problem_set.id %}?mode=review" class="sub-button">오답·헷갈린 문제 복습</a>
+      <a href="{% url 'problem_set_start' problem_set.id %}?mode=history" class="sub-button">풀었던 문제 다시 보기</a>
     </p>
   {% else %}
     <div class="info-box">

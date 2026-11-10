@@ -389,6 +389,7 @@ class Attempt(models.Model):
     mission = models.ForeignKey(Mission, on_delete=models.PROTECT)
 
     is_correct = models.BooleanField(default=False)
+    learning_evidence = models.BooleanField(default=False)
     time_spent_sec = models.PositiveIntegerField(null=True, blank=True)
     submitted_answer = models.TextField(blank=True, default="")
     confidence_level = models.CharField(
@@ -718,6 +719,7 @@ class ProblemSetItem(models.Model):
 
 
 class ProblemSetSession(models.Model):
+    learning_mode = models.CharField(max_length=12, blank=True, default="")
     STATUS_CHOICES = [
         ("in_progress", "진행중"),
         ("completed", "완료"),
@@ -933,3 +935,13 @@ class MissionWork(models.Model):
     class Meta:
         constraints = [models.UniqueConstraint(fields=["user", "mission"],
                        condition=models.Q(attempt__isnull=True), name="unique_pending_mission_work")]
+
+
+class LearningExposure(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    mission = models.ForeignKey(Mission, on_delete=models.CASCADE)
+    viewed_at = models.DateTimeField(auto_now=True)
+    known_until = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['user', 'mission'], name='unique_learning_exposure')]

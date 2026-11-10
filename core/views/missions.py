@@ -792,6 +792,13 @@ def mission_detail(request, mission_id):
             raw, allowed_hosts={request.get_host()}
         ) else ""
 
+    if request.method == "GET" and request.GET.get("explanation") == "1":
+        from core.models import LearningExposure
+        from core.services.efficient_learning import alternatives
+        if LearningExposure.objects.filter(user=request.user, mission=mission).exists():
+            return render(request, "core/learning_explanation.html", {"mission": mission,
+                "alternatives": alternatives(request.user, mission), "choices": parse_choice_schema(mission.answer_schema)})
+
     reason_post_attempt = None
     reason_post_selected_ids = set()
     reason_post_continue_url = ""
@@ -1359,7 +1366,10 @@ def mission_detail(request, mission_id):
         else:
             reason_continue_url = reverse("mission_list")
             reason_continue_label = "학습 종료"
+    from core.services.efficient_learning import alternatives
+    concept_alternatives = alternatives(request.user, mission) if saved else []
     return render(request, "core/mission_detail.html", {
+        "concept_alternatives": concept_alternatives,
         "mission": mission,
         "daily_review_state": request.session.get("daily_review_state") if mission.pk in request.session.get("review_mission_ids", []) else None,
         "daily_review_number": request.session.get("review_mission_ids", []).index(mission.pk) + 1 if mission.pk in request.session.get("review_mission_ids", []) else None,

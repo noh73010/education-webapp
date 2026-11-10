@@ -27,12 +27,12 @@
 {% else %}
 <section class="card exam-mode-card is-recommended">
   <h2>짧은 실전 연습</h2><p>10문제 · 10분</p><p>짧게 풀며 실력을 확인해요. 전체 합격 판정은 하지 않습니다.</p>
-  <form method="post" action="{% url 'exam_create' %}">{% csrf_token %}<input type="hidden" name="mode" value="short"><button type="submit" {% if not can_start_short %}disabled{% endif %}>10분 연습 시작</button></form>
+  <form method="post" action="{% url 'exam_create' %}">{% csrf_token %}<input type="hidden" name="mode" value="short"><label>문제 구성 <select name="purpose"><option value="practice">새 문제 중심 연습 · 본 문제 제외</option><option value="assessment">실전 점검 · 기존 문제 포함 가능</option></select></label><button type="submit" {% if not can_start_short %}disabled{% endif %}>10분 연습 시작</button></form>
   {% if not can_start_short %}<p role="status">선택한 단계의 출제 가능한 문제가 10개 이상 등록되면 이용할 수 있습니다.</p>{% endif %}
 </section>
 <section class="card exam-mode-card">
   <h2>과목별 모의고사</h2><p>한 과목 40문제 · 40분</p><p>40분은 앱의 연습 기준입니다. 실제 시험은 교시 안에서 시간을 배분합니다.</p>
-  <form method="post" action="{% url 'exam_create' %}">{% csrf_token %}<input type="hidden" name="mode" value="course">
+  <form method="post" action="{% url 'exam_create' %}">{% csrf_token %}<input type="hidden" name="mode" value="course"><label>문제 구성 <select name="purpose"><option value="practice">새 문제 중심 연습 · 본 문제 제외</option><option value="assessment">실전 점검 · 기존 문제 포함 가능</option></select></label>
     <label for="exam-course">연습할 과목</label><select id="exam-course" name="course" required>{% for course in courses %}<option value="{{ course }}">{{ course }}</option>{% endfor %}</select>
     <button type="submit" {% if not courses %}disabled{% endif %}>과목별 시험 시작</button>
   </form>

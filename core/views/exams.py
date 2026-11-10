@@ -173,12 +173,13 @@ def create_selected_mode(request):
             exam = begin_second_sitting(request.user, subject, int(request.POST["second_sitting"]))
         else:
             mode, course = request.POST.get("mode"), request.POST.get("course", "")
+            purpose = "assessment" if mode == "full" else request.POST.get("purpose", "practice")
             if mode not in {"short", "course", "full"}:
                 raise ValueError("올바른 모드를 선택해 주세요.")
             if mode == "course" and course not in available_courses(subject, request.user):
                 raise ValueError("올바른 과목을 선택해 주세요.")
             existing = ExamSession.objects.filter(user=request.user, items__mission__subject=subject,
-                mode_config__mode=mode, status__in=["in_progress", "waiting"])
+                mode_config__mode=mode, mode_config__purpose=purpose, status__in=["in_progress", "waiting"])
             if mode == "course":
                 existing = existing.filter(mode_config__course=course)
             exam = existing.distinct().order_by("pk").first()
@@ -187,7 +188,7 @@ def create_selected_mode(request):
                     user=request.user, previous_sitting__isnull=True,
                     started_at__date=timezone.localdate()).exists():
                     raise ValueError("무료 회원은 세 모드를 합쳐 하루 1회 새 시험을 시작할 수 있습니다. 풀던 시험은 계속 이용할 수 있습니다.")
-                exam = create_mode_exam(request.user, subject, mode, course)
+                exam = create_mode_exam(request.user, subject, mode, course, purpose=purpose)
                 record_event(request.user, "start_exam", page="exam_create", metadata={
                     "exam_id": exam.pk, "mode": mode, "total_questions": exam.total_questions,
                     "time_limit_min": exam.time_limit_min})

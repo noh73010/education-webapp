@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="{% static 'core/theory_cards.css' %}?v=3">
 {% endblock %}
 
-{% block content %}
+{% block content %}<section class="card"><a href="{% url 'study_library' %}">새 문제·오답 복습·풀었던 문제와 챕터 현황 보기 →</a><p>기본 챕터 배치는 새 문제만 제공합니다. 새 문제가 부족하면 숙달 문제를 채워 넣지 않습니다.</p></section>
 <main class="theory-page theory-page--cards{% if realtor_area %} theory-area-{{ realtor_area.code }}{% endif %}">
   <nav class="theory-breadcrumb" aria-label="현재 위치">
     {% if current_subject.code == 'realtor' %}<a href="{% url 'realtor_home' %}">공인중개사 단원 목차</a>{% else %}<a href="{% url 'mission_list' %}#learning-roadmap">학습 로드맵</a>{% endif %}

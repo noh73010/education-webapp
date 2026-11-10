@@ -275,7 +275,7 @@ class LogisticsDatasetIntegrationTests(TestCase):
         )
         self.assertNotContains(response, "주간 랭킹 준비 중")
 
-    def test_daily_flow_moves_to_next_unlearned_chapter_then_adds_weak_review(self):
+    def test_daily_flow_moves_to_next_unlearned_chapter_without_immediate_repeat(self):
         lm01_missions = list(
             Mission.objects.filter(
                 subject__code=LOGISTICS_SUBJECT_CODE,
@@ -297,7 +297,7 @@ class LogisticsDatasetIntegrationTests(TestCase):
 
         self.assertEqual(recommended[0].chapter_code, "LM02")
         self.assertTrue(all(mission.chapter_code != "LM01" for mission in recommended[:4]))
-        self.assertEqual(recommended[4].id, weak_mission.id)
+        self.assertNotIn(weak_mission.id, [m.pk for m in recommended])
 
     def test_daily_recommendation_level_ignores_other_subject_attempts(self):
         default_subject = Mission.objects.exclude(subject__code=LOGISTICS_SUBJECT_CODE).first()

@@ -385,10 +385,16 @@ def build_chapter_practice_plan(user, subject, chapter_code: str, *, mode="batch
     ):
         latest_attempts.setdefault(attempt.mission_id, attempt)
 
-    unlearned = [mission for mission in missions if mission.id not in latest_attempts]
+    from core.services.efficient_learning import suppressed_ids
+    from core.services.review_schedule import get_mission_review_states
+    from core.models import LearningExposure
+    excluded = suppressed_ids(user)
+    viewed = set(LearningExposure.objects.filter(user=user, mission_id__in=mission_ids).values_list('mission_id', flat=True))
+    states = get_mission_review_states(user, mission_ids)
+    unlearned = [mission for mission in missions if mission.id not in latest_attempts and mission.pk not in viewed]
     wrong = [
         mission for mission in missions
-        if mission.id in latest_attempts and latest_attempts[mission.id].is_correct is False
+        if states.get(mission.pk, {}).get("status") in ("wrong", "uncertain") and mission.pk not in excluded
     ]
     learned = [
         mission for mission in missions
@@ -402,7 +408,7 @@ def build_chapter_practice_plan(user, subject, chapter_code: str, *, mode="batch
     elif mode == "wrong":
         selected = wrong
     else:
-        selected = (unlearned + wrong + learned)[:batch_size]
+        selected = [m for m in unlearned if m.pk not in excluded][:batch_size]
 
     return {
         "missions": selected,

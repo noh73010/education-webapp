@@ -3,7 +3,7 @@ from django.db import transaction
 from django.db.models import Count, Exists, OuterRef
 from django.utils import timezone
 
-from core.models import Attempt, ExamSession, ExamSessionMission, Mission
+from core.models import Attempt, ExamSession, ExamSessionMission, Mission, LearningExposure
 from core.services.exams import calculate_exam_score, exact_exam_score
 from core.services.logistics_curriculum import LOGISTICS_CURRICULUM
 from core.services.realtor_curriculum import REALTOR_SUBJECT_CODE, courses_for_path
@@ -44,7 +44,7 @@ def missing_full_courses(subject):
     return [course for course in plan["courses"] if counts.get(course, 0) < plan["per_course"]]
 
 
-def select_questions(user, subject, count, course=None):
+def select_questions(user, subject, count, course=None, *, purpose="practice"):
     qs = Mission.objects.filter(subject=subject, is_usable_for_set=True,
         question_type__in=["choice_one", "true_false", "error_detect"]).exclude(
         review_status=Mission.REVIEW_CONFIRMED_ERROR,
@@ -58,15 +58,22 @@ def select_questions(user, subject, count, course=None):
         qs = qs.filter(course__in=courses_for_path(preference.path))
     qs = qs.annotate(seen=Exists(
         Attempt.objects.valid_for_learning().filter(user=user, mission_id=OuterRef("pk"))
-    ))
-    questions = list(qs.order_by("seen", "?")[:count])
+    ) | Exists(LearningExposure.objects.filter(user=user, mission_id=OuterRef("pk"))))
+    from core.services.efficient_learning import suppressed_ids
+    if purpose == "practice":
+        viewed = LearningExposure.objects.filter(user=user).values('mission_id')
+        qs = qs.filter(seen=False).exclude(pk__in=viewed).exclude(pk__in=suppressed_ids(user))
+    questions = list(qs.order_by("?")[:count])
     if len(questions) != count:
-        raise ValueError(f"{course or '선택한 자격증'}: 출제 가능한 문제가 부족합니다. {count}문제 구성이 준비되면 시작할 수 있습니다.")
+        raise ValueError(f"{course or '선택한 자격증'}: 이 목적에 맞는 문제가 부족합니다. 새 문제 중심 연습이 부족하면 실전 점검을 선택해 주세요. {count}문제 구성이 준비되면 시작할 수 있습니다.")
     return questions
 
 
 @transaction.atomic
-def create_mode_exam(user, subject, mode, course=""):
+def create_mode_exam(user, subject, mode, course="", purpose="practice"):
+    purpose = "assessment" if mode == "full" else purpose
+    if purpose not in ("practice", "assessment"):
+        raise ValueError("올바른 시험 목적을 선택해 주세요.")
     plan = blueprint(subject)
     if mode not in {"short", "course", "full"}:
         raise ValueError("올바른 모드를 선택해 주세요.")
@@ -76,22 +83,22 @@ def create_mode_exam(user, subject, mode, course=""):
         raise ValueError("공인중개사 학습 목표를 먼저 선택해 주세요.")
     groups = []
     if mode == "short":
-        groups = [("짧은 실전 연습", 10, select_questions(user, subject, 10))]
+        groups = [("짧은 실전 연습", 10, select_questions(user, subject, 10, purpose=purpose))]
     elif mode == "course":
         if course not in available_courses(subject, user):
             raise ValueError("올바른 과목을 선택해 주세요.")
-        groups = [(f"과목별 모의고사 · {course}", 40, select_questions(user, subject, 40, course))]
+        groups = [(f"과목별 모의고사 · {course}", 40, select_questions(user, subject, 40, course, purpose=purpose))]
     else:
         for number, (start, end, minutes) in enumerate(plan["periods"], 1):
             selected = []
             for name in plan["courses"][start:end]:
-                selected.extend(select_questions(user, subject, plan["per_course"], name))
+                selected.extend(select_questions(user, subject, plan["per_course"], name, purpose=purpose))
             groups.append((f"실전 모의고사 · {number}교시", minutes, selected))
     first = previous = None
     for number, (title, minutes, questions) in enumerate(groups, 1):
-        config = {"mode": mode, "course": course, "period": number,
+        config = {"purpose": purpose, "mode": mode, "course": course, "period": number,
             "plan": plan, "question_courses": {str(q.pk): q.course for q in questions},
-            "seen_count": sum(q.seen for q in questions)}
+            "seen_count": sum(q.seen for q in questions), "seen_percent": round(sum(q.seen for q in questions)*100/len(questions))}
         exam = ExamSession.objects.create(user=user, title=title, time_limit_min=minutes,
             total_questions=len(questions), status="in_progress" if number == 1 else "waiting",
             previous_sitting=previous, mode_config=config)

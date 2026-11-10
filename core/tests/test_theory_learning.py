@@ -205,7 +205,7 @@ class TheoryLearningPathTests(TestCase):
         selected_ids = set(learning_session.items.values_list("mission_id", flat=True))
         self.assertTrue(selected_ids.issubset({m.id for m in self.lm01 + extra_missions}))
 
-    def test_chapter_batch_prioritizes_unlearned_then_wrong_then_old_learned(self):
+    def test_chapter_batch_contains_only_new_questions(self):
         Attempt.objects.create(user=self.user, mission=self.lm01[0], is_correct=True)
         Attempt.objects.create(user=self.user, mission=self.lm01[1], is_correct=False)
 
@@ -218,7 +218,7 @@ class TheoryLearningPathTests(TestCase):
 
         self.assertEqual(
             [mission.id for mission in plan["missions"]],
-            [self.lm01[2].id, self.lm01[1].id, self.lm01[0].id],
+            [self.lm01[2].id],
         )
         self.assertEqual(plan["remaining_count"], 1)
         self.assertEqual(plan["review_count"], 1)

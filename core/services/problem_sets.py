@@ -100,10 +100,11 @@ def finish_problem_set_session(session: ProblemSetSession) -> ProblemSetSession:
 
 
 @transaction.atomic
-def create_problem_set_session_from_missions(*, user, problem_set: ProblemSet, missions) -> ProblemSetSession:
+def create_problem_set_session_from_missions(*, user, problem_set: ProblemSet, missions, learning_mode="") -> ProblemSetSession:
     missions = list(missions)
     session = ProblemSetSession.objects.create(
         user=user,
+        learning_mode=learning_mode,
         problem_set=problem_set,
         status="in_progress",
         total_count=len(missions),

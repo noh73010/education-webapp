@@ -48,7 +48,7 @@ def _build_review_state(attempts, *, today):
     latest = attempts[0]
     latest_date = timezone.localtime(latest.created_at).date()
 
-    if latest.is_correct and latest.confidence_level != Attempt.CONFIDENCE_CERTAIN:
+    if latest.is_correct and latest.confidence_level in (Attempt.CONFIDENCE_GUESSED, Attempt.CONFIDENCE_UNSURE):
         due_date = latest_date + timedelta(days=1)
         return {
             "status": "uncertain",
@@ -62,6 +62,7 @@ def _build_review_state(attempts, *, today):
         due_date = latest_date + timedelta(days=1)
         return {
             "status": "wrong",
+            "priority": 0 if latest.confidence_level == Attempt.CONFIDENCE_CERTAIN else 1,
             "label": "오답 복습",
             "due_date": due_date,
             "is_due": due_date <= today,
@@ -72,7 +73,7 @@ def _build_review_state(attempts, *, today):
     has_recent_wrong = False
     certain_correct_dates = []
     for attempt in attempts:
-        if attempt.is_correct and attempt.confidence_level == Attempt.CONFIDENCE_CERTAIN:
+        if attempt.is_correct and attempt.confidence_level not in (Attempt.CONFIDENCE_GUESSED, Attempt.CONFIDENCE_UNSURE):
             consecutive_correct += 1
             certain_correct_dates.append(timezone.localtime(attempt.created_at).date())
             continue
@@ -83,12 +84,16 @@ def _build_review_state(attempts, *, today):
         consecutive_correct >= 2
         and (max(certain_correct_dates) - min(certain_correct_dates)).days >= 3
     )
+    explicit_certain = all(a.confidence_level == Attempt.CONFIDENCE_CERTAIN for a in attempts[:consecutive_correct])
+    has_delayed_confirmation = has_delayed_confirmation and (
+        explicit_certain or (all(a.learning_evidence for a in attempts[:consecutive_correct]) and consecutive_correct >= 3 and len(set(certain_correct_dates)) >= 3 and (max(certain_correct_dates) - min(certain_correct_dates)).days >= 7)
+    )
     if has_delayed_confirmation:
         return {
             "status": "mastered",
             "label": "숙련",
-            "due_date": None,
-            "is_due": False,
+            "due_date": latest_date + timedelta(days=30),
+            "is_due": latest_date + timedelta(days=30) <= today,
             "consecutive_correct": consecutive_correct,
         }
 
@@ -112,6 +117,7 @@ def decorate_missions_with_review_state(user, missions, *, today=None):
     for mission in missions:
         state = states.get(mission.id, {})
         mission.my_review_status = state.get("status", "new")
+        mission.my_review_priority = state.get("priority", 2)
         mission.my_review_label = state.get("label", "")
         mission.my_review_due_date = state.get("due_date")
         mission.my_review_is_due = state.get("is_due", False)

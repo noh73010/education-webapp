@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from core.models import Attempt, Mission, ProblemSet, ProblemSetSession
 from core.services.analytics import record_event
-from core.services.problem_sets import create_problem_set_session
+from core.services.problem_sets import create_problem_set_session, create_problem_set_session_from_missions
 from core.services.problem_set_recommendations import (
     eligible_problem_sets,
     get_problem_set_recommendations,
@@ -159,6 +159,23 @@ def problem_set_start(request, set_id):
         mission__subject=current_subject,
     ))
 
+    from core.models import LearningExposure
+    from core.services.efficient_learning import suppressed_ids
+    from core.services.review_schedule import get_mission_review_states
+    mode = request.GET.get("mode", "new")
+    if mode not in {"new", "review", "history"}:
+        mode = "new"
+    attempted = set(Attempt.objects.valid_for_learning().filter(user=request.user).values_list("mission_id", flat=True))
+    viewed = set(LearningExposure.objects.filter(user=request.user).values_list("mission_id", flat=True))
+    excluded = suppressed_ids(request.user)
+    states = get_mission_review_states(request.user, [item.mission_id for item in items])
+    if mode == "review":
+        items = [item for item in items if states.get(item.mission_id, {}).get("status") in ("wrong", "uncertain") and item.mission_id not in excluded]
+    elif mode == "history":
+        items = [item for item in items if item.mission_id in attempted | viewed]
+    else:
+        items = [item for item in items if item.mission_id not in attempted | viewed | excluded]
+
     existing_session = (
         ProblemSetSession.objects
         .filter(
@@ -166,6 +183,8 @@ def problem_set_start(request, set_id):
             problem_set=problem_set,
             status="in_progress",
             items__mission__subject=current_subject,
+        )
+        .filter(Q(learning_mode=mode) | Q(learning_mode="") if mode == "new" else Q(learning_mode=mode)
         )
         .distinct()
         .order_by("-started_at")
@@ -208,13 +227,12 @@ def problem_set_start(request, set_id):
         if not items:
             messages.warning(
                 request,
-                "이 문제 세트에는 현재 훈련 가능한 문제가 없습니다. 학습 로드맵에서 새 배치를 시작하세요.",
+                "이 모드에서 풀 문제가 남아 있지 않습니다. 새 문제·복습 현황에서 다른 학습을 선택해 주세요.",
             )
             return redirect("mission_list")
-        session = create_problem_set_session(
-            user=request.user,
-            problem_set=problem_set,
-            subject=current_subject,
+        session = create_problem_set_session_from_missions(
+            user=request.user, problem_set=problem_set, learning_mode=mode,
+            missions=[item.mission for item in items],
         )
 
         mission_ids = [item.mission_id for item in items]

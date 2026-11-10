@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Iterable, Optional
+from datetime import timedelta
 
 from django.db import transaction
 from django.utils import timezone
@@ -16,6 +17,7 @@ from core.models import (
     WrongPattern,
     AttemptWrongPattern,
     ConfusionCard,
+    LearningExposure,
 )
 from core.services.streaks import update_user_streak
 from core.services.weaknesses import resolve_mission_pattern, update_weakness_from_attempt
@@ -57,6 +59,7 @@ def save_attempt(
         is_correct=is_correct,
         submitted_answer=submitted_answer,
         confidence_level=confidence_level,
+        learning_evidence=not LearningExposure.objects.filter(user=user, mission=mission, viewed_at__gte=timezone.now()-timedelta(days=1)).exists(),
         daily_date=today_date if is_daily else None,
     )
 

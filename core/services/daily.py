@@ -83,6 +83,8 @@ def get_or_create_daily_recommendations(
             reset_qs = reset_qs.filter(mission__chapter_code__startswith=chapter_prefix)
         reset_qs.delete()
 
+    from core.services.efficient_learning import suppressed_ids
+    excluded = suppressed_ids(user)
     existing_qs = DailyMission.objects.filter(
         user=user,
         date=today_date,
@@ -97,7 +99,7 @@ def get_or_create_daily_recommendations(
 
     recommendation_limit = max(1, min(int(recommendation_limit), 10))
     existing_ids = list(
-        existing_qs.order_by("id").values_list("mission_id", flat=True)[:recommendation_limit]
+        existing_qs.exclude(mission_id__in=excluded).order_by("id").values_list("mission_id", flat=True)[:recommendation_limit]
     )
 
     if len(existing_ids) >= recommendation_limit:
