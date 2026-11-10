@@ -59,8 +59,10 @@ from core.views.exams import exam_draft
 from core.views.seo import ads_txt, robots_txt, sitemap_xml
 from core.views.visit_stats import visit_stats
 from core.views.stats import wrong_reason_attempts
+from core.views.guest_practice import guest_practice
 
 urlpatterns = [
+    path("practice/", guest_practice, name="guest_practice"),
     path("ads.txt", ads_txt, name="ads_txt"),
     path("robots.txt", robots_txt, name="robots_txt"),
     path("sitemap.xml", sitemap_xml, name="sitemap_xml"),

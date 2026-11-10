@@ -1,0 +1,64 @@
+{% extends 'core/base.html' %}
+{% block title %}무료 5문제 맛보기 | 합격한걸음{% endblock %}
+{% block content %}
+<main class="page-shell compact-page">
+  <section class="card">
+    <h1 class="section-title">무료 5문제 맛보기</h1>
+    {% if error %}<p role="alert">{{ error }}</p>{% endif %}
+    {% if finished %}
+      <h2>5문제 중 {{ score }}문제 정답</h2>
+      <p>틀린 문제 {{ wrong }}개 · 맞혔지만 찍거나 헷갈렸다고 표시한 문제 {{ uncertain }}개</p>
+      <p>회원은 방금 푼 기록을 저장해 오답과 약점을 복습하고, 단원별 문제와 모의고사를 이어서 풀 수 있어요.</p>
+      {% if user.is_authenticated %}
+        <form method="post">{% csrf_token %}
+          <button class="main-button" name="action" value="save">학습 기록 저장하고 복습 이어가기</button>
+        </form>
+      {% else %}
+        <a class="main-button" href="{% url 'login' %}?next={% url 'guest_practice' %}">로그인하고 복습 이어가기</a>
+        <p>같은 브라우저에서 로그인한 뒤 저장을 누르면 방금 푼 기록이 이어집니다.</p>
+      {% endif %}
+    {% elif mission %}
+      <p>{{ mission.subject.name }} · {{ mission.course }} · {{ number }}/5</p>
+      <h2>{{ mission.prompt|linebreaksbr }}</h2>
+      <form method="post">{% csrf_token %}
+        <input type="hidden" name="step" value="{{ step }}">
+        <fieldset>
+          <legend>선택지</legend>
+          {% for choice in choices %}
+            <p>{% if graded %}{{ choice.key }}. {{ choice.label }}{% if choice.key == mission.correct_answer %} <strong>— 정답</strong>{% endif %}{% else %}<label><input type="radio" name="answer" value="{{ choice.key }}" required> {{ choice.key }}. {{ choice.label }}</label>{% endif %}</p>
+          {% endfor %}
+        </fieldset>
+        {% if graded %}
+          <p><strong>{% if correct %}정답이에요.{% else %}오답이에요.{% endif %} 정답: {{ mission.correct_answer }}번</strong></p>
+          <h3>해설</h3>
+          <p>{{ mission.explanation|linebreaksbr }}</p>
+          <button class="main-button" name="action" value="next">{% if number == 5 %}결과 보기{% else %}다음 문제{% endif %}</button>
+        {% else %}
+          <label for="confidence">이 답, 알고 골랐나요?</label>
+          <select id="confidence" name="confidence">
+            <option value="">선택 안 함</option>
+            {% for value, label in confidence_choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+          </select>
+          <p><button class="main-button" name="action" value="answer">정답과 해설 확인</button></p>
+        {% endif %}
+      </form>
+    {% else %}
+      <p>과목을 고르면 바로 시작합니다. 정답과 해설, 최종 결과까지 로그인 없이 볼 수 있어요.</p>
+      {% regroup courses by subject__name as subjects %}
+      {% for subject in subjects %}
+        <h2>{{ subject.grouper }}</h2>
+        {% for item in subject.list %}
+          <form method="post" class="inline-form">{% csrf_token %}
+            <input type="hidden" name="subject" value="{{ item.subject__code }}">
+            <button class="sub-button" name="course" value="{{ item.course }}">{{ item.course }}</button>
+            <input type="hidden" name="action" value="start">
+          </form>
+        {% endfor %}
+      {% empty %}
+        <p>아직 준비된 맛보기 문제가 없습니다.</p>
+      {% endfor %}
+    {% endif %}
+    {% if mission or finished %}<p><a href="?choose=1">다른 과목 선택</a></p>{% endif %}
+  </section>
+</main>
+{% endblock %}

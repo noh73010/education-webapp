@@ -20,7 +20,7 @@ class LandingPageTests(TestCase):
         self.assertContains(response, "core/illustrations/learning-journey.png")
         self.assertIsNotNone(finders.find("core/illustrations/learning-journey.png"))
         self.assertContains(response, "안전재고와 재주문점을 헷갈렸어요")
-        self.assertContains(response, 'href="#subject-selection-title"')
+        self.assertContains(response, f'href="{reverse("guest_practice")}"')
         self.assertContains(response, "자격증 선택")
         self.assertContains(response, "물류관리사")
         self.assertContains(response, "공인중개사")
