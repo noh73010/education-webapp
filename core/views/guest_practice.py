@@ -88,7 +88,18 @@ def guest_practice(request):
                 "graded": graded, "correct": graded and answers[step][2],
                 "confidence_choices": Attempt.CONFIDENCE_CHOICES, "error": error,
             })
+        review = []
+        for number, ((pk, _), (answer, confidence, correct)) in enumerate(zip(state["questions"], answers), 1):
+            mission = missions[pk]
+            review.append({
+                "number": number, "mission": mission, "answer": answer,
+                "correct": correct, "uncertain": correct and confidence in ("guessed", "unsure"),
+                "confidence": dict(Attempt.CONFIDENCE_CHOICES).get(confidence, ""),
+                "choices": parse_choice_schema(mission.answer_schema),
+            })
         return render(request, "core/guest_practice.html", {
+            "review": review, "course": review[0]["mission"].course,
+            "review_count": sum(not row[2] or row[1] in ("guessed", "unsure") for row in answers),
             "finished": True, "score": sum(row[2] for row in answers),
             "wrong": sum(not row[2] for row in answers),
             "uncertain": sum(row[2] and row[1] in ("guessed", "unsure") for row in answers),

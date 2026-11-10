@@ -28,6 +28,13 @@ class GuestPracticeTests(TestCase):
             self.assertContains(self.client.get(url), "A private explanation until graded")
             self.client.post(url, {"action": "next", "step": index})
         self.assertContains(self.client.get(url), "5문제 중 5문제 정답")
+        result = self.client.get(url)
+        self.assertEqual(len(result.context["review"]), 5)
+        for index in range(5):
+            self.assertContains(result, f"Question {index}")
+        self.assertContains(result, "A private explanation until graded", count=5)
+        self.assertEqual(result.context["review_count"], 5)
+        self.assertContains(result, "정답 · 다시 확인", count=5)
         self.assertFalse(Attempt.objects.exists())
         self.assertEqual(self.client.post(url, {"action": "save"}).status_code, 302)
         user = get_user_model().objects.create_user(username="learner", password="test-password")

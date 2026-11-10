@@ -40,3 +40,42 @@
   .guest-practice .guest-question { font-size: 18px; line-height: 1.75; }
   .guest-practice .guest-choice { gap: 10px; padding: 13px 12px; }
 }
+.guest-result-hero { padding: 26px 20px; border-radius: 18px; background: linear-gradient(135deg, #f1ecfa, #edf5fb); text-align: center; }
+.guest-result-kicker { color: #655080; font-size: 13px; font-weight: 700; }
+.guest-practice .guest-result-hero h2 { margin: 12px 0; font-size: clamp(24px, 5vw, 30px); color: #29213e; }
+.guest-result-hero p { color: #5d6075; font-size: 15px; line-height: 1.7; }
+.guest-result-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 24px; }
+.guest-result-stats div { padding: 16px 4px; border-radius: 12px; background: #ffffffc9; }
+.guest-result-stats strong { display: block; color: #563c7a; font-size: 30px; line-height: 1.3; }
+.guest-result-stats small { color: #7b7488; font-size: 15px; }
+.guest-result-stats span { display: block; margin-top: 6px; color: #5d6075; font-size: 12px; }
+.guest-result-hero .guest-result-summary { margin: 14px 0 0; font-size: 13px; }
+.guest-next-step { margin: 24px 0 36px; padding: 22px; border: 1px solid #dfd5ec; border-radius: 18px; background: #fcfaff; }
+.guest-practice .guest-next-step h2, .guest-review-heading h2, .guest-review-end h2 { margin: 6px 0 12px; font-size: 21px; line-height: 1.5; color: #302841; word-break: keep-all; }
+.guest-next-step p, .guest-review-heading p, .guest-review-end p { color: #626b7b; font-size: 15px; line-height: 1.75; }
+.guest-learning-path { list-style: none; counter-reset: steps; padding: 0; margin: 20px 0; display: grid; gap: 14px; }
+.guest-learning-path li { position: relative; padding-left: 38px; counter-increment: steps; }
+.guest-learning-path li::before { content: counter(steps); position: absolute; left: 0; top: 1px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #ece4f6; color: #68478b; font-size: 13px; font-weight: 700; }
+.guest-learning-path strong, .guest-learning-path span { display: block; font-size: 14px; line-height: 1.6; }
+.guest-learning-path span { color: #6e7482; font-size: 13px; }
+.guest-next-step .guest-save-note { font-size: 12px; margin: 12px 0 0; }
+.guest-review-heading { margin-bottom: 20px; }
+.guest-review-item { padding: 24px 0; border-top: 1px solid #e4e7ee; overflow-wrap: anywhere; }
+.guest-review-meta { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 14px; color: #5d5870; }
+.guest-result-badge { padding: 5px 9px; border-radius: 8px; font-size: 12px; font-weight: 700; }
+.guest-result-badge.is-correct { color: #25624d; background: #eaf6ef; }
+.guest-result-badge.is-wrong { color: #a13c45; background: #fff0f0; }
+.guest-result-badge.is-uncertain { color: #875d19; background: #fff5df; }
+.guest-review-item h3 { margin: 18px 0; font-size: 17px; line-height: 1.8; color: #263248; word-break: keep-all; }
+.guest-review-choices { display: grid; gap: 8px; }
+.guest-review-choice { display: flex; gap: 10px; padding: 12px; border: 1px solid #e6e9ef; border-radius: 10px; font-size: 14px; line-height: 1.7; color: #535e70; }
+.guest-review-choice > span { flex: 0 0 18px; font-weight: 700; }
+.guest-review-choice.is-answer { background: #eff8f3; border-color: #a4cfb8; color: #245b43; }
+.guest-review-choice.is-selected-wrong { background: #fff5f5; border-color: #ebc0c5; color: #923e49; }
+.guest-answer-label { display: inline-block; margin-left: 8px; font-size: 12px; }
+.guest-review-confidence { margin: 12px 0; color: #747080; font-size: 12px; }
+.guest-review-explanation { margin-top: 16px; padding: 16px; border-radius: 12px; background: #f6f7fb; }
+.guest-review-explanation h4 { margin: 0 0 8px; color: #695181; font-size: 13px; }
+.guest-review-explanation p { margin: 0; color: #465267; font-size: 14px; line-height: 1.85; }
+.guest-review-end { border-top: 1px solid #e4e7ee; padding: 24px 0 0; }
+@media (max-width: 600px) { .guest-result-hero { padding: 24px 12px; } .guest-next-step { padding: 18px 14px; } .guest-result-stats { gap: 6px; } }

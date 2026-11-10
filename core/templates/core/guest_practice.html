@@ -1,6 +1,6 @@
 {% extends 'core/base.html' %}
 {% load static %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'core/guest_practice.css' %}?v=20261110-1">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'core/guest_practice.css' %}?v=20261111-1">{% endblock %}
 {% block title %}무료 5문제 맛보기 | 합격한걸음{% endblock %}
 {% block content %}
 <main class="page-shell compact-page guest-practice">
@@ -9,17 +9,44 @@
     <h1 class="section-title">무료 5문제 맛보기</h1>
     {% if error %}<p role="alert">{{ error }}</p>{% endif %}
     {% if finished %}
-      <h2>5문제 중 {{ score }}문제 정답</h2>
-      <p>틀린 문제 {{ wrong }}개 · 맞혔지만 찍거나 헷갈렸다고 표시한 문제 {{ uncertain }}개</p>
-      <p>회원은 방금 푼 기록을 저장해 오답과 약점을 복습하고, 단원별 문제와 모의고사를 이어서 풀 수 있어요.</p>
-      {% if user.is_authenticated %}
-        <form method="post">{% csrf_token %}
-          <button class="main-button" name="action" value="save">학습 기록 저장하고 복습 이어가기</button>
-        </form>
-      {% else %}
-        <a class="main-button" href="{% url 'login' %}?next={% url 'guest_practice' %}">로그인하고 복습 이어가기</a>
-        <p>같은 브라우저에서 로그인한 뒤 저장을 누르면 방금 푼 기록이 이어집니다.</p>
-      {% endif %}
+      <div class="guest-result-hero">
+        <span class="guest-result-kicker">첫 학습 완료 · {{ course }}</span>
+        <h2>5문제, 끝까지 해냈어요!</h2>
+        <p>점수 확인에서 한 걸음 더.<br>방금 푼 문제를 내 실력으로 바꿔보세요.</p>
+        <div class="guest-result-stats" aria-label="학습 결과">
+          <div><strong>{{ score }}<small> / 5</small></strong><span>정답</span></div>
+          <div><strong>{{ wrong }}</strong><span>틀린 문제</span></div>
+          <div><strong>{{ uncertain }}</strong><span>맞혔지만 헷갈림</span></div>
+        </div>
+        <p class="guest-result-summary">5문제 중 {{ score }}문제 정답</p>
+      </div>
+      <section class="guest-next-step" aria-labelledby="next-step-title">
+        <p class="guest-eyebrow">다음 한 걸음</p>
+        <h2 id="next-step-title">{% if review_count %}복습할 {{ review_count }}문제를 찾았어요{% else %}좋은 출발이에요. 다음 문제도 도전해 볼까요?{% endif %}</h2>
+        <p>{% if review_count %}틀린 답뿐 아니라 찍거나 헷갈린 정답도 다시 보면, 놓친 개념이 더 선명해져요.{% else %}방금 푼 기록을 저장하고, 단원별 문제와 모의고사로 학습을 이어가세요.{% endif %}</p>
+        <ol class="guest-learning-path"><li><strong>기록 저장</strong><span>방금 푼 5문제를 내 학습 기록으로</span></li><li><strong>오답·약점 복습</strong><span>틀리거나 헷갈린 문제를 다시 확인</span></li><li><strong>다음 학습</strong><span>단원별 문제부터 모의고사까지</span></li></ol>
+        {% if user.is_authenticated %}
+          <form method="post">{% csrf_token %}<button class="main-button" name="action" value="save">학습 기록 저장하고 복습 이어가기</button></form>
+        {% else %}
+          <a class="main-button" href="{% url 'login' %}?next={% url 'guest_practice' %}">로그인하고 내 학습 기록으로 저장</a>
+          <p class="guest-save-note">같은 브라우저에서 로그인한 뒤 저장을 누르면 이어집니다. 아래 정답과 해설은 로그인 없이 모두 볼 수 있어요.</p>
+        {% endif %}
+      </section>
+      <section class="guest-review" aria-labelledby="review-title">
+        <div class="guest-review-heading"><p class="guest-eyebrow">오늘 푼 문제, 한눈에 복습</p><h2 id="review-title">5문제 전체 풀이</h2><p>내가 고른 답과 정답을 비교하고 해설로 마무리해 보세요.</p></div>
+        {% for item in review %}
+          <article class="guest-review-item" id="review-{{ item.number }}">
+            <div class="guest-review-meta"><strong>문제 {{ item.number }}</strong><span class="guest-result-badge {% if not item.correct %}is-wrong{% elif item.uncertain %}is-uncertain{% else %}is-correct{% endif %}">{% if not item.correct %}오답 · 복습 추천{% elif item.uncertain %}정답 · 다시 확인{% else %}정답{% endif %}</span></div>
+            <h3>{{ item.mission.prompt|linebreaksbr }}</h3>
+            <div class="guest-review-choices">
+              {% for choice in item.choices %}<div class="guest-review-choice{% if choice.key == item.mission.correct_answer %} is-answer{% elif choice.key == item.answer %} is-selected-wrong{% endif %}"><span>{{ choice.key }}.</span><div>{{ choice.label }}{% if choice.key == item.answer %}<strong class="guest-answer-label">내 답</strong>{% endif %}{% if choice.key == item.mission.correct_answer %}<strong class="guest-answer-label">정답</strong>{% endif %}</div></div>{% endfor %}
+            </div>
+            {% if item.confidence %}<p class="guest-review-confidence">풀이할 때의 확신: {{ item.confidence }}</p>{% endif %}
+            <div class="guest-review-explanation"><h4>해설로 개념 정리</h4><p>{{ item.mission.explanation|linebreaksbr }}</p></div>
+          </article>
+        {% endfor %}
+      </section>
+      <div class="guest-review-end"><h2>오늘의 5문제가 다음 실력으로 이어지도록</h2><p>기록을 남기면 다시 볼 문제를 놓치지 않아요.</p>{% if user.is_authenticated %}<form method="post">{% csrf_token %}<button class="main-button" name="action" value="save">학습 기록 저장하고 복습 이어가기</button></form>{% else %}<a class="main-button" href="{% url 'login' %}?next={% url 'guest_practice' %}">로그인하고 복습 이어가기</a>{% endif %}</div>
     {% elif mission %}
       <div class="guest-question-meta"><span>{{ mission.subject.name }} · {{ mission.course }}</span><strong>{{ number }} / 5</strong></div>
       <progress class="guest-progress" value="{{ number }}" max="5" aria-label="현재 문제 진행 상황">{{ number }} / 5</progress>
