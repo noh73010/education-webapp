@@ -42,6 +42,8 @@ def study_library(request):
         missions = [m for m in missions if m.pk in seen]
     else:
         missions = []
+    if request.GET.get('start') == '1' and missions:
+        return redirect('mission_detail', mission_id=missions[0].pk)
     return render(request, 'core/study_library.html', {'subject':subject, 'chapters':chapter_rows(request.user,subject), 'study_missions':Paginator(missions,30).get_page(request.GET.get('page')), 'remaining':len(missions), 'mode':mode, 'course':course, 'chapter':chapter, 'scope':request.GET.get('scope', '')})
 
 
@@ -72,3 +74,16 @@ def learning_signal(request, mission_id):
     elif action == 'view':
         LearningExposure.objects.update_or_create(user=request.user, mission=mission, defaults={})
     return redirect(reverse('mission_detail', args=[mission.pk]) + '?explanation=1')
+
+
+@login_required
+def next_learning_mission(request, mission_id):
+    subject, _ = get_current_subject(request)
+    current = get_object_or_404(scoped_missions(subject), pk=mission_id)
+    attempted = Attempt.objects.valid_for_learning().filter(user=request.user).values('mission_id')
+    viewed = LearningExposure.objects.filter(user=request.user).values('mission_id')
+    candidates = scoped_missions(subject).filter(course=current.course).exclude(pk=current.pk).exclude(pk__in=attempted).exclude(pk__in=viewed).exclude(pk__in=suppressed_ids(request.user))
+    mission = candidates.filter(chapter_code=current.chapter_code).order_by('pk').first() or candidates.order_by('chapter_code','pk').first()
+    if mission:
+        return redirect('mission_detail', mission_id=mission.pk)
+    return render(request, 'core/study_pause.html', {'subject': subject})

@@ -176,8 +176,8 @@ class LearningExperienceTests(TestCase):
         submitted = self.submit(self.work(), "1")
         result = self.client.get(submitted.url)
         self.assertNotContains(result, "30초 오답 교정")
-        self.assertContains(result, "원인 기록하고 학습 종료")
-        self.assertContains(result, "기록 없이 학습 종료")
+        self.assertContains(result, "원인 기록하고 다음 문제")
+        self.assertContains(result, "기록 없이 다음 문제")
         self.assertContains(result, "테스트 해설")
         self.assertEqual(result.content.decode().count("<b>1번 · 오답</b>"), 1)
 

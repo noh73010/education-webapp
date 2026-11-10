@@ -182,7 +182,7 @@
   <section class="card confidence-result {% if saved_attempt.is_correct and not saved_attempt.confidence_level %}confidence-result--unselected{% endif %}" aria-label="확신도에 따른 복습 안내">
     <h2>이제 어떻게 복습하나요?</h2>
     <form method="post" action="{% url 'learning_signal' mission.pk %}">{% csrf_token %}<input type="hidden" name="action" value="confidence"><input type="hidden" name="attempt" value="{{ saved_attempt.pk }}"><input type="hidden" name="next" value="{{ continue_url }}"><p>선택 사항 · 맞혀도 찍거나 헷갈렸다면 다시 확인하도록 안내합니다.</p><button class="sub-button" name="confidence" value="guessed">찍었어요</button> <button class="sub-button" name="confidence" value="unsure">헷갈렸어요</button></form>
-    <a href="{% url 'study_library' %}?mode=new">다음 새 문제 선택 →</a>
+    {% if not continue_url and not next_daily_mission and not daily_completion %}<a class="main-button" href="{% url 'next_learning_mission' mission.pk %}">다음 문제 →</a>{% endif %}
 
     {% if saved_attempt.confidence_level == "guessed" %}
       <p>찍어서 맞힌 문제라 내일 다시 복습할게요. 정답이어도 아직 아는 문제로 보지 않습니다.</p>

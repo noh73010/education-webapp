@@ -61,9 +61,10 @@ from core.views.visit_stats import visit_stats
 from core.views.stats import wrong_reason_attempts
 from core.views.guest_practice import guest_practice
 
-from core.views.efficient_learning import study_library, learning_signal
+from core.views.efficient_learning import study_library, learning_signal, next_learning_mission
 
 urlpatterns = [
+    path("missions/<int:mission_id>/next-learning/", next_learning_mission, name="next_learning_mission"),
     path("study-library/", study_library, name="study_library"),
     path("missions/<int:mission_id>/learning-signal/", learning_signal, name="learning_signal"),
     path("practice/", guest_practice, name="guest_practice"),

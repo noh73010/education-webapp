@@ -1,0 +1,2 @@
+{% extends 'core/base.html' %}
+{% block content %}<main class="page-shell"><section class="card"><h1>여기서 한 번 정리해 볼까요?</h1><p>지금 범위의 새 문제 학습을 마쳤어요. 익힌 내용을 복습하거나 다른 챕터로 이어갈 수 있습니다.</p><a class="main-button" href="{% url 'study_library' %}?mode=review&amp;start=1">복습 이어가기</a><a class="sub-button" href="{% url 'study_library' %}">다른 챕터 선택</a></section></main>{% endblock %}

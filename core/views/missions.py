@@ -1364,8 +1364,8 @@ def mission_detail(request, mission_id):
             reason_continue_url = reverse("mission_detail", args=[next_daily_mission.pk])
             reason_continue_label = "다음 추천 문제"
         else:
-            reason_continue_url = reverse("mission_list")
-            reason_continue_label = "학습 종료"
+            reason_continue_url = (reverse("mission_list") if daily_completion else reverse("next_learning_mission", args=[mission.pk]))
+            reason_continue_label = "학습 종료" if daily_completion else "다음 문제"
     from core.services.efficient_learning import alternatives
     concept_alternatives = alternatives(request.user, mission) if saved else []
     return render(request, "core/mission_detail.html", {

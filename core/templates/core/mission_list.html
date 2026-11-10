@@ -559,7 +559,7 @@
     {% if daily_progress.total == 0 %}
       <li>현재 추천 가능한 문제가 부족합니다. 전체 문제 검색을 이용하거나 관리자에게 문의해 주세요.</li>
     {% elif daily_progress.total < 5 %}
-      <li>추천 가능한 문제가 {{ daily_progress.total }}개뿐입니다. 준비된 문제부터 먼저 풀 수 있습니다.</li>
+      <li>오늘의 추천 학습부터 차근차근 시작해 보세요.</li>
     {% endif %}
 
     {% for m in recommended %}
@@ -677,7 +677,7 @@
       <a href="?page={{ page_obj.previous_page_number }}&chapter={{ chapter|urlencode }}&q={{ q|urlencode }}&skill={{ skill|urlencode }}&level={{ level|urlencode }}&sort={{ sort|urlencode }}#search-section">이전</a>
     {% endif %}
 
-    <span> {{ page_obj.number }} / {{ page_obj.paginator.num_pages }} </span>
+    <span>  </span>
 
     {% if page_obj.has_next %}
       <a href="?page={{ page_obj.next_page_number }}&chapter={{ chapter|urlencode }}&q={{ q|urlencode }}&skill={{ skill|urlencode }}&level={{ level|urlencode }}&sort={{ sort|urlencode }}#search-section">다음</a>

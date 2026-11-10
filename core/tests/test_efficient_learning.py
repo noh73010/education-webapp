@@ -130,3 +130,25 @@ class EfficientLearningTests(TestCase):
         self.assertContains(response,'오답으로 자동 기록했어요.')
         self.assertNotContains(response,'class="card confidence-result')
         self.assertNotContains(response,'name="confidence"')
+
+    def test_next_problem_opens_question_directly_and_skips_known_questions(self):
+        current=self.missions[0]
+        save_attempt(user=self.user,mission=current,is_correct=True)
+        LearningExposure.objects.create(user=self.user,mission=self.missions[1])
+        response=self.client.get(reverse('next_learning_mission',args=[current.pk]))
+        self.assertRedirects(response,reverse('mission_detail',args=[self.missions[2].pk]),fetch_redirect_response=False)
+
+    def test_library_hides_question_inventory_and_total_pages(self):
+        response=self.client.get(reverse('study_library')+'?mode=new')
+        self.assertNotContains(response,'남은 새 문제')
+        self.assertNotContains(response,'12개')
+        self.assertNotContains(response,'미풀이 12')
+        self.assertNotContains(response,'최대 30문제')
+        self.assertRedirects(self.client.get(reverse('study_library')+'?mode=new&start=1'),reverse('mission_detail',args=[self.missions[0].pk]),fetch_redirect_response=False)
+
+    def test_no_new_question_offers_pause_instead_of_known_question(self):
+        for m in self.missions:
+            save_attempt(user=self.user,mission=m,is_correct=True)
+        response=self.client.get(reverse('next_learning_mission',args=[self.missions[0].pk]))
+        self.assertContains(response,'정리해 볼까요')
+        self.assertNotContains(response,'12개')
