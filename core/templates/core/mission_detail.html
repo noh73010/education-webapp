@@ -6,6 +6,11 @@
 {% if mission.course %}{{ mission.course }}{% else %}{{ mission.subject.name }}{% endif %} 문제 풀이
 {% endblock %}
 
+{% block extra_css %}<style>
+.wrong-reason-choices { display:grid; gap:10px; }
+.wrong-reason-choices label { display:flex; align-items:center; gap:12px; padding:14px; border:1px solid #e2e5ed; border-radius:12px; }
+.wrong-reason-choices label input[type="checkbox"] { flex:0 0 18px; width:18px; height:18px; min-height:0; padding:0; margin:0; }
+</style>{% endblock %}
 {% block content %}
 {% if daily_review_state %}<section class="card"><p class="eyebrow">{{ daily_review_state.label }} · 오늘의 복습 {{ daily_review_number }}/{{ daily_review_state.mission_ids|length }}</p><p>제출 후 정답과 해설을 확인하고 다음 문제를 누르세요.</p></section>{% endif %}
 <main class="cbt-page">
@@ -77,7 +82,7 @@
     </section>
   {% else %}
     <section class="card result-wrong">
-      <b>오답입니다. 다시 풀어야 합니다.</b>
+      <b>오답입니다.</b><p>틀린 문제라 오답 복습 대상으로 기록했어요.</p>
 
       {% if mission.question_type != "manual" %}
         <div class="answer-comparison compact">
@@ -151,7 +156,7 @@
 {% if saved_attempt and not saved_attempt.is_correct and wrong_reasons %}
   <section class="card wrong-reason-after-grading" aria-labelledby="wrong-reason-title">
     <h2 id="wrong-reason-title">어디서 헷갈렸나요?</h2>
-    <p>원인을 기록하면 다음 복습에 도움이 됩니다. 원하지 않으면 기록 없이 넘어가세요.</p>
+    <p>오답으로 자동 기록했어요. 원인은 선택 사항이며, 입력하지 않고 다음 문제로 넘어가도 됩니다.</p>
     <form method="post" action="{% url 'mission_detail' mission.id %}">
       {% csrf_token %}
       <input type="hidden" name="reason_attempt" value="{{ saved_attempt.pk }}">
@@ -173,15 +178,13 @@
   <section class="card"><a href="{{ continue_url }}" class="main-button">{{ continue_label }}</a></section>
 {% endif %}
 
-{% if saved_attempt %}
+{% if saved_attempt and saved_attempt.is_correct %}
   <section class="card confidence-result {% if saved_attempt.is_correct and not saved_attempt.confidence_level %}confidence-result--unselected{% endif %}" aria-label="확신도에 따른 복습 안내">
     <h2>이제 어떻게 복습하나요?</h2>
     <form method="post" action="{% url 'learning_signal' mission.pk %}">{% csrf_token %}<input type="hidden" name="action" value="confidence"><input type="hidden" name="attempt" value="{{ saved_attempt.pk }}"><input type="hidden" name="next" value="{{ continue_url }}"><p>선택 사항 · 맞혀도 찍거나 헷갈렸다면 다시 확인하도록 안내합니다.</p><button class="sub-button" name="confidence" value="guessed">찍었어요</button> <button class="sub-button" name="confidence" value="unsure">헷갈렸어요</button></form>
     <a href="{% url 'study_library' %}?mode=new">다음 새 문제 선택 →</a>
 
-    {% if not saved_attempt.is_correct %}
-      <p>틀린 문제라 오답 복습 대상으로 기록했어요. 확신도와 관계없이 해설을 확인하고 다시 풀어보세요.</p>
-    {% elif saved_attempt.confidence_level == "guessed" %}
+    {% if saved_attempt.confidence_level == "guessed" %}
       <p>찍어서 맞힌 문제라 내일 다시 복습할게요. 정답이어도 아직 아는 문제로 보지 않습니다.</p>
     {% elif saved_attempt.confidence_level == "unsure" %}
       <p>헷갈렸지만 맞힌 문제예요. 확실히 아는 문제로 보지 않고 내일 다시 확인할 문제로 봅니다.</p>

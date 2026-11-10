@@ -118,3 +118,15 @@ class EfficientLearningTests(TestCase):
         LearningExposure.objects.create(user=self.user,mission=self.missions[0])
         a=save_attempt(user=self.user,mission=self.missions[0],is_correct=True)
         self.assertFalse(a.learning_evidence)
+
+    def test_wrong_answer_shows_only_optional_reason_not_confidence_form(self):
+        from core.models import WrongReason
+        WrongReason.objects.get_or_create(name='개념을 몰랐음')
+        mission=self.missions[0]
+        url=reverse('mission_detail',args=[mission.pk])
+        work=self.client.get(url).context['work']
+        response=self.client.post(url,{'submitted_answer':'2','work_token':str(work.pk)},follow=True)
+        self.assertContains(response,'어디서 헷갈렸나요?')
+        self.assertContains(response,'오답으로 자동 기록했어요.')
+        self.assertNotContains(response,'class="card confidence-result')
+        self.assertNotContains(response,'name="confidence"')
