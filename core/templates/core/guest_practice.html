@@ -1,8 +1,11 @@
 {% extends 'core/base.html' %}
+{% load static %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'core/guest_practice.css' %}?v=20261110-1">{% endblock %}
 {% block title %}무료 5문제 맛보기 | 합격한걸음{% endblock %}
 {% block content %}
-<main class="page-shell compact-page">
-  <section class="card">
+<main class="page-shell compact-page guest-practice">
+  <section class="card guest-practice-card">
+    <p class="guest-eyebrow">부담 없이 시작하는 첫 학습</p>
     <h1 class="section-title">무료 5문제 맛보기</h1>
     {% if error %}<p role="alert">{{ error }}</p>{% endif %}
     {% if finished %}
@@ -18,27 +21,32 @@
         <p>같은 브라우저에서 로그인한 뒤 저장을 누르면 방금 푼 기록이 이어집니다.</p>
       {% endif %}
     {% elif mission %}
-      <p>{{ mission.subject.name }} · {{ mission.course }} · {{ number }}/5</p>
-      <h2>{{ mission.prompt|linebreaksbr }}</h2>
+      <div class="guest-question-meta"><span>{{ mission.subject.name }} · {{ mission.course }}</span><strong>{{ number }} / 5</strong></div>
+      <progress class="guest-progress" value="{{ number }}" max="5" aria-label="현재 문제 진행 상황">{{ number }} / 5</progress>
+      <h2 class="guest-question">{{ mission.prompt|linebreaksbr }}</h2>
       <form method="post">{% csrf_token %}
         <input type="hidden" name="step" value="{{ step }}">
-        <fieldset>
-          <legend>선택지</legend>
+        <fieldset class="guest-choices">
+          <legend>알맞은 답을 하나 선택해 주세요</legend>
           {% for choice in choices %}
-            <p>{% if graded %}{{ choice.key }}. {{ choice.label }}{% if choice.key == mission.correct_answer %} <strong>— 정답</strong>{% endif %}{% else %}<label><input type="radio" name="answer" value="{{ choice.key }}" required> {{ choice.key }}. {{ choice.label }}</label>{% endif %}</p>
+            {% if graded %}
+              <div class="guest-choice guest-choice--graded{% if choice.key == mission.correct_answer %} is-correct{% endif %}"><span class="guest-choice-number">{{ choice.key }}</span><span class="guest-choice-text">{{ choice.label }}{% if choice.key == mission.correct_answer %}<strong class="guest-correct-label">정답</strong>{% endif %}</span></div>
+            {% else %}
+              <label class="guest-choice"><input type="radio" name="answer" value="{{ choice.key }}" required><span class="guest-choice-number" aria-hidden="true">{{ choice.key }}</span><span class="guest-choice-text">{{ choice.label }}</span></label>
+            {% endif %}
           {% endfor %}
         </fieldset>
         {% if graded %}
-          <p><strong>{% if correct %}정답이에요.{% else %}오답이에요.{% endif %} 정답: {{ mission.correct_answer }}번</strong></p>
+          <div class="guest-feedback" role="status"><p><strong>{% if correct %}정답이에요.{% else %}오답이에요.{% endif %} 정답: {{ mission.correct_answer }}번</strong></p>
           <h3>해설</h3>
-          <p>{{ mission.explanation|linebreaksbr }}</p>
+          <p>{{ mission.explanation|linebreaksbr }}</p></div>
           <button class="main-button" name="action" value="next">{% if number == 5 %}결과 보기{% else %}다음 문제{% endif %}</button>
         {% else %}
-          <label for="confidence">이 답, 알고 골랐나요?</label>
+          <div class="guest-confidence"><label for="confidence">이 답, 알고 골랐나요? <span>선택 사항</span></label>
           <select id="confidence" name="confidence">
             <option value="">선택 안 함</option>
             {% for value, label in confidence_choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
-          </select>
+          </select></div>
           <p><button class="main-button" name="action" value="answer">정답과 해설 확인</button></p>
         {% endif %}
       </form>
@@ -58,7 +66,7 @@
         <p>아직 준비된 맛보기 문제가 없습니다.</p>
       {% endfor %}
     {% endif %}
-    {% if mission or finished %}<p><a href="?choose=1">다른 과목 선택</a></p>{% endif %}
+    {% if mission or finished %}<p class="guest-back"><a href="?choose=1">다른 과목 선택</a></p>{% endif %}
   </section>
 </main>
 {% endblock %}

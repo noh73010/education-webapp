@@ -1,0 +1,42 @@
+.guest-practice { max-width: 760px; margin: 24px auto; }
+.guest-practice .guest-practice-card { padding: clamp(20px, 4vw, 36px); border: 1px solid #e1e5ef; border-radius: 24px; background: #fff; box-shadow: 0 8px 32px #26365208; }
+.guest-practice .guest-eyebrow { margin: 0 0 6px; color: #70618a; font-size: 13px; font-weight: 700; }
+.guest-practice .section-title { margin: 0 0 24px; font-size: 24px; line-height: 1.4; }
+.guest-question-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; color: #657087; font-size: 13px; }
+.guest-question-meta strong { flex: none; color: #6b4f91; }
+.guest-progress { display: block; width: 100%; height: 5px; margin: 12px 0 24px; border: 0; border-radius: 8px; overflow: hidden; accent-color: #8263a8; }
+.guest-progress::-webkit-progress-bar { background: #eeeaf4; }
+.guest-progress::-webkit-progress-value { background: #8263a8; border-radius: 8px; }
+.guest-progress::-moz-progress-bar { background: #8263a8; }
+.guest-practice .guest-question { margin: 0 0 28px; color: #202d43; font-size: clamp(18px, 3vw, 22px); font-weight: 650; line-height: 1.75; word-break: keep-all; overflow-wrap: anywhere; }
+.guest-practice .guest-choices { display: grid; gap: 10px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.guest-choices legend { margin-bottom: 12px; padding: 0; color: #687288; font-size: 13px; }
+.guest-practice .guest-choice { position: relative; display: flex; align-items: flex-start; gap: 12px; width: 100%; box-sizing: border-box; min-height: 58px; margin: 0; padding: 15px; border: 1px solid #dfe4ed; border-radius: 14px; color: #344157; background: #fff; text-align: left; font-size: 16px; line-height: 1.6; cursor: pointer; }
+.guest-choice:hover { border-color: #b3a0cc; background: #faf8fd; }
+.guest-choice:has(input:checked) { border-color: #8263a8; background: #f4effa; box-shadow: inset 0 0 0 1px #8263a8; }
+.guest-choice:has(input:focus-visible) { outline: 3px solid #b29ace; outline-offset: 3px; }
+.guest-practice .guest-choice input[type="radio"] { position: absolute; width: 1px; height: 1px; margin: 0; padding: 0; opacity: 0; }
+.guest-choice-number { display: grid; place-items: center; flex: 0 0 28px; height: 28px; border: 1px solid #d8dfeb; border-radius: 50%; color: #657087; background: #f7f9fc; font-size: 14px; font-weight: 700; }
+.guest-choice:has(input:checked) .guest-choice-number { border-color: #8263a8; color: #fff; background: #8263a8; }
+.guest-choice-text { min-width: 0; padding-top: 1px; overflow-wrap: anywhere; word-break: keep-all; }
+.guest-choice--graded { cursor: default; }
+.guest-practice .guest-choice.is-correct { border-color: #80b6a4; background: #eef8f3; }
+.guest-correct-label { display: inline-block; margin-left: 8px; color: #23694f; font-size: 13px; }
+.guest-confidence { margin: 24px 0 20px; padding: 18px; border-radius: 14px; background: #f6f7fa; }
+.guest-confidence label { display: block; margin-bottom: 10px; color: #344157; font-size: 14px; font-weight: 600; }
+.guest-confidence label span { margin-left: 6px; color: #758094; font-size: 12px; font-weight: 400; }
+.guest-confidence select { box-sizing: border-box; width: 100%; min-height: 46px; margin: 0; padding: 10px 12px; border: 1px solid #dce2eb; border-radius: 10px; color: #344157; background: #fff; font: inherit; font-size: 16px; }
+.guest-practice .main-button { box-sizing: border-box; display: block; width: 100%; min-height: 50px; margin-top: 20px; padding: 14px 18px; border-radius: 12px; background: #735590; background-image: none; box-shadow: none; color: #fff; text-align: center; line-height: 1.5; }
+.guest-practice .main-button:hover { background: #60447d; }
+.guest-feedback { margin-top: 24px; padding: 18px; border: 1px solid #e1e5ef; border-radius: 14px; background: #f7f9fc; line-height: 1.75; overflow-wrap: anywhere; }
+.guest-feedback h3 { margin: 16px 0 6px; font-size: 15px; }
+.guest-feedback p { margin: 0; }
+.guest-back { margin: 24px 0 0; text-align: center; font-size: 14px; }
+.guest-back a { color: #687288; text-underline-offset: 4px; }
+@media (max-width: 600px) {
+  .guest-practice { margin: 12px auto 28px; }
+  .guest-practice .guest-practice-card { padding: 20px 16px; border-radius: 18px; }
+  .guest-practice .section-title { font-size: 21px; margin-bottom: 20px; }
+  .guest-practice .guest-question { font-size: 18px; line-height: 1.75; }
+  .guest-practice .guest-choice { gap: 10px; padding: 13px 12px; }
+}
