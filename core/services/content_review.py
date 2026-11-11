@@ -66,10 +66,10 @@ def apply_review(mission, manifest=None):
         subject=mission.subject, title=definition["title"],
         defaults={"comparison": definition["comparison"], "example": definition["example"],
                   "references": definition["references"],
-                  "reviewed_on": date.fromisoformat(manifest["review_date"])},
+                  "reviewed_on": date.fromisoformat(entry.get("review_date", manifest["review_date"]))},
     )
     mission.concept_unit = unit
-    mission.reviewed_on = date.fromisoformat(manifest["review_date"])
+    mission.reviewed_on = date.fromisoformat(entry.get("review_date", manifest["review_date"]))
     mission.review_status = Mission.REVIEW_VERIFIED
     mission.is_usable_for_set = True
     mission.quality_note = ""
