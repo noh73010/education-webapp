@@ -291,7 +291,7 @@
 
 {% if not saved %}
 <section class="card cbt-answer-card">
-  <p id="draft-status" role="status" aria-live="polite">객관식은 보기를 누르면 바로 채점하고 기록합니다. 입력형 답안은 제출해 주세요.</p>
+  <p id="draft-status" role="status" aria-live="polite">답을 선택한 뒤 ‘답안 제출’을 눌러 주세요. 선택만으로는 채점하거나 풀이 기록에 반영하지 않습니다.</p>
   <button type="button" id="draft-retry" class="sub-button" hidden>다시 저장</button>
   <form method="POST" id="mission-answer-form" data-draft-url="{% url 'save_mission_draft' mission.id %}" data-server-updated="{{ work.updated_at|date:'c' }}">
     {% csrf_token %}
@@ -370,9 +370,7 @@
   </form>
 </section>
 {{ draft_answers|json_script:"draft-answers" }}
-{% if mission.question_type == 'choice_one' or mission.question_type == 'true_false' or mission.question_type == 'error_detect' %}
-<script>document.addEventListener('DOMContentLoaded',()=>{const f=document.getElementById('mission-answer-form'); let busy=false; f.querySelectorAll('input[name="submitted_answer"]').forEach(r=>r.addEventListener('change',()=>{if(busy)return;busy=true;f.requestSubmit();}));f.querySelector('.cbt-submit-row').hidden=true;});</script>
-{% else %}<script src="{% static 'core/mission_draft.js' %}?v=20261005-2" defer></script>{% endif %}
+<script src="{% static 'core/mission_draft.js' %}?v=20261111-explicit-submit-1" defer></script>
 <form method="post" action="{% url 'learning_signal' mission.pk %}" class="card">{% csrf_token %}<button class="sub-button" name="action" value="view">정답·해설 바로 보기</button><p>풀이 점수 없이 해설 열람만 기록합니다.</p></form>
 {% else %}
 <section class="card"><a href="{% url 'mission_detail' mission.id %}" class="sub-button">다시 풀기</a></section>

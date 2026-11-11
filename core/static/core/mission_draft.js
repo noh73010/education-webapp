@@ -46,7 +46,7 @@
         const response = await fetch(form.dataset.draftUrl, {method: 'POST', body: data, credentials: 'same-origin', signal: controller.signal});
         if (!response.ok || response.redirected) throw new Error('not saved');
         const result = await response.json();
-        status.textContent = result.submitted ? '이미 제출된 답안입니다.' : '답안이 저장됐어요. 아직 채점하지 않았습니다.';
+        status.textContent = result.submitted ? '이미 제출된 답안입니다.' : '답안을 임시 저장했어요. 아직 제출하거나 채점하지 않았습니다.';
         showRetry(false);
         // Keep local fallback until submission; local storage is scoped to this unique work token.
       } catch (_) {

@@ -70,7 +70,8 @@
           <p>선택 사항 · <button class="sub-button" type="submit" name="confidence" value="guessed">찍었어요</button> <button class="sub-button" type="submit" name="confidence" value="unsure">헷갈렸어요</button></p><input type="hidden" name="action" value="confidence">
           <button class="main-button" name="action" value="next">{% if number == 5 %}결과 보기{% else %}다음 문제{% endif %}</button>
         {% else %}
-          <p><button class="main-button" name="action" value="answer">정답과 해설 확인</button></p>
+          <p class="meta-text">보기를 선택한 뒤 답안 제출을 눌러 주세요. 제출 전에는 선택을 바꿀 수 있어요.</p>
+          <p><button type="submit" class="main-button" name="action" value="answer">답안 제출</button></p>
         {% endif %}
       </form>
     {% else %}
@@ -91,6 +92,6 @@
     {% endif %}
     {% if mission or finished %}<p class="guest-back"><a href="?choose=1">다른 과목 선택</a></p>{% endif %}
   </section>
-{% if mission and not graded %}<script>document.addEventListener('DOMContentLoaded',()=>{const f=document.querySelector('.guest-practice-card form');let busy=false; f.querySelectorAll('input[name=answer]').forEach(r=>r.addEventListener('change',()=>{if(busy)return;busy=true;f.requestSubmit(f.querySelector('button[value=answer]'));}));f.querySelector('button[value=answer]').hidden=true;});</script>{% endif %}
+
 </main>
 {% endblock %}

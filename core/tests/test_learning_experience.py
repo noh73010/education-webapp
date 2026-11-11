@@ -106,7 +106,7 @@ class LearningExperienceTests(TestCase):
     def test_correct_result_shows_explanation_and_confidence_has_no_default(self):
         initial = self.client.get(self.url)
         self.assertNotContains(initial, 'value="unsure" checked')
-        self.assertContains(initial, "객관식은 보기를 누르면 바로 채점하고 기록합니다.")
+        self.assertContains(initial, "답을 선택한 뒤 ‘답안 제출’을 눌러 주세요.")
         self.assertNotContains(initial, 'name="confidence_level"')
         self.assertContains(initial, "정답·해설 바로 보기")
         work = initial.context["work"]
