@@ -1,5 +1,6 @@
 from datetime import timedelta
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
@@ -59,14 +60,15 @@ def learning_signal(request, mission_id):
             return HttpResponseBadRequest('올바른 풀이 기록을 선택해 주세요.')
         attempt = get_object_or_404(Attempt, pk=attempt_id, user=request.user, mission=mission)
         value = request.POST.get('confidence', '')
-        if value in ('guessed', 'unsure', 'certain'):
-            attempt.confidence_level = value
-            attempt.save(update_fields=['confidence_level'])
+        if value not in ('guessed', 'unsure', 'certain'):
+            return HttpResponseBadRequest('올바른 확신도를 선택해 주세요.')
+        attempt.confidence_level = value
+        attempt.save(update_fields=['confidence_level'])
+        messages.success(request, f"✓ ‘{attempt.get_confidence_level_display()}’로 저장됐어요. 복습 안내에 반영됩니다.")
         next_url = request.POST.get('next', '')
-        suffix = ''
         if next_url.startswith('/') and not next_url.startswith('//') and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
-            suffix = '&' + urlencode({'next': next_url})
-        return redirect(reverse('mission_detail', args=[mission.pk]) + f'?attempt={attempt.pk}' + suffix)
+            return redirect(next_url)
+        return redirect('next_learning_mission', mission_id=mission.pk)
     if action == 'known':
         exposure = get_object_or_404(LearningExposure, user=request.user, mission=mission)
         exposure.known_until = timezone.now() + timedelta(days=7)

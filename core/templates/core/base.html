@@ -71,7 +71,7 @@
 {% if messages %}
   <section class="card">
     {% for message in messages %}
-      <div class="info-box">{{ message }}</div>
+      <div class="info-box" role="status">{{ message }}</div>
     {% endfor %}
   </section>
 {% endif %}

@@ -10,6 +10,9 @@
 .wrong-reason-choices { display:grid; gap:10px; }
 .wrong-reason-choices label { display:flex; align-items:center; gap:12px; padding:14px; border:1px solid #e2e5ed; border-radius:12px; }
 .wrong-reason-choices label input[type="checkbox"] { flex:0 0 18px; width:18px; height:18px; min-height:0; padding:0; margin:0; }
+.cbt-page .confidence-result button[aria-pressed="true"] { background:#735590; background-image:none; color:#fff; border:2px solid #51376c; box-shadow:none; }
+.confidence-saved { padding:12px; border-radius:10px; background:#edf8f1; color:#256044; font-weight:700; }
+.confidence-form[aria-busy="true"] button { pointer-events:none; opacity:.7; }
 </style>{% endblock %}
 {% block content %}
 {% if daily_review_state %}<section class="card"><p class="eyebrow">{{ daily_review_state.label }} · 오늘의 복습 {{ daily_review_number }}/{{ daily_review_state.mission_ids|length }}</p><p>제출 후 정답과 해설을 확인하고 다음 문제를 누르세요.</p></section>{% endif %}
@@ -179,9 +182,11 @@
 {% endif %}
 
 {% if saved_attempt and saved_attempt.is_correct %}
-  <section class="card confidence-result {% if saved_attempt.is_correct and not saved_attempt.confidence_level %}confidence-result--unselected{% endif %}" aria-label="확신도에 따른 복습 안내">
+  <section id="confidence-feedback" class="card confidence-result {% if saved_attempt.is_correct and not saved_attempt.confidence_level %}confidence-result--unselected{% endif %}" aria-label="확신도에 따른 복습 안내">
     <h2>이제 어떻게 복습하나요?</h2>
-    <form method="post" action="{% url 'learning_signal' mission.pk %}">{% csrf_token %}<input type="hidden" name="action" value="confidence"><input type="hidden" name="attempt" value="{{ saved_attempt.pk }}"><input type="hidden" name="next" value="{{ continue_url }}"><p>선택 사항 · 맞혀도 찍거나 헷갈렸다면 다시 확인하도록 안내합니다.</p><button class="sub-button" name="confidence" value="guessed">찍었어요</button> <button class="sub-button" name="confidence" value="unsure">헷갈렸어요</button></form>
+    <form class="confidence-form" method="post" action="{% url 'learning_signal' mission.pk %}">{% csrf_token %}<input type="hidden" name="action" value="confidence"><input type="hidden" name="attempt" value="{{ saved_attempt.pk }}"><input type="hidden" name="next" value="{% if continue_url %}{{ continue_url }}{% elif next_daily_mission %}{% url 'mission_detail' next_daily_mission.pk %}{% elif daily_completion %}{% url 'mission_list' %}{% else %}{% url 'next_learning_mission' mission.pk %}{% endif %}"><p>선택 사항 · 맞혀도 찍거나 헷갈렸다면 다시 확인하도록 안내합니다.</p><button class="sub-button" name="confidence" value="guessed" aria-pressed="{% if saved_attempt.confidence_level == 'guessed' %}true{% else %}false{% endif %}">{% if saved_attempt.confidence_level == 'guessed' %}✓ {% endif %}찍었어요</button> <button class="sub-button" name="confidence" value="unsure" aria-pressed="{% if saved_attempt.confidence_level == 'unsure' %}true{% else %}false{% endif %}">{% if saved_attempt.confidence_level == 'unsure' %}✓ {% endif %}헷갈렸어요</button></form>
+    {% if saved_attempt.confidence_level == 'guessed' or saved_attempt.confidence_level == 'unsure' %}<p class="confidence-saved" role="status">✓ ‘{{ saved_attempt.get_confidence_level_display }}’로 저장됐어요. 복습 안내에 반영됩니다.</p>{% endif %}
+    <script>document.querySelector('.confidence-form').addEventListener('submit',function(e){if(this.getAttribute('aria-busy')==='true'){e.preventDefault();return;}this.setAttribute('aria-busy','true');if(e.submitter)e.submitter.textContent='저장 중…';});</script>
     {% if not continue_url and not next_daily_mission and not daily_completion %}<a class="main-button" href="{% url 'next_learning_mission' mission.pk %}">다음 문제 →</a>{% endif %}
 
     {% if saved_attempt.confidence_level == "guessed" %}

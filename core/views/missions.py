@@ -816,6 +816,8 @@ def mission_detail(request, mission_id):
         else:
             try:
                 with transaction.atomic():
+                    Attempt.objects.select_for_update().get(pk=attempt.pk)
+                    AttemptWrongReason.objects.filter(attempt=attempt).exclude(wrong_reason_id__in=valid_reason_ids).delete()
                     for reason_id in valid_reason_ids:
                         AttemptWrongReason.objects.get_or_create(attempt=attempt, wrong_reason_id=reason_id)
             except DatabaseError:

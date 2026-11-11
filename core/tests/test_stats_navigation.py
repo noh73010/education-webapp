@@ -38,16 +38,16 @@ class StatsNavigationTests(TestCase):
 
     def test_realtor_scope_uses_subject_and_canonical_chapter_names(self):
         first = self.make_wrong()
-        self.make_wrong()
+        latest = self.make_wrong()
         response = self.client.get(reverse("stats"))
         self.assertContains(response, "부동산공시법")
         self.assertContains(response, "지적공부")
         self.assertNotContains(response, "RE05-03")
-        detail_url = reverse("mission_detail", args=[self.mission.pk]) + f"?attempt={first.pk}"
+        detail_url = reverse("mission_detail", args=[self.mission.pk]) + f"?attempt={latest.pk}"
         self.assertContains(response, detail_url.replace("&", "&amp;"))
         self.assertContains(self.client.get(detail_url), "지적공부 해설")
 
-    def test_wrong_reason_problems_are_scoped_and_paginated(self):
+    def test_wrong_reason_problems_are_scoped_and_use_latest_attempt_only(self):
         mine = [self.make_wrong() for _ in range(23)]
         self.make_wrong(user=self.other)
         other_subject_mission = Mission.objects.create(
@@ -57,18 +57,18 @@ class StatsNavigationTests(TestCase):
         )
         self.make_wrong(mission=other_subject_mission)
         stats = self.client.get(reverse("stats"))
-        self.assertContains(stats, "문제를 잘못 읽음 · 23회")
-        self.assertContains(stats, reverse("wrong_reason_attempts", args=[self.reason.pk]))
+        self.assertContains(stats, "문제를 잘못 읽음 · 1문제")
+        self.assertNotContains(stats, reverse("wrong_reason_attempts", args=[self.reason.pk]))
 
         url = reverse("wrong_reason_attempts", args=[self.reason.pk])
         first_page = self.client.get(url)
-        self.assertEqual(first_page.context["page_obj"].paginator.count, 23)
-        self.assertEqual(len(first_page.context["page_obj"].object_list), 20)
+        self.assertEqual(first_page.context["page_obj"].paginator.count, 1)
+        self.assertEqual(len(first_page.context["page_obj"].object_list), 1)
         self.assertContains(first_page, f"?attempt={mine[-1].pk}")
         second_page = self.client.get(url, {"page": "2"})
-        self.assertEqual(len(second_page.context["page_obj"].object_list), 3)
+        self.assertEqual(len(second_page.context["page_obj"].object_list), 1)
         self.assertNotContains(first_page, "다른 자격증 문제")
 
         Attempt.objects.filter(pk=mine[-1].pk).update(created_at=timezone.now() - timedelta(days=40))
         recent = self.client.get(url, {"period": "7"})
-        self.assertEqual(recent.context["page_obj"].paginator.count, 22)
+        self.assertEqual(recent.context["page_obj"].paginator.count, 1)

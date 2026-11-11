@@ -156,11 +156,11 @@
 
 <details class="card">
   <summary><b>내가 기록한 오답 원인</b></summary>
-  <p class="meta-text">원인별 최근 문제 3개를 보여줍니다. 전체 기록은 각 원인에서 확인할 수 있어요.</p>
+  <p class="meta-text">같은 문제는 마지막 풀이의 원인만 반영합니다. 원인별 최근 문제를 확인해 보세요.</p>
   <ul class="clean-list stats-reason-list">
     {% for r in wrong_reason_rows %}
       <li>
-        <b>{{ r.wrong_reason__name }} · {{ r.cnt }}회</b>
+        <b>{{ r.wrong_reason__name }} · {{ r.cnt }}문제</b>
         <ul class="stats-reason-examples">
           {% for example in r.examples %}
             <li><a class="stats-question-link" href="{% url 'mission_detail' example.attempt.mission_id %}?attempt={{ example.attempt_id }}">{{ example.attempt.mission.prompt|truncatechars:70 }}</a> <small class="meta-text">{{ example.attempt.created_at|date:"m-d H:i" }}</small></li>

@@ -152,3 +152,33 @@ class EfficientLearningTests(TestCase):
         response=self.client.get(reverse('next_learning_mission',args=[self.missions[0].pk]))
         self.assertContains(response,'정리해 볼까요')
         self.assertNotContains(response,'12개')
+
+    def test_confidence_receipt_reflects_persisted_selection_and_can_change(self):
+        a=save_attempt(user=self.user,mission=self.missions[0],is_correct=True)
+        url=reverse('learning_signal',args=[a.mission_id])
+        for value,label in [('unsure','헷갈렸어요'),('guessed','찍었어요')]:
+            response=self.client.post(url,{'action':'confidence','attempt':a.pk,'confidence':value},follow=True)
+            a.refresh_from_db()
+            self.assertEqual(a.confidence_level,value)
+            self.assertContains(response, 'role="status"')
+            self.assertEqual(response.wsgi_request.path, reverse('mission_detail',args=[self.missions[1].pk]))
+            self.assertContains(response,f'‘{label}’로 저장됐어요.')
+            self.assertContains(self.client.get(reverse('mission_detail',args=[a.mission_id])+f'?attempt={a.pk}'),f'value="{value}" aria-pressed="true"')
+
+    def test_latest_reasons_replace_previous_selection_and_previous_attempt(self):
+        from core.models import WrongReason, AttemptWrongReason
+        from core.views.stats import latest_reason_rows
+        r1=WrongReason.objects.create(name='첫 번째 원인')
+        r2=WrongReason.objects.create(name='두 번째 원인')
+        m=self.missions[0]
+        old=save_attempt(user=self.user,mission=m,is_correct=False)
+        AttemptWrongReason.objects.create(attempt=old,wrong_reason=r1)
+        latest=save_attempt(user=self.user,mission=m,is_correct=False)
+        url=reverse('mission_detail',args=[m.pk])
+        for reason in [r1,r2]:
+            self.client.post(url,{'reason_attempt':latest.pk,'wrong_reason_ids':[reason.pk]})
+        self.assertEqual(list(AttemptWrongReason.objects.filter(attempt=latest).values_list('wrong_reason_id',flat=True)),[r2.pk])
+        rows=latest_reason_rows(self.user,self.subject)
+        self.assertEqual(list(rows.values_list('attempt_id','wrong_reason_id')),[(latest.pk,r2.pk)])
+        save_attempt(user=self.user,mission=m,is_correct=True)
+        self.assertFalse(latest_reason_rows(self.user,self.subject).exists())

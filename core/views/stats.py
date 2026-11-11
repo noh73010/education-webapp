@@ -25,6 +25,13 @@ from core.models import (
     WrongReason,
 )
 
+def latest_reason_rows(user, subject):
+    latest = Attempt.objects.valid_for_learning().filter(
+        user=user, mission__subject=subject, mission_id=OuterRef('attempt__mission_id'),
+    ).order_by('-created_at', '-pk').values('pk')[:1]
+    return AttemptWrongReason.objects.filter(attempt_id=Subquery(latest), attempt__is_correct=False)
+
+
 REALTOR_AREA_NAMES = {area["code"]: area["title"] for area in REALTOR_LEARNING_AREAS}
 
 
@@ -71,12 +78,7 @@ def stats(request):
         user=request.user, mission__subject=current_subject
     )
     has_learning_history = attempt_qs.exists()
-    awr_qs = AttemptWrongReason.objects.filter(
-        attempt__user=request.user,
-        attempt__mission__subject=current_subject,
-        attempt__grading_valid=True,
-        attempt__is_correct=False,
-    )
+    awr_qs = latest_reason_rows(request.user, current_subject)
 
     if since is not None:
         attempt_qs = attempt_qs.filter(created_at__gte=since)
@@ -172,8 +174,11 @@ def stats(request):
 
 
     # 3) 최근 풀이 20개
+    latest_for_mission = Attempt.objects.valid_for_learning().filter(
+        user=request.user, mission_id=OuterRef('mission_id'), mission__subject=current_subject,
+    ).order_by('-created_at', '-pk').values('pk')[:1]
     recent_attempts = list(
-        attempt_qs
+        attempt_qs.filter(pk=Subquery(latest_for_mission))
         .select_related("mission")
         .order_by("-created_at")[:20]
     )
@@ -369,11 +374,7 @@ def wrong_reason_attempts(request, reason_id):
     period = request.GET.get("period", "all").strip()
     if period not in {"all", "7", "30"}:
         period = "all"
-    attempts = AttemptWrongReason.objects.filter(
-        wrong_reason=reason, attempt__user=request.user,
-        attempt__mission__subject=current_subject, attempt__grading_valid=True,
-        attempt__is_correct=False,
-    ).select_related("attempt__mission").order_by("-attempt__created_at", "-pk")
+    attempts = latest_reason_rows(request.user, current_subject).filter(wrong_reason=reason).select_related("attempt__mission").order_by("-attempt__created_at", "-pk")
     since = _period_since(period)
     if since is not None:
         attempts = attempts.filter(attempt__created_at__gte=since)
