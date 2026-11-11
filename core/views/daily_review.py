@@ -33,5 +33,7 @@ def daily_review_result(request):
     ids = state.get("attempt_ids", []) if state.get("subject_id") == subject.pk else []
     attempts = list(Attempt.objects.valid_for_learning().filter(pk__in=ids, user=request.user,
                     mission__subject=subject).select_related("mission"))
+    valid_state = state if state.get("subject_id") == subject.pk else {}
     return render(request, "core/daily_review_result.html", {"review_attempts": attempts,
-        "review_correct": sum(a.is_correct for a in attempts), "review_total": len(state.get("mission_ids", [])) if ids else 0})
+        "study_mode": valid_state.get("study_mode", ""), "viewed_count": len(valid_state.get("viewed_ids", [])),
+        "review_correct": sum(a.is_correct for a in attempts), "review_total": len(valid_state.get("mission_ids", []))})

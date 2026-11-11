@@ -59,7 +59,7 @@ class Command(BaseCommand):
                         continue
                     self.stdout.write(f'{status} {mission.external_id} · 버전 {mission.content_version}')
                 ContentSourceSync.objects.update_or_create(source_path=path_key,defaults={
-                    'subject_code':subject_code,'fingerprint':digest,'mission_ids':ids})
+                    'subject_code':subject_code,'fingerprint':digest,'mission_ids':sorted(set(ids) | set(marker.mission_ids if marker else []))})
                 changed += 1
                 subject_changed = True
                 self.stdout.write(f'IMPORTED {path_key}: created={counts.created}, updated={counts.updated}, invalidated_attempts={counts.invalidated_attempts}')

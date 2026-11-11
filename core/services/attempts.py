@@ -63,6 +63,9 @@ def save_attempt(
         daily_date=today_date if is_daily else None,
     )
 
+    if not is_correct or confidence_level in (Attempt.CONFIDENCE_GUESSED, Attempt.CONFIDENCE_UNSURE):
+        LearningExposure.objects.filter(user=user, mission=mission).update(known_until=None)
+
     # 3) 오답이면 오답원인 연결 저장
     if not is_correct:
         ids = list(wrong_reason_ids or [])

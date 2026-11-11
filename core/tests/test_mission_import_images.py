@@ -405,8 +405,10 @@ class LogisticsDatasetIntegrationTests(TestCase):
 
     def test_held_questions_stay_out_of_daily_recommendations(self):
         from django.utils import timezone
-        held = Mission.objects.filter(subject__code=LOGISTICS_SUBJECT_CODE, is_usable_for_set=False).first()
-        self.assertIsNotNone(held)
+        held = Mission.objects.filter(subject__code=LOGISTICS_SUBJECT_CODE).first()
+        held.review_status = Mission.REVIEW_CONFIRMED_ERROR
+        held.is_usable_for_set = False
+        held.save()
         DailyMission.objects.create(user=self.user, mission=held, date=timezone.localdate())
         response = self.client.get(reverse("mission_list"))
         self.assertEqual(len(response.context["recommended"]), 5)

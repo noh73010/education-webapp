@@ -50,8 +50,8 @@ class DailyReviewTests(TestCase):
 
     def test_submit_shows_feedback_then_next_and_does_not_duplicate(self):
         one, two = self.mission('flow-one'), self.mission('flow-two')
-        self.attempt(one)
-        self.attempt(two)
+        self.attempt(one, days=2)
+        self.attempt(two, days=2)
         response = self.client.post(reverse('daily_review_start'))
         self.assertEqual(response.url, reverse('mission_detail', args=[one.pk]))
         page = self.client.get(response.url)
@@ -104,7 +104,7 @@ class DailyReviewTests(TestCase):
         for key, chapter in [('public', 'RE05-03'), ('tax', 'RE06-01')]:
             m = Mission.objects.create(subject=realtor, external_id=key, title=key, prompt=key,
                 course='부동산공시법 및 부동산세법', chapter_code=chapter, question_type='choice_one', correct_answer='1')
-            self.attempt(m)
+            self.attempt(m, days=2)
         plan = review_plan(self.user, realtor)
         self.assertEqual(plan['label'], '부동산공시법')
         self.assertEqual(len(plan['mission_ids']), 1)
@@ -118,3 +118,16 @@ class DailyReviewTests(TestCase):
         unit = ConceptUnit.objects.create(subject=self.subject, title='검수 개념', comparison='검수 비교', reviewed_on=timezone.localdate())
         m.concept_unit = unit
         self.assertEqual(get_mission_learning_concept(m)['summary'], '검수 비교')
+
+    def test_review_uses_shared_mastery_intervals_and_known_suppression(self):
+        from core.models import LearningExposure
+        mastered=self.mission('mastered-blank')
+        for days in (8,4,0):
+            a=self.attempt(mastered,True,days=days)
+            Attempt.objects.filter(pk=a.pk).update(learning_evidence=True)
+        self.attempt(self.mission('recent-correct'),True,days=1)
+        self.attempt(self.mission('recent-wrong'),days=0)
+        due=self.mission('due-wrong');self.attempt(due,days=2)
+        known=self.mission('known-due');self.attempt(known,True,'guessed',2)
+        LearningExposure.objects.create(user=self.user,mission=known,known_until=timezone.now()+timedelta(days=7))
+        self.assertEqual(review_plan(self.user,self.subject)['mission_ids'],[due.pk])

@@ -100,6 +100,7 @@ class CsvCatalogTests(TestCase):
         self.write(self.log,'LOG-NEW',번호='6')
         output=self.sync()
         self.assertIn('WARNING missing ID LOG-030-1-005',output)
+        self.assertIn('WARNING missing ID LOG-030-1-005',self.sync())
         self.assertTrue(Mission.objects.filter(pk=m.pk).exists())
     def test_dry_run_leaves_no_rows_or_checkpoints(self):
         self.sync(dry_run=True)

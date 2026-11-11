@@ -195,3 +195,50 @@ class EfficientLearningTests(TestCase):
         self.assertContains(response,'오답 원인이 저장됐어요.')
         self.assertContains(response,'role="status"')
         self.assertTrue(AttemptWrongReason.objects.filter(attempt=attempt,wrong_reason=reason).exists())
+
+    def test_manual_review_stays_in_review_queue_until_result(self):
+        for m in self.missions[:2]:save_attempt(user=self.user,mission=m,is_correct=False)
+        response=self.client.get(reverse('study_library')+'?mode=review&start=1')
+        self.assertEqual(self.client.session['review_mission_ids'],[m.pk for m in self.missions[:2]])
+        first=self.client.get(response.url)
+        receipt=self.client.post(response.url,{'work_token':str(first.context['work'].pk),'submitted_answer':'1'})
+        result=self.client.get(receipt.url)
+        self.assertEqual(result.context['continue_url'],reverse('mission_detail',args=[self.missions[1].pk]))
+        last=self.client.get(result.context['continue_url'])
+        end=self.client.post(reverse('mission_detail',args=[self.missions[1].pk]),{'work_token':str(last.context['work'].pk),'submitted_answer':'2'})
+        self.assertEqual(self.client.get(end.url).context['continue_url'],reverse('daily_review_result'))
+        self.assertEqual(len(self.client.get(reverse('daily_review_result')).context['review_attempts']),2)
+
+    def test_reveal_skips_within_queue_without_fabricating_a_score(self):
+        self.client.get(reverse('study_library')+'?mode=new&start=1')
+        before=Attempt.objects.count()
+        response=self.client.post(reverse('learning_signal',args=[self.missions[0].pk]),{'action':'view'},follow=True)
+        self.assertEqual(response.context['explanation_next'],reverse('mission_detail',args=[self.missions[1].pk]))
+        self.assertEqual(Attempt.objects.count(),before)
+        self.assertEqual(self.client.session['review_current_index'],1)
+        self.client.post(reverse('learning_signal',args=[self.missions[0].pk]),{'action':'view'})
+        self.assertEqual(self.client.session['review_current_index'],1)
+
+    def test_unspecified_confidence_does_not_claim_the_learner_was_uncertain(self):
+        from core.services.learning_experience import progress_evidence, summarize_attempt_evidence
+        a=save_attempt(user=self.user,mission=self.missions[0],is_correct=True)
+        self.assertNotIn('확신이 부족',progress_evidence(self.user,a)['message'])
+        self.assertEqual(summarize_attempt_evidence([a])['status'],'correct')
+
+    def test_new_wrong_answer_cancels_self_reported_known_period(self):
+        exposure=LearningExposure.objects.create(user=self.user,mission=self.missions[0],known_until=timezone.now()+timedelta(days=7))
+        save_attempt(user=self.user,mission=self.missions[0],is_correct=False)
+        exposure.refresh_from_db();self.assertIsNone(exposure.known_until)
+
+    def test_same_timestamp_uses_newest_attempt_as_current_state(self):
+        first=save_attempt(user=self.user,mission=self.missions[0],is_correct=True,confidence_level='certain')
+        last=save_attempt(user=self.user,mission=self.missions[0],is_correct=False)
+        Attempt.objects.filter(pk__in=[first.pk,last.pk]).update(created_at=timezone.now())
+        self.assertEqual(get_mission_review_states(self.user,[last.mission_id])[last.mission_id]['status'],'wrong')
+
+    def test_stale_confidence_form_cannot_rewrite_old_learning_history(self):
+        old=save_attempt(user=self.user,mission=self.missions[0],is_correct=True)
+        latest=save_attempt(user=self.user,mission=self.missions[0],is_correct=False)
+        response=self.client.post(reverse('learning_signal',args=[old.mission_id]),{'action':'confidence','attempt':old.pk,'confidence':'certain'})
+        self.assertEqual(response.url,reverse('mission_detail',args=[old.mission_id])+f'?attempt={latest.pk}')
+        old.refresh_from_db();self.assertEqual(old.confidence_level,'')

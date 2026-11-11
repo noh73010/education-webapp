@@ -27,11 +27,11 @@ def get_mission_review_states(user, mission_ids, *, today=None):
             recent_rank=Window(
                 expression=RowNumber(),
                 partition_by=[F("mission_id")],
-                order_by=F("created_at").desc(),
+                order_by=[F("created_at").desc(), F("pk").desc()],
             )
         )
         .filter(recent_rank__lte=RECENT_ATTEMPT_LIMIT)
-        .order_by("mission_id", "-created_at")
+        .order_by("mission_id", "-created_at", "-pk")
     )
 
     attempts_by_mission = defaultdict(list)

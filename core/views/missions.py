@@ -785,7 +785,9 @@ def mission_detail(request, mission_id):
     mission = get_object_or_404(Mission, id=mission_id, subject=current_subject)
     pattern_training = build_pattern_training_context(request, current_subject, mission)
     wrong_reasons = WrongReason.objects.all()
-    diagnostic_before = diagnostic_state(request.user, current_subject) if request.method == "POST" else None
+    queue_state = request.session.get("daily_review_state", {})
+    manual_queue = bool(queue_state.get("study_mode") and queue_state.get("subject_id") == current_subject.pk and mission.pk in queue_state.get("mission_ids", []))
+    diagnostic_before = diagnostic_state(request.user, current_subject) if request.method == "POST" and not manual_queue else None
 
     def safe_continue_url(raw):
         return raw if raw.startswith("/") and not raw.startswith("//") and url_has_allowed_host_and_scheme(
@@ -797,7 +799,9 @@ def mission_detail(request, mission_id):
         from core.services.efficient_learning import alternatives
         if LearningExposure.objects.filter(user=request.user, mission=mission).exists():
             return render(request, "core/learning_explanation.html", {"mission": mission,
-                "alternatives": alternatives(request.user, mission), "choices": parse_choice_schema(mission.answer_schema)})
+                "alternatives": alternatives(request.user, mission), "choices": parse_choice_schema(mission.answer_schema),
+                "explanation_next": (request.session.get("explanation_next", {}).get("url", "")
+                    if request.session.get("explanation_next", {}).get("mission_id") == mission.pk else "")})
 
     reason_post_attempt = None
     reason_post_selected_ids = set()
@@ -970,43 +974,10 @@ def mission_detail(request, mission_id):
         return redirect("problem_set_list")
 
     def handle_review_progress(attempt=None):
-        review_ids = request.session.get("review_mission_ids", [])
-        return_exam_id = request.session.get("review_return_exam_id")
+        from core.services.daily_review import advance_study_queue
+        destination = advance_study_queue(request, current_subject, mission, attempt)
+        return redirect(destination) if destination else None
 
-        if not review_ids or mission.id not in review_ids:
-            return None
-
-        current_index = review_ids.index(mission.id)
-        daily_state = request.session.get("daily_review_state", {})
-        is_daily_review = (daily_state.get("subject_id") == current_subject.pk
-                           and daily_state.get("mission_ids") == review_ids)
-        if is_daily_review and attempt:
-            daily_state["attempt_ids"] = list(dict.fromkeys(daily_state.get("attempt_ids", []) + [attempt.pk]))
-            request.session["daily_review_state"] = daily_state
-        next_index = current_index + 1
-        if is_daily_review:
-            allowed = set(Mission.objects.filter(pk__in=review_ids[next_index:], subject=current_subject,
-                          is_usable_for_set=True).exclude(review_status=Mission.REVIEW_CONFIRMED_ERROR).values_list("pk", flat=True))
-            while next_index < len(review_ids) and review_ids[next_index] not in allowed:
-                next_index += 1
-
-        if next_index < len(review_ids):
-            next_mission_id = review_ids[next_index]
-            request.session["review_current_index"] = next_index
-            return redirect("mission_detail", mission_id=next_mission_id)
-
-        request.session.pop("review_mission_ids", None)
-        request.session.pop("review_current_index", None)
-        request.session.pop("review_return_exam_id", None)
-
-        if is_daily_review:
-            return redirect("daily_review_result")
-
-        if return_exam_id:
-            return redirect("exam_result", exam_id=return_exam_id)
-
-        return redirect("mission_list")
-    
     def get_next_daily_mission():
         today = timezone.localdate()
 
@@ -1356,7 +1327,7 @@ def mission_detail(request, mission_id):
                 today_date,
                 subject=current_subject,
             ))
-    diagnostic_context = diagnostic_state(request.user, current_subject)
+    diagnostic_context = None if manual_queue else diagnostic_state(request.user, current_subject)
     continue_parts = urlsplit(continue_url).path.strip("/").split("/") if continue_url else []
     continue_label = ("다음 문제" if len(continue_parts) == 2 and
                       continue_parts[0] == "missions" and continue_parts[1].isdigit()

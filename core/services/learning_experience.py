@@ -35,8 +35,10 @@ def progress_evidence(user, attempt):
     if not attempt or not attempt.is_correct or attempt.mission.question_type == "manual":
         return None
     mission = attempt.mission
-    if attempt.confidence_level != Attempt.CONFIDENCE_CERTAIN:
+    if attempt.confidence_level in (Attempt.CONFIDENCE_GUESSED, Attempt.CONFIDENCE_UNSURE):
         return {"label": "정답 확인", "message": "맞혔지만 아직 확신이 부족해요. 다음 복습에서 다시 확인해요."}
+    if not attempt.confidence_level and not attempt.learning_evidence:
+        return {"label": "정답 기록", "message": "정답으로 기록했어요. 확신도는 입력되지 않았으며, 시간이 지난 뒤 다시 확인합니다."}
     unit = reviewed_concept(mission)
     if unit:
         # A different, previously unseen question in an explicitly reviewed concept group.
@@ -49,7 +51,7 @@ def progress_evidence(user, attempt):
         ).exclude(mission=mission).order_by("-created_at").first()
         if prior_failure and not previous_target:
             return {"label": "다른 문제에서도 확인했어요", "message":
-                    f"{unit.title}: 틀린 날로부터 3일 이상 지난 뒤, 처음 푼 다른 문제를 확신 있게 맞혔어요. 한 번의 확인이므로 다음 복습도 이어가세요."}
+                    f"{unit.title}: 틀린 날로부터 3일 이상 지난 뒤, 처음 푼 다른 문제를 맞혔어요. 한 번의 확인이므로 다음 복습도 이어가세요."}
     previous = Attempt.objects.valid_for_learning().filter(
         user=user, mission=mission, created_at__lt=attempt.created_at
     ).order_by("-created_at").first()
@@ -73,12 +75,14 @@ def summarize_attempt_evidence(attempts):
             "label": "반복 복습 필요",
             "message": "틀린 문제의 해설을 확인하고 관련 문제로 다시 점검해 보세요.",
         }
-    if any(attempt.confidence_level != Attempt.CONFIDENCE_CERTAIN for attempt in attempts):
+    if any(attempt.confidence_level in (Attempt.CONFIDENCE_GUESSED, Attempt.CONFIDENCE_UNSURE) for attempt in attempts):
         return {
             "status": "uncertain",
             "label": "맞혔지만 확신 부족",
             "message": "점수는 정답이지만 안정된 실력으로 판단하지 않습니다. 다음 복습에서 다시 확인해요.",
         }
+    if any(not attempt.confidence_level for attempt in attempts):
+        return {"status": "correct", "label": "정답 기록", "message": "정답을 기록했어요. 확신도를 입력하지 않았다는 이유로 헷갈린 문제로 분류하지 않으며, 숙달은 별도의 시간 간격과 반복 정답 근거로 판단합니다."}
     ordered = sorted(attempts, key=lambda attempt: attempt.created_at)
     delayed = len(ordered) >= 2 and ordered[-1].created_at >= ordered[0].created_at + timedelta(days=3)
     if delayed and len(ordered) >= 3:
