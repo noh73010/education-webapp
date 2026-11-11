@@ -182,3 +182,16 @@ class EfficientLearningTests(TestCase):
         self.assertEqual(list(rows.values_list('attempt_id','wrong_reason_id')),[(latest.pk,r2.pk)])
         save_attempt(user=self.user,mission=m,is_correct=True)
         self.assertFalse(latest_reason_rows(self.user,self.subject).exists())
+
+    def test_wrong_reason_success_is_announced_on_next_question(self):
+        from core.models import WrongReason, AttemptWrongReason
+        reason=WrongReason.objects.create(name='저장 확인 원인')
+        m=self.missions[0]
+        attempt=save_attempt(user=self.user,mission=m,is_correct=False)
+        next_url=reverse('mission_detail',args=[self.missions[1].pk])
+        response=self.client.post(reverse('mission_detail',args=[m.pk]),
+            {'reason_attempt':attempt.pk,'wrong_reason_ids':[reason.pk],'next_url':next_url},follow=True)
+        self.assertEqual(response.wsgi_request.path,next_url)
+        self.assertContains(response,'오답 원인이 저장됐어요.')
+        self.assertContains(response,'role="status"')
+        self.assertTrue(AttemptWrongReason.objects.filter(attempt=attempt,wrong_reason=reason).exists())

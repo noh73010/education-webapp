@@ -822,6 +822,8 @@ def mission_detail(request, mission_id):
                         AttemptWrongReason.objects.get_or_create(attempt=attempt, wrong_reason_id=reason_id)
             except DatabaseError:
                 reason_error = "오답 원인을 저장하지 못했어요. 선택은 유지했으니 다시 눌러 주세요."
+        if not reason_error:
+            messages.success(request, "✓ 오답 원인이 저장됐어요. 복습 안내에 반영됩니다.")
         if reason_error:
             reason_post_attempt = attempt
         elif reason_post_continue_url:
