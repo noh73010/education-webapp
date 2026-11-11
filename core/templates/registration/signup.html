@@ -19,6 +19,7 @@
 
   <form method="post" novalidate>
     {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
 
     {% for field in form %}
       <div class="form-field">
@@ -40,7 +41,7 @@
 <section class="card">
   <p>
     이미 계정이 있나요?
-    <a href="{% url 'login' %}" class="sub-link signup-login-link">로그인하기</a>
+    <a href="{% url 'login' %}{% if next %}?next={{ next|urlencode }}{% endif %}" class="sub-link signup-login-link">로그인하기</a>
   </p>
 </section>
 {% endblock %}

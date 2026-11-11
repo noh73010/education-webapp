@@ -3,7 +3,7 @@ import random
 from django.db import transaction
 from django.utils import timezone
 
-from core.models import Mission, ExamSession, ExamSessionMission, Attempt
+from core.models import Mission, ExamSession, ExamSessionMission, Attempt, LearningExposure
 from core.services.grading import grade_answer, grade_multi_answer, parse_answer_schema
 from core.services.mission_versioning import attempt_snapshot_defaults
 from core.services.streaks import update_user_streak
@@ -196,6 +196,11 @@ def sync_exam_to_attempts(exam):
         exam.items.select_related("mission").filter(submitted_at__isnull=False)
     )
 
+    recent_views = set(LearningExposure.objects.filter(user=exam.user,
+        mission_id__in=[item.mission_id for item in items],
+        viewed_at__gte=timezone.now()-timezone.timedelta(days=1)).values_list('mission_id', flat=True))
+    wrong_ids = [item.mission_id for item in items if item.user_answer_correct is not True]
+    LearningExposure.objects.filter(user=exam.user, mission_id__in=wrong_ids).update(known_until=None)
     attempt_list = []
     for item in items:
         attempt_list.append(
@@ -203,6 +208,7 @@ def sync_exam_to_attempts(exam):
                 user=exam.user,
                 mission=item.mission,
                 is_correct=item.user_answer_correct is True,
+                learning_evidence=item.mission_id not in recent_views,
                 time_spent_sec=None,
                 daily_date=None,
                 submitted_answer=item.submitted_answer,

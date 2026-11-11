@@ -783,6 +783,9 @@ def mission_list(request):
 def mission_detail(request, mission_id):
     current_subject, _ = get_current_subject(request)
     mission = get_object_or_404(Mission, id=mission_id, subject=current_subject)
+    if request.method == "POST" and not mission.is_usable_for_set:
+        messages.warning(request, "출제가 중지된 문제입니다. 답안을 기록하지 않았어요. 다른 문제를 선택해 주세요.")
+        return redirect("mission_detail", mission_id=mission.pk)
     pattern_training = build_pattern_training_context(request, current_subject, mission)
     wrong_reasons = WrongReason.objects.all()
     queue_state = request.session.get("daily_review_state", {})
@@ -812,6 +815,11 @@ def mission_detail(request, mission_id):
         if not attempt_id.isdigit():
             raise Http404
         attempt = get_object_or_404(Attempt, pk=attempt_id, user=request.user, mission=mission, is_correct=False)
+        latest = Attempt.objects.valid_for_learning().filter(user=request.user, mission=mission).order_by("-created_at", "-pk").first()
+        if latest is None or latest.pk != attempt.pk:
+            messages.info(request, "더 최근의 풀이가 있어 마지막 기록을 유지했어요.")
+            destination = reverse("mission_detail", args=[mission.pk])
+            return redirect(destination + f"?attempt={latest.pk}" if latest else destination)
         reason_post_selected_ids = {int(value) for value in request.POST.getlist("wrong_reason_ids") if value.isdigit()}
         reason_post_continue_url = safe_continue_url(request.POST.get("next_url", ""))
         valid_reason_ids = set(WrongReason.objects.filter(pk__in=reason_post_selected_ids).values_list("pk", flat=True))
@@ -858,7 +866,7 @@ def mission_detail(request, mission_id):
         if work.attempt_id:
             return redirect(work.return_url)
     work = None
-    if not saved:
+    if not saved and mission.is_usable_for_set:
         work, _ = MissionWork.objects.get_or_create(user=request.user, mission=mission, attempt__isnull=True)
     schema_items = parse_answer_schema(mission.answer_schema)
     choice_items = parse_choice_schema(mission.answer_schema)

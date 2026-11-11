@@ -82,3 +82,29 @@ class SignupTest(TestCase):
             reverse("mission_list"),
             fetch_redirect_response=False,
         )
+
+    def test_guest_result_return_url_survives_signup(self):
+        next_url = reverse('guest_practice')
+        login = self.client.get(reverse('login'), {'next': next_url})
+        self.assertContains(login, reverse('signup') + '?next=')
+        page = self.client.get(reverse('signup'), {'next': next_url})
+        self.assertEqual(page.context['next'], next_url)
+        response = self.client.post(reverse('signup'), {'username': 'guest-convert',
+            'password1': 'StrongPass123!', 'password2': 'StrongPass123!', 'next': next_url})
+        self.assertRedirects(response, next_url, fetch_redirect_response=False)
+
+    def test_signup_rejects_external_return_url(self):
+        for target in ('https://example.com/', '//example.com/', '/\\example.com/'):
+            with self.subTest(target=target):
+                page = self.client.get(reverse('signup'), {'next': target})
+                self.assertEqual(page.context['next'], '')
+        response = self.client.post(reverse('signup'), {'username': 'safe-convert',
+            'password1': 'StrongPass123!', 'password2': 'StrongPass123!', 'next': '//example.com/'})
+        self.assertRedirects(response, reverse('mission_list'), fetch_redirect_response=False)
+
+    def test_signup_validation_error_keeps_internal_return_url(self):
+        next_url = reverse('guest_practice')
+        response = self.client.post(reverse('signup'), {'username': 'incomplete',
+            'password1': 'StrongPass123!', 'password2': 'mismatch', 'next': next_url})
+        self.assertEqual(response.context['next'], next_url)
+        self.assertContains(response, 'name="next"')

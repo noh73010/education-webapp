@@ -415,6 +415,17 @@
     }
 
     .learning-flow li:not(:last-child)::after {
+        position: absolute;
+        z-index: 2;
+        width: 28px;
+        height: 28px;
+        border: 1px solid #dbe3ed;
+        border-radius: 50%;
+        background: #f8fafc;
+        color: #94a3b8;
+        font-size: 15px;
+        line-height: 26px;
+        text-align: center;
         display: block;
         top: auto;
         right: 50%;

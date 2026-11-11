@@ -9,11 +9,11 @@ from django.utils import timezone
 from core.models import (
     Attempt, ConfusionCard, DailyMission, ExamSession, Inquiry,
     PatternTrainingSession, ProblemSetSession, UserEvent, UserStreak, UserWeakness,
-    LearningStart, MissionWork, WrongPattern,
+    LearningStart, MissionWork, LearningExposure, WrongPattern,
 )
 
 LEARNING_MODELS = (
-    MissionWork, LearningStart,
+    MissionWork, LearningStart, LearningExposure,
     ProblemSetSession, ExamSession, PatternTrainingSession, Attempt,
     DailyMission, ConfusionCard, UserWeakness, UserStreak,
 )
@@ -109,6 +109,7 @@ def reset_subject_learning_data(user, subject):
                        metadata__pattern_code__in=safe_pattern_codes))
     UserEvent.objects.filter(user=user).filter(event_scope).delete()
 
+    LearningExposure.objects.filter(user=user, mission__subject=subject).delete()
     MissionWork.objects.filter(user=user, mission__subject=subject).delete()
     LearningStart.objects.filter(user=user, subject=subject).delete()
     ProblemSetSession.objects.filter(pk__in=set_ids, user=user).delete()

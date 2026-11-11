@@ -37,7 +37,7 @@
 
 <section class="card signup-callout">
   <p class="signup-callout-text">아직 계정이 없나요?</p>
-  <a href="{% url 'signup' %}" class="main-button signup-callout-button">회원가입하기</a>
+  <a href="{% url 'signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}" class="main-button signup-callout-button">회원가입하기</a>
 </section>
 
 {% endblock %}

@@ -4,6 +4,7 @@ from django.contrib.auth import login
 from django.contrib.auth.views import LoginView
 from django.db import transaction
 from django.shortcuts import redirect, render
+from django.utils.http import url_has_allowed_host_and_scheme
 
 from core.forms import SignupForm
 from core.models import UserAccess
@@ -11,8 +12,12 @@ from core.services.analytics import record_event
 
 
 def signup(request):
+    next_url = request.POST.get("next", request.GET.get("next", ""))
+    if not (next_url.startswith("/") and not next_url.startswith("//") and
+            url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()})):
+        next_url = ""
     if request.user.is_authenticated:
-        return redirect("mission_list")
+        return redirect(next_url) if next_url else redirect("mission_list")
 
     if request.method == "POST":
         form = SignupForm(request.POST)
@@ -33,12 +38,13 @@ def signup(request):
                 metadata={"source": "signup_form"},
             )
             messages.success(request, "회원가입이 완료되었습니다. 바로 학습을 시작할 수 있습니다.")
-            return redirect("mission_list")
+            return redirect(next_url) if next_url else redirect("mission_list")
     else:
         form = SignupForm()
 
     return render(request, "registration/signup.html", {
         "form": form,
+        "next": next_url,
         "social_login_providers": settings.SOCIAL_LOGIN_PROVIDERS,
     })
 

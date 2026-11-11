@@ -113,7 +113,7 @@ def guest_practice(request):
                     request.session[KEY] = state
                     return redirect("guest_practice")
                 error = "답안을 선택해 주세요."
-            if action == "confidence" and graded and request.POST.get("confidence") in ("guessed", "unsure"):
+            if action == "confidence" and graded and request.POST.get("step") == str(step) and request.POST.get("confidence") in ("guessed", "unsure"):
                 answers[step][1] = request.POST["confidence"]
                 request.session[KEY] = state
                 return redirect("guest_practice")
