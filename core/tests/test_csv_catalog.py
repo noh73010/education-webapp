@@ -104,15 +104,15 @@ class CsvCatalogTests(TestCase):
     def test_dry_run_leaves_no_rows_or_checkpoints(self):
         self.sync(dry_run=True)
         self.assertFalse(Mission.objects.exists());self.assertFalse(ContentSourceSync.objects.exists())
-    def test_repository_csv_ids_equal_previous_generated_ids(self):
-        from django.conf import settings
-        from core.management.commands.import_missions import normalize_korean_row
-        for subject in ('logistics','realtor'):
-            for path in (Path(settings.BASE_DIR)/'generated'/subject).glob('*.csv'):
-                with path.open(encoding='utf-8-sig',newline='') as f:
-                    for row in csv.DictReader(f):
-                        identity=row.pop('문항ID')
-                        self.assertEqual(normalize_korean_row(row,csv_path=path,subject_code=subject)['external_id'],identity)
+    def test_legacy_id_backfill_preserves_existing_database_identity(self):
+        self.write(self.log, '')
+        call_command('import_missions', str(self.log), subject_code='logistics', stdout=StringIO())
+        mission = Mission.objects.get()
+        identity, pk = mission.external_id, mission.pk
+        self.write(self.log, identity)
+        self.sync()
+        self.assertEqual(Mission.objects.get(external_id=identity).pk, pk)
+        self.assertEqual(Mission.objects.count(), 2)
 
     def test_changed_image_path_and_explicit_removal_invalidate_old_grade(self):
         from core.models import MissionImage
