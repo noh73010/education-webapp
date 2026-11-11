@@ -187,9 +187,21 @@ def normalize_korean_row(row, *, csv_path, subject_code):
         raise ValueError("정답 번호가 보기 범위를 벗어납니다")
 
     batch_label = Path(csv_path).stem.replace("_", " ")
-    external_id = f"{subject_code.upper()}-{chapter_code}-{source_slug(csv_path)}-{number:04d}"
+    external_id = ((row.get("문항ID") or row.get("external_id") or "").strip()
+                   or f"{subject_code.upper()}-{chapter_code}-{source_slug(csv_path)}-{number:04d}")
+    if len(external_id) > 100:
+        raise ValueError("문항ID는 100자 이하여야 합니다")
+    enabled = (row.get("사용여부") or "사용").strip()
+    if enabled not in ("사용", "중지"):
+        raise ValueError("사용여부는 사용 또는 중지여야 합니다")
+    change_type = (row.get("수정유형") or "").strip()
+    if change_type not in ("", "오타"):
+        raise ValueError("수정유형은 비워두거나 오타로 입력하세요")
     data = {
-        "external_id": external_id[:100],
+        "external_id": external_id,
+        "csv_change_type": change_type,
+        "csv_explicit_id": bool((row.get("문항ID") or row.get("external_id") or "").strip()),
+        "source_enabled": enabled == "사용",
         "subject_code": subject_code,
         "course": course,
         "chapter_code": chapter_code,
@@ -208,6 +220,7 @@ def normalize_korean_row(row, *, csv_path, subject_code):
         "answer_schema": answer_schema,
         "wrong_pattern_code": default_pattern_code(subject_code, chapter_code),
         "variation_group": default_pattern_code(subject_code, chapter_code) or chapter_code,
+        "csv_clear_image": (row.get("문제이미지") or row.get("이미지") or "").strip() == "없음",
         "image_raw_path": (row.get("문제이미지") or row.get("이미지") or "").strip(),
         "question_number": number,
         "quality_defaults": {
@@ -335,6 +348,8 @@ def sync_generated_problem_sets(missions):
             .order_by("external_id")
         )
         if not grouped_missions:
+            subject_code = Subject.objects.get(pk=subject_id).code
+            deactivated_count += ProblemSet.objects.filter(generation_key__startswith=f"{subject_code}|{course}|{chapter_code}|").update(is_active=False)
             continue
         ordered = sorted(grouped_missions, key=lambda mission: mission.external_id)
         expected_keys = []
@@ -387,6 +402,7 @@ class Command(BaseCommand):
         parser.add_argument("--subject-code", default="")
         parser.add_argument("--create-problem-sets", action="store_true")
         parser.add_argument("--dry-run", action="store_true")
+        parser.add_argument("--skip-unchanged", action="store_true", help="Avoid locking and rewriting identical mission rows")
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -448,6 +464,9 @@ class Command(BaseCommand):
                         self.stdout.write(f"SKIP {error} ({csv_path.name}:{row_number})")
                         continue
 
+                    change_type = data.pop("csv_change_type", "")
+                    clear_image = data.pop("csv_clear_image", False)
+                    explicit_id = data.pop("csv_explicit_id", False)
                     quality_defaults = data.pop("quality_defaults")
                     image_raw_path = data.pop("image_raw_path")
                     question_number = data.pop("question_number")
@@ -461,6 +480,8 @@ class Command(BaseCommand):
                     # Reuse that row by its stable source-file/number suffix
                     # instead of creating a duplicate during taxonomy repair.
                     existing_mission = Mission.objects.filter(external_id=external_id).first()
+                    if existing_mission and existing_mission.subject_id != subject.pk:
+                        raise CommandError(f"{external_id}: 다른 자격증에서 사용하는 문항ID입니다")
                     previous_state = mission_import_state(existing_mission)
                     if is_korean_schema and existing_mission is None:
                         external_parts = external_id.split("-", 2)
@@ -474,23 +495,58 @@ class Command(BaseCommand):
                                 previous_state = mission_import_state(legacy_mission)
                                 legacy_mission.external_id = external_id
                                 legacy_mission.save(update_fields=["external_id"])
+                                existing_mission = legacy_mission
 
-                    mission, created = Mission.objects.update_or_create(
-                        external_id=external_id,
-                        defaults=data,
-                    )
+                    if clear_image or (explicit_id and not image_raw_path):
+                        image_path, image_source, explicit_missing = "", "", False
+                    else:
+                        image_path, image_source, explicit_missing = resolve_question_image(
+                            raw_path=image_raw_path, subject_code=subject_code,
+                            csv_path=csv_path, question_number=question_number,
+                        )
+                    previous_image_path = ""
+                    if existing_mission:
+                        try:
+                            previous_image_path = existing_mission.question_image.static_path
+                        except MissionImage.DoesNotExist:
+                            pass
+                    image_changed = bool(existing_mission and (
+                        (image_path and previous_image_path != image_path) or (clear_image and previous_image_path)
+                    ))
+                    semantic_change = bool(existing_mission and change_type != "오타" and (
+                        existing_mission.prompt != data.get("prompt", existing_mission.prompt)
+                        or existing_mission.answer_schema != data.get("answer_schema", existing_mission.answer_schema)
+                    ))
+                    semantic_change = semantic_change or image_changed
+                    answer_changed = bool(existing_mission and existing_mission.correct_answer != data.get("correct_answer", existing_mission.correct_answer))
+                    if options["skip_unchanged"] and existing_mission and all(getattr(existing_mission,key) == value for key,value in data.items()):
+                        mission, created = existing_mission, False
+                        mission._grading_change_impact = {"attempts":0,"user_ids":()}
+                    else:
+                        mission, created = Mission.objects.update_or_create(
+                            external_id=external_id, defaults=data,
+                        )
+                    if image_changed and existing_mission and mission.content_version == existing_mission.content_version:
+                        mission.content_version += 1
+                        Mission.objects.filter(pk=mission.pk).update(content_version=mission.content_version)
                     grading_impact = getattr(mission, "_grading_change_impact", {})
+                    if semantic_change:
+                        from core.services.mission_versioning import invalidate_attempts_for_grading_change
+                        impact = invalidate_attempts_for_grading_change(mission=mission, previous_version=max(mission.content_version-1,1), reason_detail="문제 조건 또는 보기 변경")
+                        grading_impact = {"attempts": grading_impact.get("attempts",0)+impact.attempts,
+                                          "user_ids": set(grading_impact.get("user_ids",())) | set(impact.user_ids)}
+                    if semantic_change or answer_changed:
+                        from core.models import LearningExposure
+                        LearningExposure.objects.filter(mission=mission).delete()
+                        from core.models import MissionWork
+                        MissionWork.objects.filter(mission=mission, attempt__isnull=True).delete()
                     invalidated_attempt_count += grading_impact.get("attempts", 0)
                     affected_user_ids.update(grading_impact.get("user_ids", ()))
                     apply_review(mission, review_manifest)
                     imported_missions.append(mission)
 
-                    image_path, image_source, explicit_missing = resolve_question_image(
-                        raw_path=image_raw_path,
-                        subject_code=subject_code,
-                        csv_path=csv_path,
-                        question_number=question_number,
-                    )
+                    if clear_image:
+                        MissionImage.objects.filter(mission=mission).delete()
                     if image_path:
                         MissionImage.objects.update_or_create(
                             mission=mission,

@@ -17,6 +17,7 @@
 {% block content %}
 {% if daily_review_state %}<section class="card"><p class="eyebrow">{{ daily_review_state.label }} · 오늘의 복습 {{ daily_review_number }}/{{ daily_review_state.mission_ids|length }}</p><p>제출 후 정답과 해설을 확인하고 다음 문제를 누르세요.</p></section>{% endif %}
 <main class="cbt-page">
+{% if content_updated %}<section class="card" role="status"><p>내용이 수정된 문제예요. 이전 풀이의 채점은 현재 학습 판단에서 제외했으니 다시 확인해 보세요.</p></section>{% endif %}
 
 {% if diagnostic_active %}
 <section class="card diagnostic-banner">

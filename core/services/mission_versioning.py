@@ -63,7 +63,13 @@ def mission_grading_fingerprint(mission) -> str:
 
 def mission_snapshot(mission) -> dict:
     """Freeze the question and answer context that the learner actually saw."""
+    from core.models import MissionImage
+    try:
+        image_path = mission.question_image.static_path
+    except MissionImage.DoesNotExist:
+        image_path = ""
     return {
+        "image_path": image_path,
         "external_id": mission.external_id,
         "content_version": mission.content_version,
         "content_fingerprint": mission.content_fingerprint,
@@ -98,7 +104,7 @@ class GradingInvalidationImpact:
 
 
 @transaction.atomic
-def invalidate_attempts_for_grading_change(*, mission, previous_version: int):
+def invalidate_attempts_for_grading_change(*, mission, previous_version: int, reason_detail="채점 기준 fingerprint 변경"):
     """Preserve historical attempts but remove them from current learning data."""
     from core.models import Attempt, ConfusionCard
     from core.services.weaknesses import rebuild_weaknesses_for_attempt_invalidation
@@ -107,7 +113,7 @@ def invalidate_attempts_for_grading_change(*, mission, previous_version: int):
     user_ids = list(affected.values_list("user_id", flat=True).distinct())
     reason = (
         f"문항 버전 {previous_version}→{mission.content_version}: "
-        "채점 기준 fingerprint 변경"
+        f"{reason_detail}"
     )
     attempt_count = affected.update(
         grading_valid=False,

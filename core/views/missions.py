@@ -1373,6 +1373,7 @@ def mission_detail(request, mission_id):
     from core.services.efficient_learning import alternatives
     concept_alternatives = alternatives(request.user, mission) if saved else []
     return render(request, "core/mission_detail.html", {
+        "content_updated": Attempt.objects.filter(user=request.user, mission=mission, grading_valid=False).exists(),
         "concept_alternatives": concept_alternatives,
         "mission": mission,
         "daily_review_state": request.session.get("daily_review_state") if mission.pk in request.session.get("review_mission_ids", []) else None,

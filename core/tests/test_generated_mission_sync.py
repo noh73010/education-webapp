@@ -15,7 +15,7 @@ from core.services.subjects import LOGISTICS_SUBJECT_CODE, seed_platform_subject
 
 KOREAN_COLUMNS = [
     "번호", "과목", "챕터", "난이도", "문제", "문제이미지",
-    "보기1", "보기2", "보기3", "보기4", "보기5", "정답", "해설",
+    "보기1", "보기2", "보기3", "보기4", "보기5", "정답", "해설", "수정유형",
 ]
 
 
@@ -32,6 +32,7 @@ class GeneratedMissionSyncTests(TestCase):
         prompt="문제",
         difficulty="중",
         correct_answer="1",
+        change_type="",
     ):
         csv_path = Path(directory) / filename
         with csv_path.open("w", newline="", encoding="utf-8-sig") as csv_file:
@@ -51,6 +52,7 @@ class GeneratedMissionSyncTests(TestCase):
                 "보기5": "",
                 "정답": correct_answer,
                 "해설": "해설",
+                "수정유형": change_type,
             })
         return csv_path
 
@@ -194,7 +196,7 @@ class GeneratedMissionSyncTests(TestCase):
                 is_correct=True,
             )
 
-            self.write_csv(tmpdir, "typo.csv", prompt="수정 전 문제")
+            self.write_csv(tmpdir, "typo.csv", prompt="수정 전 문제", change_type="오타")
             output, _ = self.sync(tmpdir)
 
         attempt.refresh_from_db()

@@ -147,6 +147,7 @@ class Mission(models.Model):
         choices=QUALITY_LEVEL_CHOICES,
         default="basic",
     )
+    source_enabled = models.BooleanField(default=True)
     is_usable_for_set = models.BooleanField(default=True)
     quality_note = models.TextField(blank=True, default="")
 
@@ -194,12 +195,12 @@ class Mission(models.Model):
 
         # A confirmed error is an editorial decision. Imports cannot silently
         # make it eligible again.
-        if self.review_status == self.REVIEW_CONFIRMED_ERROR:
+        if self.review_status == self.REVIEW_CONFIRMED_ERROR or not self.source_enabled:
             self.is_usable_for_set = False
         update_fields = kwargs.get("update_fields")
         if update_fields is not None:
             required = {"content_version", "content_fingerprint", "grading_fingerprint"}
-            if self.review_status == self.REVIEW_CONFIRMED_ERROR:
+            if self.review_status == self.REVIEW_CONFIRMED_ERROR or not self.source_enabled:
                 required.add("is_usable_for_set")
             kwargs["update_fields"] = set(update_fields) | required
 
@@ -945,3 +946,11 @@ class LearningExposure(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=['user', 'mission'], name='unique_learning_exposure')]
+
+
+class ContentSourceSync(models.Model):
+    source_path = models.CharField(max_length=500, unique=True)
+    subject_code = models.CharField(max_length=32)
+    fingerprint = models.CharField(max_length=64)
+    mission_ids = models.JSONField(default=list)
+    synced_at = models.DateTimeField(auto_now=True)
