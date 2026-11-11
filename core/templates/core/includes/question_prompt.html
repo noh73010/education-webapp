@@ -1,0 +1,15 @@
+{% load mission_tags %}
+<div class="question-layout">
+  {% for block in prompt|prompt_blocks %}
+    <div class="question-part question-part--{{ block.type|lower }}">
+      <p class="question-part-label">{{ block.label }}</p>
+      {% if block.statements %}
+        <ul class="question-statements" aria-label="문제에 제시된 보기">
+          {% for item in block.statements %}<li>{{ item }}</li>{% endfor %}
+        </ul>
+      {% else %}
+        <div class="question-part-text">{{ block.content }}</div>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>

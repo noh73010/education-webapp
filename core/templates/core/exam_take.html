@@ -39,12 +39,7 @@
   </p>
   <div class="cbt-divider"></div>
 
-  {% for block in mission.prompt|prompt_blocks %}
-    <div class="cbt-prompt-block">
-      <h2 class="cbt-block-label">{{ block.label }}</h2>
-      <div class="pre-line cbt-question-text">{{ block.content }}</div>
-    </div>
-  {% endfor %}
+  {% include "core/includes/question_prompt.html" with prompt=mission.prompt %}
 
   {% include "core/includes/mission_image.html" with mission=mission %}
 </section>

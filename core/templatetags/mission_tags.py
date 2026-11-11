@@ -5,50 +5,10 @@ from django.utils.html import strip_tags
 register = template.Library()
 
 
-BLOCK_LABELS = {
-    "CONTEXT": "상황",
-    "TABLE": "입력 데이터",
-    "DATA": "입력 데이터",
-    "RULES": "규칙",
-    "TEXT": "입력값",
-    "QUESTION": "질문",
-}
-
-
 @register.filter
 def prompt_blocks(prompt):
-    """
-    [CONTEXT]...[/CONTEXT] 같은 구조화 프롬프트를
-    템플릿에서 순서대로 출력하기 좋게 변환한다.
-    """
-    prompt = prompt or ""
-
-    pattern = r"\[(CONTEXT|TABLE|DATA|RULES|TEXT|QUESTION)\](.*?)\[/\1\]"
-    matches = re.findall(pattern, prompt, flags=re.DOTALL | re.IGNORECASE)
-
-    blocks = []
-
-    for block_type, content in matches:
-        block_type = block_type.upper()
-        content = content.strip()
-
-        if not content:
-            continue
-
-        blocks.append({
-            "type": block_type,
-            "label": BLOCK_LABELS.get(block_type, block_type),
-            "content": content,
-        })
-
-    if not blocks and prompt.strip():
-        blocks.append({
-            "type": "PLAIN",
-            "label": "문제",
-            "content": prompt.strip(),
-        })
-
-    return blocks
+    from core.services.question_layout import question_blocks
+    return question_blocks(prompt)
 
 @register.filter
 def prompt_question(prompt):

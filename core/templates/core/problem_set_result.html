@@ -55,7 +55,7 @@
               <span class="result-status is-wrong">오답</span>
             </header>
 
-            <p class="pre-line result-question-prompt">{{ item.question_text }}</p>
+            {% include "core/includes/question_prompt.html" with prompt=item.question_text %}
             {% include "core/includes/mission_image.html" with mission=item.mission %}
 
             <div class="answer-comparison">
@@ -136,7 +136,7 @@
                 <span class="result-question-number">문제 {{ item.order_no }}</span>
                 <span class="result-question-course">{{ item.mission.course|default:item.mission.subject.name }}</span>
               </div>
-              <p class="pre-line">{{ item.question_text }}</p>
+              {% include "core/includes/question_prompt.html" with prompt=item.question_text %}
               <p class="correct-answer-line">선택한 답 · {{ item.submitted_answer_display }}</p>
               <p class="correct-answer-line">정답 · {{ item.correct_answer_display }}</p>
               <p class="pre-line"><b>해설</b> {{ item.mission.explanation|default:"등록된 해설이 없습니다." }}</p>

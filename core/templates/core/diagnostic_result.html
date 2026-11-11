@@ -11,7 +11,7 @@
   {% for row in rows %}
     <section class="card">
       <h2>{{ forloop.counter }}번 · {% if row.attempt.is_correct %}정답{% else %}오답{% endif %}</h2>
-      <p class="pre-line">{{ row.mission.prompt }}</p>
+      {% include "core/includes/question_prompt.html" with prompt=row.mission.prompt %}
       <div class="answer-comparison compact">
         <div class="answer-box"><span>내 답</span><b>{{ row.selected }}</b></div>
         <div class="answer-box is-correct"><span>정답</span><b>{{ row.correct }}</b></div>

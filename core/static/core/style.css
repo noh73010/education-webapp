@@ -2803,3 +2803,23 @@ body.theme-realtor .selected-course-banner > a {
   text-decoration: none;
 }
 body.theme-realtor .selected-course-banner > a:hover { background: #ffe6cb; }
+
+/* Shared question typography: practice, trials, exams and review receipts. */
+.question-layout { margin: 18px 0 24px; text-align: left; word-break: keep-all; overflow-wrap: anywhere; }
+.question-layout .question-part + .question-part { margin-top: 22px; }
+.question-layout .question-part-label { margin: 0 0 8px; color: #64748b; font-size: 13px; font-weight: 700; line-height: 1.5; }
+.question-layout .question-part-text,
+.question-layout .question-statements { color: #263248; font-size: 18px; font-weight: 400; letter-spacing: -0.015em; line-height: 1.85; }
+.question-layout .question-part-text { white-space: pre-line; }
+.question-layout .question-part--question .question-part-text { color: #0f172a; font-size: 20px; font-weight: 600; line-height: 1.7; }
+.question-layout .question-statements { list-style: none; margin: 0; padding: 16px 18px; border: 1px solid #dde3ee; border-radius: 14px; background: #f8faff; }
+.question-layout .question-statements li { margin: 0; padding: 0; white-space: pre-line; }
+.question-layout .question-statements li + li { margin-top: 12px; }
+.question-layout .question-part--conditions { padding: 14px 16px; border-left: 3px solid #b7c5e2; background: #f5f7fb; border-radius: 0 10px 10px 0; }
+.question-layout .question-part--conditions .question-part-text { font-size: 16px; color: #475569; }
+.cbt-choice-text { word-break: keep-all; overflow-wrap: anywhere; }
+@media (max-width: 480px) {
+  .question-layout .question-part-text, .question-layout .question-statements { font-size: 17px; }
+  .question-layout .question-part--question .question-part-text { font-size: 19px; }
+  .question-layout .question-statements { padding: 14px; }
+}

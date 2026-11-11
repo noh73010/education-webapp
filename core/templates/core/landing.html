@@ -38,7 +38,7 @@
     <article class="trial-preview" data-subject="{{ trial.subject.code }}">
       <div class="trial-preview-top"><span>문제 미리보기</span><span>{{ trial.subject.name }}</span></div>
       <p class="trial-preview-course">{{ trial.course }} · 실제 맛보기 문제</p>
-      <h2>{{ trial.mission.prompt }}</h2>
+      {% include "core/includes/question_prompt.html" with prompt=trial.mission.prompt %}
       <div class="trial-preview-choices">{% for choice in trial.choices|slice:":2" %}<p><span>{{ choice.key }}</span>{{ choice.label }}</p>{% endfor %}</div>
       <p class="trial-preview-note">5개 보기 중 일부예요. 체험에서 전체 문제를 풀어보세요.</p>
       <details class="trial-preview-explanation"><summary>어떤 해설을 볼 수 있나요?</summary><p><strong>정답 {{ trial.mission.correct_answer }}번</strong><br>{{ trial.mission.explanation|linebreaksbr }}</p></details>

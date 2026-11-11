@@ -37,7 +37,7 @@
         {% for item in review %}
           <article class="guest-review-item" id="review-{{ item.number }}">
             <div class="guest-review-meta"><strong>문제 {{ item.number }}</strong><span class="guest-result-badge {% if not item.correct %}is-wrong{% elif item.uncertain %}is-uncertain{% else %}is-correct{% endif %}">{% if not item.correct %}오답 · 복습 추천{% elif item.uncertain %}정답 · 다시 확인{% else %}정답{% endif %}</span></div>
-            <h3>{{ item.mission.prompt|linebreaksbr }}</h3>
+            {% include "core/includes/question_prompt.html" with prompt=item.mission.prompt %}
             <div class="guest-review-choices">
               {% for choice in item.choices %}<div class="guest-review-choice{% if choice.key == item.mission.correct_answer %} is-answer{% elif choice.key == item.answer %} is-selected-wrong{% endif %}"><span>{{ choice.key }}.</span><div>{{ choice.label }}{% if choice.key == item.answer %}<strong class="guest-answer-label">내 답</strong>{% endif %}{% if choice.key == item.mission.correct_answer %}<strong class="guest-answer-label">정답</strong>{% endif %}</div></div>{% endfor %}
             </div>
@@ -50,7 +50,7 @@
     {% elif mission %}
       <div class="guest-question-meta"><span>{{ mission.subject.name }} · {{ mission.course }}</span><strong>{{ number }} / 5</strong></div>
       <progress class="guest-progress" value="{{ number }}" max="5" aria-label="현재 문제 진행 상황">{{ number }} / 5</progress>
-      <h2 class="guest-question">{{ mission.prompt|linebreaksbr }}</h2>
+      {% include "core/includes/question_prompt.html" with prompt=mission.prompt %}
       <form method="post">{% csrf_token %}
         <input type="hidden" name="step" value="{{ step }}">
         <fieldset class="guest-choices">
