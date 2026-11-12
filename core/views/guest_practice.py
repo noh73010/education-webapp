@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.views import redirect_to_login
 from django.db import transaction
 from django.shortcuts import redirect, render
+from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
@@ -116,7 +117,11 @@ def guest_practice(request):
             if action == "confidence" and graded and answers[step][2] and request.POST.get("step") == str(step) and request.POST.get("confidence") in ("guessed", "unsure"):
                 answers[step][1] = request.POST["confidence"]
                 request.session[KEY] = state
+                if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                    return JsonResponse({"saved": True, "confidence": answers[step][1]})
                 return redirect("guest_practice")
+            if action == "confidence" and request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return JsonResponse({"saved": False, "error": "문제 상태가 변경됐어요. 새로고침 후 다시 선택해 주세요."}, status=409)
             if action == "next" and graded and request.POST.get("step") == str(step):
                 state["step"] += 1
                 request.session[KEY] = state

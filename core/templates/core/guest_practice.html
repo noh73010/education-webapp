@@ -1,6 +1,6 @@
 {% extends 'core/base.html' %}
 {% load static %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'core/guest_practice.css' %}?v=20261112-2">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'core/guest_practice.css' %}?v=20261112-3">{% endblock %}
 {% block title %}무료 5문제 맛보기 | 합격한걸음{% endblock %}
 {% block content %}
 <main class="page-shell compact-page guest-practice">
@@ -74,7 +74,7 @@
               <button class="guest-confidence-button" type="submit" name="confidence" value="guessed" aria-pressed="{% if confidence == 'guessed' %}true{% else %}false{% endif %}">찍었어요</button>
               <button class="guest-confidence-button" type="submit" name="confidence" value="unsure" aria-pressed="{% if confidence == 'unsure' %}true{% else %}false{% endif %}">헷갈렸어요</button>
             </div>
-            {% if confidence %}<p class="guest-confidence-saved" role="status">✓ 이 체험에 반영했어요. 복습할 문제로 안내합니다.</p>{% endif %}
+            <p class="guest-confidence-saved" role="status" aria-live="polite">{% if confidence %}✓ 이 체험에 반영했어요. 복습할 문제로 안내합니다.{% endif %}</p>
           </section>
           <input type="hidden" name="action" value="confidence">
           {% else %}
@@ -106,4 +106,5 @@
   </section>
 
 </main>
+<script src="{% static 'core/guest_practice.js' %}?v=20261112-1" defer></script>
 {% endblock %}

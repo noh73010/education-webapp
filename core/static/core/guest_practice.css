@@ -88,5 +88,7 @@ body .guest-practice button.guest-confidence-button { width: 100%; min-height: 4
 body .guest-practice button.guest-confidence-button:hover,
 body .guest-practice button.guest-confidence-button[aria-pressed="true"] { border-color: #735590; background: #eee7f6; color: #402958; transform: none; }
 body .guest-practice button.guest-confidence-button:focus-visible { outline: 3px solid #735590; outline-offset: 3px; }
-.guest-confidence .guest-confidence-saved { margin: 12px 0 0; color: #245b43; }
+.guest-confidence .guest-confidence-saved { min-height: 3.4em; margin: 12px 0 0; color: #245b43; }
 .guest-wrong-note { margin-top: 18px; color: #465267; font-size: 15px; line-height: 1.7; }
+
+body .guest-practice button.guest-confidence-button:disabled { cursor: wait; opacity: .7; }
