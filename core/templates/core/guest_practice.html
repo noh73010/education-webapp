@@ -26,7 +26,7 @@
         <p>{% if review_count %}틀린 답뿐 아니라 찍거나 헷갈린 정답도 다시 보면, 놓친 개념이 더 선명해져요.{% else %}방금 푼 기록을 저장하고, 단원별 문제와 모의고사로 학습을 이어가세요.{% endif %}</p>
         <ol class="guest-learning-path"><li><strong>기록 저장</strong><span>방금 푼 5문제를 내 학습 기록으로</span></li><li><strong>오답·약점 복습</strong><span>틀리거나 헷갈린 문제를 다시 확인</span></li><li><strong>다음 학습</strong><span>단원별 문제부터 모의고사까지</span></li></ol>
         {% if user.is_authenticated %}
-          <form method="post">{% csrf_token %}<button class="main-button" name="action" value="save">학습 기록 저장하고 복습 이어가기</button></form>
+          <form method="post">{% csrf_token %}<input type="hidden" name="run_id" value="{{ run_id }}"><button class="main-button" name="action" value="save">학습 기록 저장하고 복습 이어가기</button></form>
         {% else %}
           <a class="main-button" href="{% url 'login' %}?next={% url 'guest_practice' %}">로그인하고 내 학습 기록으로 저장</a>
           <p class="guest-save-note">같은 브라우저에서 로그인한 뒤 저장을 누르면 이어집니다. 아래 정답과 해설은 로그인 없이 모두 볼 수 있어요.</p>
@@ -46,12 +46,12 @@
           </article>
         {% endfor %}
       </section>
-      <div class="guest-review-end"><h2>오늘의 5문제가 다음 실력으로 이어지도록</h2><p>기록을 남기면 다시 볼 문제를 놓치지 않아요.</p>{% if user.is_authenticated %}<form method="post">{% csrf_token %}<button class="main-button" name="action" value="save">학습 기록 저장하고 복습 이어가기</button></form>{% else %}<a class="main-button" href="{% url 'login' %}?next={% url 'guest_practice' %}">로그인하고 복습 이어가기</a>{% endif %}</div>
+      <div class="guest-review-end"><h2>오늘의 5문제가 다음 실력으로 이어지도록</h2><p>기록을 남기면 다시 볼 문제를 놓치지 않아요.</p>{% if user.is_authenticated %}<form method="post">{% csrf_token %}<input type="hidden" name="run_id" value="{{ run_id }}"><button class="main-button" name="action" value="save">학습 기록 저장하고 복습 이어가기</button></form>{% else %}<a class="main-button" href="{% url 'login' %}?next={% url 'guest_practice' %}">로그인하고 복습 이어가기</a>{% endif %}</div>
     {% elif mission %}
       <div class="guest-question-meta"><span>{{ mission.subject.name }} · {{ mission.course }}</span><strong>{{ number }} / 5</strong></div>
       <progress class="guest-progress" value="{{ number }}" max="5" aria-label="현재 문제 진행 상황">{{ number }} / 5</progress>
       {% include "core/includes/question_prompt.html" with prompt=mission.prompt %}
-      <form method="post">{% csrf_token %}
+      <form method="post">{% csrf_token %}<input type="hidden" name="run_id" value="{{ run_id }}">
         <input type="hidden" name="step" value="{{ step }}">
         <fieldset class="guest-choices">
           <legend>알맞은 답을 하나 선택해 주세요</legend>
@@ -106,5 +106,5 @@
   </section>
 
 </main>
-<script src="{% static 'core/guest_practice.js' %}?v=20261112-1" defer></script>
+<script src="{% static 'core/guest_practice.js' %}?v=20261112-2" defer></script>
 {% endblock %}

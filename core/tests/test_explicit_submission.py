@@ -54,5 +54,5 @@ class ExplicitSubmissionTests(TestCase):
         self.assertNotContains(page, 'requestSubmit')
         self.assertNotContains(page, '제출 후 해설')
         self.assertNotContains(self.client.get(url), '제출 후 해설')
-        page = self.client.post(url, {'action': 'answer', 'answer': '2', 'step': '0'}, follow=True)
+        page = self.client.post(url, {'action': 'answer', 'answer': '2', 'step': '0', 'run_id': self.client.session['guest_practice']['id']}, follow=True)
         self.assertContains(page, '제출 후 해설')

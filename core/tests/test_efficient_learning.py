@@ -242,3 +242,26 @@ class EfficientLearningTests(TestCase):
         response=self.client.post(reverse('learning_signal',args=[old.mission_id]),{'action':'confidence','attempt':old.pk,'confidence':'certain'})
         self.assertEqual(response.url,reverse('mission_detail',args=[old.mission_id])+f'?attempt={latest.pk}')
         old.refresh_from_db();self.assertEqual(old.confidence_level,'')
+
+    def test_manual_review_includes_due_correct_but_skips_fresh_mastery(self):
+        due = Attempt.objects.create(user=self.user, mission=self.missions[0], is_correct=True)
+        Attempt.objects.filter(pk=due.pk).update(created_at=timezone.now()-timedelta(days=4))
+        save_attempt(user=self.user, mission=self.missions[1], is_correct=True)
+        self.attempts(self.missions[2])
+        response = self.client.get(reverse('study_library')+'?mode=review')
+        self.assertEqual([m.pk for m in response.context['study_missions']], [self.missions[0].pk])
+        self.client.get(reverse('study_library')+'?mode=review&start=1')
+        self.assertEqual(self.client.session['review_mission_ids'], [self.missions[0].pk])
+
+    def test_library_action_links_preserve_selected_course_and_chapter(self):
+        from html import unescape
+        from urllib.parse import parse_qs, urlparse
+        import re
+        response = self.client.get(reverse('study_library'), {'mode':'history', 'course':'물류관리론', 'scope':'chapter', 'chapter':'LM01'})
+        links = re.findall(r'href="([^"]+)"', response.content.decode())
+        actions = [parse_qs(urlparse(unescape(link)).query) for link in links if '?mode=' in link]
+        for mode in ('new', 'review', 'history'):
+            query = next(q for q in actions if q.get('mode') == [mode])
+            self.assertEqual(query['course'], ['물류관리론'])
+            self.assertEqual(query['chapter'], ['LM01'])
+            self.assertEqual(query['scope'], ['chapter'])

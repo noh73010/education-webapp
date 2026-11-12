@@ -35,7 +35,7 @@ def study_library(request):
         excluded = set(viewed) | set(attempted) | suppressed
         missions = [m for m in missions if m.pk not in excluded]
     elif mode == 'review':
-        missions = [m for m in missions if states.get(m.pk, {}).get('status') in ('wrong', 'uncertain') and m.pk not in suppressed]
+        missions = [m for m in missions if (states.get(m.pk, {}).get('status') in ('wrong', 'uncertain') or states.get(m.pk, {}).get('is_due')) and m.pk not in suppressed]
         missions.sort(key=lambda m:(not states[m.pk]['is_due'], states[m.pk]['due_date'], m.pk))
     elif mode == 'history':
         seen = set(Attempt.objects.valid_for_learning().filter(user=request.user).values_list('mission_id',flat=True))
@@ -103,4 +103,4 @@ def next_learning_mission(request, mission_id):
     mission = candidates.filter(chapter_code=current.chapter_code).order_by('pk').first() or candidates.order_by('chapter_code','pk').first()
     if mission:
         return redirect('mission_detail', mission_id=mission.pk)
-    return render(request, 'core/study_pause.html', {'subject': subject})
+    return render(request, 'core/study_pause.html', {'subject': subject, 'course': current.course})

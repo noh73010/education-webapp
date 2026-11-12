@@ -1,0 +1,3 @@
+{% extends 'core/base.html' %}
+{% block title %}현재 체험 확인{% endblock %}
+{% block content %}<main class="page-shell compact-page"><section class="card"><h1>현재 체험을 확인해 주세요</h1><p role="alert">{{ error }}</p><a class="main-button" href="{% url 'guest_practice' %}">현재 체험으로 돌아가기</a></section></main>{% endblock %}

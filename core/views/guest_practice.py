@@ -80,6 +80,13 @@ def guest_practice(request):
             request.session[KEY] = {"id": uuid4().hex, "questions": selected, "answers": [], "step": 0}
             return redirect("guest_practice")
         error = "이 과목의 맛보기 문제는 아직 준비 중입니다. 다른 과목을 선택해 주세요."
+    if action in ("answer", "confidence", "next", "save") and (
+        not state or request.POST.get("run_id") != state["id"]
+    ):
+        message = "다른 탭에서 맛보기를 다시 시작했거나 체험이 종료됐어요. 현재 체험으로 돌아가 주세요."
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse({"saved": False, "error": message}, status=409)
+        return render(request, "core/guest_practice_conflict.html", {"error": message}, status=409)
     if state:
         missions = eligible().in_bulk([pk for pk, _ in state["questions"]])
         if any(pk not in missions or missions[pk].content_version != version for pk, version in state["questions"]):
@@ -127,7 +134,7 @@ def guest_practice(request):
                 request.session[KEY] = state
                 return redirect("guest_practice")
             return render(request, "core/guest_practice.html", {
-                "mission": mission, "choices": choices, "step": step, "number": step + 1,
+                "run_id": state["id"], "mission": mission, "choices": choices, "step": step, "number": step + 1,
                 "graded": graded, "correct": graded and answers[step][2],
                 "confidence": answers[step][1] if graded else "", "error": error,
             })
@@ -141,7 +148,7 @@ def guest_practice(request):
                 "choices": parse_choice_schema(mission.answer_schema),
             })
         return render(request, "core/guest_practice.html", {
-            "review": review, "course": review[0]["mission"].course,
+            "run_id": state["id"], "review": review, "course": review[0]["mission"].course,
             "review_count": sum(not row[2] or row[1] in ("guessed", "unsure") for row in answers),
             "finished": True, "score": sum(row[2] for row in answers),
             "wrong": sum(not row[2] for row in answers),

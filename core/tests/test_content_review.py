@@ -66,3 +66,20 @@ class ContentReviewTests(TestCase):
     def test_manifest_fingerprints_are_valid_sha256(self):
         for entry in load_review()["missions"].values():
             self.assertRegex(entry["fingerprint"], r"^[0-9a-f]{64}$")
+
+    def test_review_manifest_matches_maintained_csv_text(self):
+        import csv
+        from types import SimpleNamespace
+        from core.services.csv_catalog import validate_catalog
+        from core.management.commands.import_missions import normalize_korean_row
+        manifest = load_review()
+        found = set()
+        for path, _ in validate_catalog()['logistics']:
+            with path.open(encoding='utf-8-sig', newline='') as source:
+                for row in csv.DictReader(source):
+                    identity = row['문항ID']
+                    if identity in manifest['missions']:
+                        data = normalize_korean_row(row, csv_path=path, subject_code='logistics')
+                        self.assertEqual(content_fingerprint(SimpleNamespace(**data)), manifest['missions'][identity]['fingerprint'], identity)
+                        found.add(identity)
+        self.assertEqual(found, set(manifest['missions']))

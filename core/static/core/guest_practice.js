@@ -15,9 +15,11 @@ document.querySelectorAll('.guest-confidence').forEach(function (section) {
     data.set('confidence', button.value);
     controls.forEach(function (control) { control.disabled = true; });
     status.textContent = '반영 중이에요…';
+    const controller = new AbortController();
+    const timeout = setTimeout(function () { controller.abort(); }, 12000);
     try {
       const response = await fetch(form.getAttribute('action') || window.location.href, {
-        method: 'POST', body: data, credentials: 'same-origin',
+        method: 'POST', body: data, credentials: 'same-origin', signal: controller.signal,
         headers: {'X-Requested-With': 'XMLHttpRequest'}
       });
       if (response.redirected) throw new Error('문제 상태가 변경됐어요. 새로고침 후 다시 선택해 주세요.');
@@ -28,9 +30,11 @@ document.querySelectorAll('.guest-confidence').forEach(function (section) {
       });
       status.textContent = '✓ 이 체험에 반영했어요. 복습할 문제로 안내합니다.';
     } catch (error) {
-      status.textContent = error instanceof TypeError || error instanceof SyntaxError
+      status.textContent = error.name === 'AbortError' ? '응답이 늦어지고 있어요. 연결을 확인하고 다시 눌러 주세요.'
+        : error instanceof TypeError || error instanceof SyntaxError
         ? '연결을 확인하고 다시 눌러 주세요. 선택을 반영하지 못했어요.' : error.message;
     } finally {
+      clearTimeout(timeout);
       saving = false;
       controls.forEach(function (control) { control.disabled = false; });
     }

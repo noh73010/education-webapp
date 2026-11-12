@@ -88,12 +88,12 @@ class AuditEdgeCasesTests(TestCase):
         self.client.logout()
         url = reverse('guest_practice')
         self.client.post(url, {'action': 'start', 'subject': self.subject.code, 'course': '검수 과목'})
-        self.client.post(url, {'action': 'answer', 'step': '0', 'answer': '1'})
-        self.client.post(url, {'action': 'next', 'step': '0'})
-        self.client.post(url, {'action': 'answer', 'step': '1', 'answer': '1'})
-        self.client.post(url, {'action': 'confidence', 'step': '0', 'confidence': 'unsure'})
+        self.client.post(url, {'run_id': self.client.session['guest_practice']['id'], 'action': 'answer', 'step': '0', 'answer': '1'})
+        self.client.post(url, {'run_id': self.client.session['guest_practice']['id'], 'action': 'next', 'step': '0'})
+        self.client.post(url, {'run_id': self.client.session['guest_practice']['id'], 'action': 'answer', 'step': '1', 'answer': '1'})
+        self.client.post(url, {'run_id': self.client.session['guest_practice']['id'], 'action': 'confidence', 'step': '0', 'confidence': 'unsure'})
         self.assertEqual(self.client.session['guest_practice']['answers'][1][1], '')
-        self.client.post(url, {'action': 'confidence', 'step': '1', 'confidence': 'unsure'})
+        self.client.post(url, {'run_id': self.client.session['guest_practice']['id'], 'action': 'confidence', 'step': '1', 'confidence': 'unsure'})
         self.assertEqual(self.client.session['guest_practice']['answers'][1][1], 'unsure')
 
     def test_invalidated_wrong_reason_form_cannot_be_edited(self):
