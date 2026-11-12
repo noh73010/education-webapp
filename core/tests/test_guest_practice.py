@@ -100,3 +100,28 @@ class GuestPracticeTests(TestCase):
         missions = [SimpleNamespace(pk=i, subject=SimpleNamespace(code="realtor"), course="Only five") for i in range(5)]
         self.assertEqual({m.pk for m in daily_sample(missions)}, set(range(5)))
         self.assertEqual(daily_sample(missions[:4]), [])
+
+    def test_confidence_only_for_correct_answers_and_wrong_post_is_ignored(self):
+        subject, _ = Subject.objects.get_or_create(code="logistics", defaults={"name": "물류관리사"})
+        for index in range(5):
+            Mission.objects.create(subject=subject, course="Confidence", external_id=f"confidence-{index}",
+                title="Confidence", prompt="Question", question_type="choice_one", correct_answer="1",
+                answer_schema="1|One\n2|Two\n3|Three\n4|Four\n5|Five", explanation="Explanation")
+        url = reverse("guest_practice")
+        self.client.post(url, {"action": "start", "subject": "logistics", "course": "Confidence"})
+        self.assertNotContains(self.client.get(url), 'name="confidence"')
+        self.client.post(url, {"action": "answer", "step": 0, "answer": "2", "confidence": "guessed"})
+        response = self.client.get(url)
+        self.assertContains(response, "오답이에요")
+        self.assertNotContains(response, 'name="confidence"')
+        self.client.post(url, {"action": "confidence", "step": 0, "confidence": "unsure"})
+        self.assertEqual(self.client.session["guest_practice"]["answers"][0], ["2", "", False])
+        self.client.post(url, {"action": "next", "step": 0})
+        self.client.post(url, {"action": "answer", "step": 1, "answer": "1"})
+        self.assertContains(self.client.get(url), 'name="confidence"', count=2)
+        for confidence in ("guessed", "unsure"):
+            response = self.client.post(url, {"action": "confidence", "step": 1, "confidence": confidence}, follow=True)
+            self.assertContains(response, "✓ 이 체험에 반영했어요")
+            self.assertEqual(self.client.session["guest_practice"]["answers"][1], ["1", confidence, True])
+        self.client.post(url, {"action": "next", "step": 1})
+        self.assertEqual(self.client.session["guest_practice"]["step"], 2)

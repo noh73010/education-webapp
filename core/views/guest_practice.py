@@ -109,11 +109,11 @@ def guest_practice(request):
                 answer = request.POST.get("answer")
                 confidence = request.POST.get("confidence", "")
                 if answer in {choice["key"] for choice in choices} and confidence in {"", *dict(Attempt.CONFIDENCE_CHOICES)}:
-                    answers.append([answer, confidence, answer == mission.correct_answer])
+                    answers.append([answer, confidence if answer == mission.correct_answer else "", answer == mission.correct_answer])
                     request.session[KEY] = state
                     return redirect("guest_practice")
                 error = "답안을 선택해 주세요."
-            if action == "confidence" and graded and request.POST.get("step") == str(step) and request.POST.get("confidence") in ("guessed", "unsure"):
+            if action == "confidence" and graded and answers[step][2] and request.POST.get("step") == str(step) and request.POST.get("confidence") in ("guessed", "unsure"):
                 answers[step][1] = request.POST["confidence"]
                 request.session[KEY] = state
                 return redirect("guest_practice")
@@ -124,7 +124,7 @@ def guest_practice(request):
             return render(request, "core/guest_practice.html", {
                 "mission": mission, "choices": choices, "step": step, "number": step + 1,
                 "graded": graded, "correct": graded and answers[step][2],
-                "confidence_choices": Attempt.CONFIDENCE_CHOICES, "error": error,
+                "confidence": answers[step][1] if graded else "", "error": error,
             })
         review = []
         for number, ((pk, _), (answer, confidence, correct)) in enumerate(zip(state["questions"], answers), 1):

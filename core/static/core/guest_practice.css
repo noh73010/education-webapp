@@ -79,3 +79,14 @@
 .guest-review-explanation p { margin: 0; color: #465267; font-size: 14px; line-height: 1.85; }
 .guest-review-end { border-top: 1px solid #e4e7ee; padding: 24px 0 0; }
 @media (max-width: 600px) { .guest-result-hero { padding: 24px 12px; } .guest-next-step { padding: 18px 14px; } .guest-result-stats { gap: 6px; } }
+
+/* Use a dedicated control: shared button gradients can hide secondary text. */
+.guest-confidence > p { margin: 0 0 12px; color: #344157; font-size: 15px; line-height: 1.6; }
+.guest-confidence > p > span { display: inline-block; color: #536176; font-size: 13px; }
+.guest-confidence-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+body .guest-practice button.guest-confidence-button { width: 100%; min-height: 48px; margin: 0; padding: 12px 8px; border: 1px solid #a6b1c2; border-radius: 12px; background: #fff; color: #263248; box-shadow: none; font: inherit; font-size: 16px; font-weight: 700; line-height: 1.5; cursor: pointer; }
+body .guest-practice button.guest-confidence-button:hover,
+body .guest-practice button.guest-confidence-button[aria-pressed="true"] { border-color: #735590; background: #eee7f6; color: #402958; transform: none; }
+body .guest-practice button.guest-confidence-button:focus-visible { outline: 3px solid #735590; outline-offset: 3px; }
+.guest-confidence .guest-confidence-saved { margin: 12px 0 0; color: #245b43; }
+.guest-wrong-note { margin-top: 18px; color: #465267; font-size: 15px; line-height: 1.7; }
