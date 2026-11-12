@@ -50,6 +50,15 @@
         "https://iccwbo.org/business-solutions/incoterms-rules/incoterms-2020/",
         "https://library.iccwbo.org/clp/clp-incoterms-qa-2020.htm?AGENT=ICC_HQ"
       ]
+    },
+    "national_logistics_policy_committee": {
+      "title": "국가물류정책위원회의 구성",
+      "comparison": "국가물류정책위원회는 국토교통부장관 소속이며 위원장도 국토교통부장관이다. 국무총리를 위원장으로 혼동하지 않는다.",
+      "example": "위원장을 묻는 경우 물류정책기본법 제18조 제2항을 확인한다.",
+      "references": [
+        "https://www.law.go.kr/LSW/lsInfoP.do?efYd=20221211&lsiSeq=243099",
+        "https://law.go.kr/LSW/lsInfoP.do?lsiSeq=258207"
+      ]
     }
   },
   "missions": {
@@ -92,6 +101,12 @@
     "LOGISTICS-FT03-LOGISTICS-29-1-0052": {
       "fingerprint": "55e9b0af6cdf9e064ccd0a36a42f4233954b12557a43647d11a631e5c4902379",
       "concept": "rail_break_even"
+    },
+    "LOGISTICS-LR01-LOGISTICS-29-2-0043": {
+      "fingerprint": "127c0df32374348526982e2a837fdbc150c078232dc4ce8e2dcf5a889f228530",
+      "concept": "national_logistics_policy_committee",
+      "review_date": "2026-11-12",
+      "review_note": "위원장을 국무총리로 설명한 오류를 물류정책기본법 제18조 제2항과 대조하여 수정. 틀린 보기 1번을 국무총리로 바꾸고 해설은 국토교통부장관으로 정정함."
     }
   }
 }

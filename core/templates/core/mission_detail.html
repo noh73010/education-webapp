@@ -296,6 +296,7 @@
   <form method="POST" id="mission-answer-form" data-draft-url="{% url 'save_mission_draft' mission.id %}" data-server-updated="{{ work.updated_at|date:'c' }}">
     {% csrf_token %}
     <input type="hidden" name="work_token" value="{{ work.pk }}">
+    <input type="hidden" name="draft_revision" value="{{ work.updated_at|date:'c' }}">
 
     <h2 class="cbt-answer-title">
       {% if mission.question_type == "manual" %}학습 결과를 선택하세요.{% else %}답안을 선택하세요.{% endif %}
@@ -370,7 +371,7 @@
   </form>
 </section>
 {{ draft_answers|json_script:"draft-answers" }}
-<script src="{% static 'core/mission_draft.js' %}?v=20261111-explicit-submit-1" defer></script>
+<script src="{% static 'core/mission_draft.js' %}?v=20261112-revisions-1" defer></script>
 <form method="post" action="{% url 'learning_signal' mission.pk %}" class="card">{% csrf_token %}<button class="sub-button" name="action" value="view">정답·해설 바로 보기</button><p>풀이 점수 없이 해설 열람만 기록합니다.</p></form>
 {% elif mission.is_usable_for_set %}
 <section class="card"><a href="{% url 'mission_detail' mission.id %}" class="sub-button">다시 풀기</a></section>

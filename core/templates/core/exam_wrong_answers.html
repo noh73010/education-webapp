@@ -14,7 +14,7 @@
       {% for item in page_obj %}
         <li>
           <strong>{% if item.sitting_number %}{{ item.sitting_number }}교시 · {% endif %}{{ item.order_no }}번 · {{ item.mission.skill_label }}</strong><br>
-          <a href="{% url 'mission_detail' item.mission.id %}">해설 보고 복습하기</a>
+          <a href="{% url 'exam_question_review' item.exam_session_id item.order_no %}">해설 보고 복습하기</a>
         </li>
       {% empty %}
         <li>복습할 오답이 없습니다.</li>

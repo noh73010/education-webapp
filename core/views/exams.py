@@ -4,7 +4,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.db.models import Count, Q
 from django.utils import timezone
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.db import transaction
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
@@ -35,6 +35,8 @@ from core.services.realtor_curriculum import REALTOR_SUBJECT_CODE, courses_for_p
 from core.services.exam_requests import serialized_exam_request
 from core.services.exam_results import representative_wrong_items, result_sessions
 from core.services.exam_history import build_exam_history_cards
+from core.services.exam_content import frozen_exam_mission, exam_item_is_current
+from core.services.draft_revisions import revision_conflicts, CONFLICT_MESSAGE
 
 
 EXAM_DRAFT_FIELDS = ("submitted_answer", "submitted_answers", "is_correct")
@@ -243,13 +245,15 @@ def exam_take(request, exam_id, order_no):
         order_no=order_no,
     )
 
-    mission = item.mission
+    mission = frozen_exam_mission(item)
     all_items = list(exam.items.select_related("mission").order_by("order_no"))
     total_count = len(all_items)
     schema_items = parse_answer_schema(mission.answer_schema)
     choice_items = parse_choice_schema(mission.answer_schema)
 
     if request.method == "POST":
+        if revision_conflicts(request, item.draft_updated_at):
+            return HttpResponse(f'<p id="submission-error">{CONFLICT_MESSAGE}</p>', status=409)
         action = request.POST.get("action", "goto" if "target_order" in request.POST else "next")
         if action == "skip":
             item.draft_answers = {}
@@ -307,6 +311,7 @@ def exam_take(request, exam_id, order_no):
 
     return render(request, "core/exam_take.html", {
         "exam": exam,
+        "exam_content_changed": not exam_item_is_current(item),
         "item": item,
         "mission": mission,
         "order_no": order_no,
@@ -374,10 +379,14 @@ def exam_draft(request, exam_id, order_no):
     answers = _posted_exam_draft(request)
     if sum(len(value) for values in answers.values() for value in values) > 12000:
         return JsonResponse({"error": "답안이 너무 깁니다."}, status=400)
+    if revision_conflicts(request, item.draft_updated_at):
+        if item.draft_answers == answers:
+            return JsonResponse({"saved": True, "submitted": False, "revision": item.draft_updated_at.isoformat()})
+        return JsonResponse({"error": CONFLICT_MESSAGE}, status=409)
     item.draft_answers = answers
     item.draft_updated_at = timezone.now()
     item.save(update_fields=["draft_answers", "draft_updated_at"])
-    return JsonResponse({"saved": True, "submitted": False})
+    return JsonResponse({"saved": True, "submitted": False, "revision": item.draft_updated_at.isoformat()})
 
 
 
@@ -405,6 +414,7 @@ def exam_result(request, exam_id):
             if resume_order:
                 return redirect("exam_take", exam_id=exam.pk, order_no=resume_order)
     related_sessions = result_sessions(exam)
+    exam_content_changed = False
     items = []
     for sitting_number, related_exam in enumerate(related_sessions, 1):
         sitting_items = list(
@@ -413,6 +423,8 @@ def exam_result(request, exam_id):
             .order_by("order_no")
         )
         for result_item in sitting_items:
+            exam_content_changed = exam_content_changed or not exam_item_is_current(result_item)
+            result_item.mission = frozen_exam_mission(result_item)
             result_item.sitting_number = sitting_number if len(related_sessions) > 1 else None
         items.extend(sitting_items)
     access = get_user_access(request.user)
@@ -484,6 +496,7 @@ def exam_result(request, exam_id):
         "skill_rows": skill_rows,
         "wrong_items": representative_wrong,
         "total_wrong_count": len(wrong_items),
+        "exam_content_changed": exam_content_changed,
         "result_title": "실전 모의고사 1·2교시 종합" if is_combined_result else exam.title,
         "result_score": result["average"] if is_combined_result else result["sitting_score"],
         "result_correct_count": sum(item.user_answer_correct is True for item in items),
@@ -525,6 +538,7 @@ def exam_wrong_answers(request, exam_id):
     page_obj = Paginator(wrong_items, 20).get_page(request.GET.get("page"))
     session_numbers = {session.pk: number for number, session in enumerate(sessions, 1)}
     for item in page_obj.object_list:
+        item.mission = frozen_exam_mission(item)
         item.mission.skill_label = item.mission.chapter_name or get_skill_label(item.mission.skill)
         item.sitting_number = session_numbers[item.exam_session_id] if len(sessions) > 1 else None
 
@@ -617,4 +631,23 @@ def exam_history(request):
     return render(request, "core/exam_history.html", {
         "exams": exams,
         "history_cards": build_exam_history_cards(exams),
+    })
+
+
+@login_required
+def exam_question_review(request, exam_id, order_no):
+    subject, _ = get_current_subject(request)
+    item = get_object_or_404(ExamSessionMission.objects.select_related("exam_session", "mission"),
+        exam_session_id=exam_id, order_no=order_no, exam_session__user=request.user,
+        mission__subject=subject)
+    if item.exam_session.status not in ("submitted", "expired"):
+        return redirect("exam_take", exam_id=exam_id, order_no=order_no)
+    mission = frozen_exam_mission(item)
+    from core.services.learning_concepts import get_answer_display
+    return render(request, "core/exam_question_review.html", {
+        "exam": item.exam_session, "item": item, "mission": mission,
+        "choices": parse_choice_schema(mission.answer_schema),
+        "selected_answer": get_answer_display(mission, item.submitted_answer),
+        "correct_answer": get_answer_display(mission, mission.correct_answer),
+        "is_current": exam_item_is_current(item), "has_snapshot": bool(item.question_snapshot),
     })

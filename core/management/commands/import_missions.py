@@ -519,6 +519,13 @@ class Command(BaseCommand):
                     ))
                     semantic_change = semantic_change or image_changed
                     answer_changed = bool(existing_mission and existing_mission.correct_answer != data.get("correct_answer", existing_mission.correct_answer))
+                    if existing_mission and (semantic_change or answer_changed):
+                        # Also cover sittings created by the old process during a rolling deploy.
+                        from core.models import ExamSessionMission
+                        from core.services.exam_content import exam_question_snapshot
+                        ExamSessionMission.objects.filter(mission=existing_mission,
+                            exam_session__status__in=("in_progress", "waiting"), question_snapshot={}).update(
+                                question_snapshot=exam_question_snapshot(existing_mission))
                     if options["skip_unchanged"] and existing_mission and all(getattr(existing_mission,key) == value for key,value in data.items()):
                         mission, created = existing_mission, False
                         mission._grading_change_impact = {"attempts":0,"user_ids":()}
@@ -535,6 +542,9 @@ class Command(BaseCommand):
                         impact = invalidate_attempts_for_grading_change(mission=mission, previous_version=max(mission.content_version-1,1), reason_detail="문제 조건 또는 보기 변경")
                         grading_impact = {"attempts": grading_impact.get("attempts",0)+impact.attempts,
                                           "user_ids": set(grading_impact.get("user_ids",())) | set(impact.user_ids)}
+                    if semantic_change and existing_mission and mission.learning_revision == existing_mission.learning_revision:
+                        mission.learning_revision += 1
+                        Mission.objects.filter(pk=mission.pk).update(learning_revision=mission.learning_revision)
                     if semantic_change or answer_changed:
                         from core.models import LearningExposure
                         LearningExposure.objects.filter(mission=mission).delete()

@@ -57,6 +57,11 @@ def validate_catalog(root=None):
                                 raise ValueError('번호는 1 이상의 정수여야 합니다.')
                             if not data['explanation'] or any(not row[f'보기{i}'].strip() for i in range(1,6)):
                                 raise ValueError('보기 5개와 해설을 모두 작성하세요.')
+                            answer_note = re.match(r'^정답\s*([1-5])\s*번', data['explanation'])
+                            if answer_note and answer_note.group(1) != data['correct_answer']:
+                                raise ValueError('해설의 정답 번호와 정답 열이 일치하지 않습니다.')
+                            if len({row[f'보기{i}'].strip() for i in range(1,6)}) != 5:
+                                raise ValueError('동일한 보기가 중복되어 있습니다.')
                             image = data['image_raw_path']
                             if image and image != '없음' and not (normalize_question_image_path(image) and static_question_image_exists(normalize_question_image_path(image))):
                                 raise ValueError(f'이미지 경로가 잘못되었거나 파일이 없습니다: {image}')

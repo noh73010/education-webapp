@@ -2,6 +2,7 @@
 {% block title %}시험 결과{% endblock %}
 {% block content %}<section class="card"><p>문제 구성: {% if exam.mode_config.purpose == 'practice' %}새 문제 중심 연습{% else %}실전 점검{% endif %}</p><p>이미 풀어본 문제 {{ exam.mode_config.seen_count|default:0 }} / {{ exam.total_questions }}개 ({{ exam.mode_config.seen_percent|default:0 }}%) · 실전 점검은 숙달 문제도 포함할 수 있습니다.</p></section>
 <main class="cbt-page exam-result-page">
+{% if exam_content_changed %}<section class="card"><p>응시 후 일부 문항이 개정되었습니다. 점수와 해설은 응시 당시 기준이며, 개정된 문항의 옛 답안은 현재 학습 통계에서 제외합니다.</p></section>{% endif %}
   <section class="card exam-result-hero">
     <p class="meta-text">최종 판정</p>
     <h1 class="section-title">{{ mode_result.label }}</h1>
@@ -58,7 +59,7 @@
     <ul class="clean-list">
       {% for item in wrong_items %}
         <li>
-          <a href="{% url 'mission_detail' item.mission.id %}">
+          <a href="{% url 'exam_question_review' item.exam_session_id item.order_no %}">
             {% if item.sitting_number %}{{ item.sitting_number }}교시 · {% endif %}{{ item.order_no }}번 · {{ item.mission.skill_label }} 해설 보기
           </a>
         </li>

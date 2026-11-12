@@ -5,6 +5,7 @@ from django.utils import timezone
 
 from core.models import Attempt, AttemptWrongPattern, ExamSession, UserStreak, UserWeakness
 from core.services.exams import exact_exam_score
+from core.services.exam_content import current_content_exams
 from core.services.skill_labels import get_skill_label
 
 
@@ -80,10 +81,7 @@ def get_exam_average(user, limit=3, subject=None):
     qs = ExamSession.objects.filter(user=user, status="submitted")
     if subject is not None:
         qs = qs.filter(items__mission__subject=subject).distinct()
-    qs = qs.exclude(
-        items__mission__attempt__user=user,
-        items__mission__attempt__grading_valid=False,
-    ).distinct()
+    qs = current_content_exams(qs).distinct()
     exams = list(
         qs
         .order_by("-ended_at", "-started_at")[:limit]
@@ -167,12 +165,9 @@ def _get_policy_readiness(user, subject, policy, streak=None):
         for row in area_rows if row["total"]
     ) / total_weight * 100
     exam_average = get_exam_average(user, subject=subject)
-    exam_count = ExamSession.objects.filter(
+    exam_count = current_content_exams(ExamSession.objects.filter(
         user=user, status="submitted", items__mission__subject=subject
-    ).exclude(
-        items__mission__attempt__user=user,
-        items__mission__attempt__grading_valid=False,
-    ).distinct().count()
+    )).distinct().count()
     weakness_qs = UserWeakness.objects.filter(user=user, subject=subject)
     weakness_total = weakness_qs.count()
     mastered = weakness_qs.filter(status=UserWeakness.STATUS_MASTERED).count()

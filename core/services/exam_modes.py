@@ -5,6 +5,7 @@ from django.utils import timezone
 
 from core.models import Attempt, ExamSession, ExamSessionMission, Mission, LearningExposure
 from core.services.exams import calculate_exam_score, exact_exam_score
+from core.services.exam_content import exam_question_snapshot
 from core.services.logistics_curriculum import LOGISTICS_CURRICULUM
 from core.services.realtor_curriculum import REALTOR_SUBJECT_CODE, courses_for_path
 
@@ -103,7 +104,7 @@ def create_mode_exam(user, subject, mode, course="", purpose="practice"):
             total_questions=len(questions), status="in_progress" if number == 1 else "waiting",
             previous_sitting=previous, mode_config=config)
         ExamSessionMission.objects.bulk_create([ExamSessionMission(exam_session=exam,
-            mission=q, order_no=i) for i, q in enumerate(questions, 1)])
+            mission=q, question_snapshot=exam_question_snapshot(q), order_no=i) for i, q in enumerate(questions, 1)])
         first = first or exam
         previous = exam
     return first

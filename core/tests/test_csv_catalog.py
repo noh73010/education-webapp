@@ -125,3 +125,43 @@ class CsvCatalogTests(TestCase):
             self.sync();attempt.refresh_from_db();self.assertFalse(attempt.grading_valid)
             self.write(self.log,m.external_id,문제이미지='없음')
             self.sync();self.assertFalse(MissionImage.objects.filter(mission=m).exists())
+
+    def test_active_exam_uses_original_question_after_semantic_csv_update(self):
+        from core.models import ExamSession, ExamSessionMission
+        from core.services.exams import finish_exam_session
+        from core.services.exam_content import frozen_exam_mission
+        self.sync(); m = self.mission()
+        exam = ExamSession.objects.create(user=self.user, total_questions=1)
+        item = ExamSessionMission.objects.create(exam_session=exam, mission=m, order_no=1,
+            draft_answers={'submitted_answer': ['1']})
+        ExamSessionMission.objects.filter(pk=item.pk).update(question_snapshot={})  # old process during rollout
+        self.write(self.log, m.external_id, 문제='새 조건 문제', 보기1='새 보기 1', 정답='2')
+        self.sync(); item.refresh_from_db(); m.refresh_from_db()
+        self.assertEqual(frozen_exam_mission(item).prompt, '기존 조건의 문제')
+        self.assertEqual(frozen_exam_mission(item).correct_answer, '1')
+        finish_exam_session(exam); exam.refresh_from_db()
+        self.assertEqual(exam.score, 100)
+        a = Attempt.objects.get(user=self.user)
+        self.assertFalse(a.grading_valid)
+        self.assertFalse(a.learning_evidence)
+        self.assertEqual(a.mission_snapshot['prompt'], '기존 조건의 문제')
+        self.assertLess(a.mission_snapshot['learning_revision'], m.learning_revision)
+
+    def test_active_exam_typo_update_keeps_learning_record_valid(self):
+        from core.models import ExamSession, ExamSessionMission
+        from core.services.exams import finish_exam_session
+        self.sync(); m = self.mission()
+        exam = ExamSession.objects.create(user=self.user, total_questions=1)
+        ExamSessionMission.objects.create(exam_session=exam, mission=m, order_no=1,
+            draft_answers={'submitted_answer': ['1']})
+        self.write(self.log, m.external_id, 문제='기존 조건의 문재', 수정유형='오타')
+        self.sync(); finish_exam_session(exam)
+        self.assertTrue(Attempt.objects.get(user=self.user).grading_valid)
+
+    def test_explanation_answer_mismatch_or_duplicate_choices_rejected(self):
+        for updates in ({'해설': '정답 2번. 번호가 잘못된 해설'}, {'보기5': '선택지 1'}):
+            with self.subTest(updates=updates):
+                self.write(self.log, 'LOG-030-1-005', **updates)
+                with self.assertRaises(CommandError):
+                    self.sync()
+                self.assertFalse(Mission.objects.filter(external_id='LOG-030-1-005').exists())

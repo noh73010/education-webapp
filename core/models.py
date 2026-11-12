@@ -152,6 +152,7 @@ class Mission(models.Model):
     quality_note = models.TextField(blank=True, default="")
 
     content_version = models.PositiveIntegerField(default=1)
+    learning_revision = models.PositiveIntegerField(default=1, db_default=1)
     content_fingerprint = models.CharField(max_length=64, blank=True, default="", db_index=True)
     grading_fingerprint = models.CharField(max_length=64, blank=True, default="", db_index=True)
 
@@ -172,7 +173,7 @@ class Mission(models.Model):
         previous = None
         if self.pk:
             previous = type(self).objects.filter(pk=self.pk).values(
-                "content_version", "content_fingerprint", "grading_fingerprint"
+                "content_version", "content_fingerprint", "grading_fingerprint", "learning_revision"
             ).first()
 
         new_content_fingerprint = mission_content_fingerprint(self)
@@ -189,6 +190,7 @@ class Mission(models.Model):
             and previous["grading_fingerprint"] != new_grading_fingerprint
         )
 
+        self.learning_revision = (previous["learning_revision"] + int(grading_changed)) if previous else max(self.learning_revision, 1)
         self.content_version = previous_version + 1 if content_changed else max(previous_version, 1)
         self.content_fingerprint = new_content_fingerprint
         self.grading_fingerprint = new_grading_fingerprint
@@ -199,7 +201,7 @@ class Mission(models.Model):
             self.is_usable_for_set = False
         update_fields = kwargs.get("update_fields")
         if update_fields is not None:
-            required = {"content_version", "content_fingerprint", "grading_fingerprint"}
+            required = {"content_version", "content_fingerprint", "grading_fingerprint", "learning_revision"}
             if self.review_status == self.REVIEW_CONFIRMED_ERROR or not self.source_enabled:
                 required.add("is_usable_for_set")
             kwargs["update_fields"] = set(update_fields) | required
@@ -832,6 +834,7 @@ class ExamSession(models.Model):
 
 
 class ExamSessionMission(models.Model):
+    question_snapshot = models.JSONField(default=dict, blank=True, db_default={})
     draft_answers = models.JSONField(default=dict, blank=True)
     draft_updated_at = models.DateTimeField(null=True, blank=True)
     submitted_answer = models.TextField(blank=True, default="")
@@ -853,6 +856,14 @@ class ExamSessionMission(models.Model):
         indexes = [
             models.Index(fields=["exam_session", "order_no"]),
         ]
+
+    def save(self, *args, **kwargs):
+        if not self.pk and self.mission_id and not self.question_snapshot and self.exam_session.status in ("in_progress", "waiting"):
+            from core.services.exam_content import exam_question_snapshot
+            self.question_snapshot = exam_question_snapshot(self.mission)
+            if kwargs.get("update_fields") is not None:
+                kwargs["update_fields"] = set(kwargs["update_fields"]) | {"question_snapshot"}
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.exam_session_id} / {self.order_no} / {self.mission_id}"

@@ -7,6 +7,7 @@ from core.models import Mission, ExamSession, ExamSessionMission, Attempt, Learn
 from core.services.grading import grade_answer, grade_multi_answer, parse_answer_schema
 from core.services.mission_versioning import attempt_snapshot_defaults
 from core.services.streaks import update_user_streak
+from core.services.exam_content import exam_question_snapshot, frozen_exam_mission, exam_item_is_current
 
 
 def calculate_exam_score(correct_count, total_questions):
@@ -71,7 +72,7 @@ def finalize_exam_drafts(exam):
     for item in exam.items.select_related("mission").all():
         if item.submitted_at is not None and not draft_has_answer(item.draft_answers):
             continue  # Preserve a legacy answer created by the old immediate-submit flow.
-        graded = grade_exam_draft(item.mission, item.draft_answers)
+        graded = grade_exam_draft(frozen_exam_mission(item), item.draft_answers)
         if graded is None:
             continue
         item.submitted_answer, item.user_answer_correct = graded
@@ -154,6 +155,7 @@ def create_exam_session(user, title="실전 모의고사 1회", time_limit_min=4
         ExamSessionMission(
             exam_session=exam,
             mission=mission,
+            question_snapshot=exam_question_snapshot(mission),
             order_no=idx,
         )
         for idx, mission in enumerate(selected, start=1)
@@ -199,7 +201,7 @@ def sync_exam_to_attempts(exam):
     recent_views = set(LearningExposure.objects.filter(user=exam.user,
         mission_id__in=[item.mission_id for item in items],
         viewed_at__gte=timezone.now()-timezone.timedelta(days=1)).values_list('mission_id', flat=True))
-    wrong_ids = [item.mission_id for item in items if item.user_answer_correct is not True]
+    wrong_ids = [item.mission_id for item in items if item.user_answer_correct is not True and exam_item_is_current(item)]
     LearningExposure.objects.filter(user=exam.user, mission_id__in=wrong_ids).update(known_until=None)
     attempt_list = []
     for item in items:
@@ -208,11 +210,14 @@ def sync_exam_to_attempts(exam):
                 user=exam.user,
                 mission=item.mission,
                 is_correct=item.user_answer_correct is True,
-                learning_evidence=item.mission_id not in recent_views,
+                learning_evidence=exam_item_is_current(item) and item.mission_id not in recent_views,
+                grading_valid=exam_item_is_current(item),
+                grading_invalidated_at=None if exam_item_is_current(item) else timezone.now(),
+                grading_invalidation_reason="" if exam_item_is_current(item) else "응시 중 문항 개정: 응시 당시 점수만 보존",
                 time_spent_sec=None,
                 daily_date=None,
                 submitted_answer=item.submitted_answer,
-                **attempt_snapshot_defaults(item.mission),
+                **attempt_snapshot_defaults(frozen_exam_mission(item)),
             )
         )
 

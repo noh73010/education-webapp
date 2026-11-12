@@ -4,12 +4,13 @@ from uuid import UUID
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from django.http import HttpResponseBadRequest
+from django.http import HttpResponseBadRequest, HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse
 
 from core.models import Attempt, MissionWork
 from core.services.subjects import get_current_subject
+from core.services.draft_revisions import revision_conflicts, CONFLICT_MESSAGE
 
 
 def reliable_submission(view):
@@ -26,16 +27,18 @@ def reliable_submission(view):
         try:
             token = UUID(token)
         except (ValueError, TypeError):
-            return HttpResponseBadRequest("올바르지 않은 제출 번호입니다. 문제를 다시 열어 주세요.")
+            return HttpResponseBadRequest('<p id="submission-error">올바르지 않은 제출 번호입니다. 문제를 다시 열어 주세요.</p>')
         with transaction.atomic():
             get_user_model().objects.select_for_update().get(pk=request.user.pk)
             subject, _ = get_current_subject(request)
             work = MissionWork.objects.filter(pk=token, user=request.user, mission_id=mission_id,
                                                mission__subject=subject).first()
             if not work:
-                return HttpResponseBadRequest("만료된 풀이입니다. 문제를 다시 열어 주세요.")
+                return HttpResponseBadRequest('<p id="submission-error">문제가 개정되었거나 풀이가 만료됐어요. 새로고침한 뒤 다시 풀어 주세요.</p>')
             if work.attempt_id:
                 return redirect(work.return_url)
+            if revision_conflicts(request, work.updated_at):
+                return HttpResponse(f'<p id="submission-error">{CONFLICT_MESSAGE}</p>', status=409)
             before = Attempt.objects.filter(user=request.user, mission_id=mission_id).order_by("-pk").first()
             response = view(request, mission_id)
             attempts = Attempt.objects.filter(user=request.user, mission_id=mission_id)

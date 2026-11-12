@@ -204,3 +204,47 @@ class SocialLoginTests(TestCase):
                 metadata__source="google",
             ).exists()
         )
+
+    @override_settings(**SOCIAL_PROVIDER_SETTINGS)
+    def test_cancel_and_invalid_state_keep_safe_guest_return_without_creating_account(self):
+        from urllib.parse import urlencode
+        before = User.objects.count()
+        for provider in ('naver', 'google', 'kakao'):
+            with self.subTest(provider=provider):
+                start = self.client.post(reverse(f'{provider}_login')+'?'+urlencode({'next': '/practice/'}))
+                state = parse_qs(urlparse(start['Location']).query)['state'][0]
+                result = self.client.get(reverse(f'{provider}_callback'), {'state': state, 'error': 'access_denied'}, follow=True)
+                self.assertEqual(result.status_code, 200)
+                self.assertContains(result, '소셜 로그인을 취소했어요')
+                self.assertEqual(result.context['next'], '/practice/')
+                replay = self.client.get(reverse(f'{provider}_callback'), {'state': state, 'error': 'access_denied'}, follow=True)
+                self.assertContains(replay, '소셜 로그인을 완료하지 못했어요')
+        self.assertEqual(User.objects.count(), before)
+
+    @override_settings(**SOCIAL_PROVIDER_SETTINGS)
+    def test_social_error_never_redirects_to_external_next(self):
+        from urllib.parse import urlencode
+        start = self.client.post(reverse('google_login')+'?'+urlencode({'next': '//example.com/'}))
+        state = parse_qs(urlparse(start['Location']).query)['state'][0]
+        result = self.client.get(reverse('google_callback'), {'state': state, 'error': 'access_denied'})
+        self.assertEqual(result['Location'], reverse('login'))
+
+    @override_settings(**SOCIAL_PROVIDER_SETTINGS)
+    def test_provider_success_and_relogin_keep_guest_return_without_duplicate_user(self):
+        from urllib.parse import urlencode
+        def identity():
+            return SocialLogin(user=User(email='verified-audit@example.com'),
+                account=SocialAccount(provider='google', uid='verified-audit-uid'),
+                email_addresses=[EmailAddress(email='verified-audit@example.com', verified=True, primary=True)],
+                provider=SocialAccountAdapter().get_provider(RequestFactory().get('/'), 'google'))
+        for _ in range(2):
+            self.client.logout()
+            start=self.client.post(reverse('google_login')+'?'+urlencode({'next':'/practice/'}))
+            state=parse_qs(urlparse(start['Location']).query)['state'][0]
+            with patch('allauth.socialaccount.providers.google.views.GoogleOAuth2Adapter.get_access_token_data', return_value={'access_token':'local-test-token'}), patch('allauth.socialaccount.providers.google.views.GoogleOAuth2Adapter.complete_login', return_value=identity()):
+                result=self.client.get(reverse('google_callback'),{'state':state,'code':'local-test-code'})
+            self.assertEqual(result.status_code,302)
+            self.assertEqual(result['Location'],'/practice/')
+            self.assertIn('_auth_user_id',self.client.session)
+        self.assertEqual(SocialAccount.objects.filter(provider='google',uid='verified-audit-uid').count(),1)
+        self.assertEqual(User.objects.filter(email='verified-audit@example.com').count(),1)

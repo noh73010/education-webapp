@@ -13,6 +13,7 @@ from core.services.exam_dates import goal_for, save_goal
 from core.services.learning_concepts import get_answer_display
 from core.services.learning_experience import diagnostic_state
 from core.services.subjects import get_current_subject
+from core.services.draft_revisions import revision_conflicts, CONFLICT_MESSAGE
 
 
 class ProblemReportForm(forms.Form):
@@ -132,6 +133,10 @@ def save_mission_draft(request, mission_id):
         work = get_object_or_404(MissionWork, pk=token, user=request.user, mission_id=mission_id)
         if work.attempt_id:
             return JsonResponse({"saved": True, "submitted": True, "url": work.return_url})
+        if revision_conflicts(request, work.updated_at):
+            if work.answers == answers:
+                return JsonResponse({"saved": True, "submitted": False, "revision": work.updated_at.isoformat()})
+            return JsonResponse({"error": CONFLICT_MESSAGE}, status=409)
         work.answers = answers
         work.save(update_fields=["answers", "updated_at"])
-    return JsonResponse({"saved": True, "submitted": False})
+    return JsonResponse({"saved": True, "submitted": False, "revision": work.updated_at.isoformat()})

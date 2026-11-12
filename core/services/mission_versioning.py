@@ -70,6 +70,7 @@ def mission_snapshot(mission) -> dict:
         image_path = ""
     return {
         "image_path": image_path,
+        "learning_revision": mission.learning_revision,
         "external_id": mission.external_id,
         "content_version": mission.content_version,
         "content_fingerprint": mission.content_fingerprint,
@@ -81,13 +82,9 @@ def mission_snapshot(mission) -> dict:
 def attempt_snapshot_defaults(mission) -> dict:
     content_fingerprint = mission.content_fingerprint or mission_content_fingerprint(mission)
     grading_fingerprint = mission.grading_fingerprint or mission_grading_fingerprint(mission)
-    snapshot = {
-        "external_id": mission.external_id,
-        "content_version": mission.content_version,
-        "content_fingerprint": content_fingerprint,
-        "grading_fingerprint": grading_fingerprint,
-        **content_payload(mission),
-    }
+    snapshot = {**mission_snapshot(mission),
+                "content_fingerprint": content_fingerprint,
+                "grading_fingerprint": grading_fingerprint}
     return {
         "mission_content_version": mission.content_version,
         "mission_content_fingerprint": content_fingerprint,

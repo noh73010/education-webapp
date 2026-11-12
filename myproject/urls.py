@@ -55,7 +55,7 @@ from core.views.study_profile import study_profile
 from core.views.final_cards import final_cards
 from core.views.account_settings import account_settings
 from core.views.learning_experience import problem_report, learning_start, diagnostic_result, save_mission_draft
-from core.views.exams import exam_draft
+from core.views.exams import exam_draft, exam_question_review
 from core.views.seo import ads_txt, robots_txt, sitemap_xml
 from core.views.visit_stats import visit_stats
 from core.views.stats import wrong_reason_attempts
@@ -71,6 +71,7 @@ urlpatterns = [
     path("ads.txt", ads_txt, name="ads_txt"),
     path("robots.txt", robots_txt, name="robots_txt"),
     path("sitemap.xml", sitemap_xml, name="sitemap_xml"),
+    path("exam/<int:exam_id>/<int:order_no>/review/", exam_question_review, name="exam_question_review"),
     path("exam/<int:exam_id>/<int:order_no>/draft/", exam_draft, name="exam_draft"),
     path("learning-start/", learning_start, name="learning_start"),
     path("learning-start/result/", diagnostic_result, name="diagnostic_result"),

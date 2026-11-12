@@ -33,6 +33,7 @@
   </details>
 </section>
 
+{% if exam_content_changed %}<section class="card"><p>응시 중 이 문항이 개정되었습니다. 이번 시험은 시작할 때의 문제와 정답으로 진행하며, 해당 답안은 현재 문항의 학습 통계에 반영하지 않습니다.</p></section>{% endif %}
 <section class="card cbt-question-card">
   <p class="cbt-subject-name">
     {% if mission.course %}{{ mission.course }}{% else %}{{ mission.subject.name }}{% endif %}
@@ -49,6 +50,7 @@
   <form method="post" id="mission-answer-form" data-draft-url="{% url 'exam_draft' exam.id order_no %}" data-server-updated="{{ item.draft_updated_at|date:'c' }}">
     {% csrf_token %}
     <input type="hidden" name="work_token" value="exam-{{ item.id }}">
+    <input type="hidden" name="draft_revision" value="{{ item.draft_updated_at|date:'c' }}">
 
     {% if mission.question_type == "manual" %}
       <h2 class="cbt-answer-title">학습 결과를 선택하세요.</h2>
@@ -129,7 +131,7 @@
 </section>
 {{ draft_answers|json_script:"draft-answers" }}
 <script src="{% static 'core/exam_submit_dialog.js' %}?v=20260910-1" defer></script>
-<script src="{% static 'core/mission_draft.js' %}?v=20261111-explicit-submit-1" defer></script>
+<script src="{% static 'core/mission_draft.js' %}?v=20261112-revisions-1" defer></script>
 
 <dialog id="final-submit-dialog" class="exam-submit-dialog" aria-labelledby="final-submit-title" aria-describedby="final-submit-description">
   <div class="exam-submit-dialog__content">
