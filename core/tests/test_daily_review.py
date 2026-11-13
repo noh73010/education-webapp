@@ -131,3 +131,52 @@ class DailyReviewTests(TestCase):
         known=self.mission('known-due');self.attempt(known,True,'guessed',2)
         LearningExposure.objects.create(user=self.user,mission=known,known_until=timezone.now()+timedelta(days=7))
         self.assertEqual(review_plan(self.user,self.subject)['mission_ids'],[due.pk])
+
+    def test_today_queue_puts_due_review_first_without_duplicates_or_other_courses(self):
+        from core.models import DailyMission
+        due = self.mission('today-due')
+        self.attempt(due, days=3)
+        new = self.mission('today-new')
+        outside = self.mission('today-outside', '물류관리론', 'LM01')
+        self.attempt(outside, days=3)
+        for m in (new, due):
+            DailyMission.objects.create(user=self.user, mission=m, date=timezone.localdate())
+        response = self.client.get(reverse('mission_list'), {'start': '1'})
+        self.assertEqual(response.url, reverse('mission_detail', args=[due.pk]))
+        self.assertEqual(self.client.session['review_mission_ids'], [due.pk, new.pk])
+        page = self.client.get(response.url)
+        self.assertContains(page, '이번 학습 1/2')
+
+    def test_twenty_minute_today_queue_keeps_all_ten_and_finishes(self):
+        from core.models import DailyMission, StudyProfile
+        StudyProfile.objects.update_or_create(user=self.user, defaults={'daily_minutes': 20})
+        missions = [self.mission(f'ten-{i}') for i in range(10)]
+        for m in missions:
+            DailyMission.objects.create(user=self.user, mission=m, date=timezone.localdate())
+        self.client.get(reverse('mission_list'), {'start': '1'})
+        ids = self.client.session['review_mission_ids']
+        self.assertEqual(len(ids), 10)
+        for pk in ids:
+            url = reverse('mission_detail', args=[pk])
+            page = self.client.get(url)
+            response = self.client.post(url, {'work_token':str(page.context['work'].pk), 'submitted_answer':'2'})
+            feedback = self.client.get(response.url)
+        self.assertEqual(feedback.context['continue_url'], reverse('daily_review_result'))
+        self.assertEqual(feedback.context['daily_review_state']['study_mode'], 'today')
+        self.assertNotContains(feedback, '<h2>같은 개념의 새 문제로 확인</h2>')
+        summary = self.client.get(reverse('daily_review_result'))
+        self.assertEqual(summary.context['review_total'], 10)
+        self.assertEqual(len(summary.context['review_attempts']), 10)
+        self.assertNotIn('review_mission_ids', self.client.session)
+
+    def test_today_queue_does_not_restart_completed_daily_questions(self):
+        from core.models import DailyMission
+        m = self.mission('finished-daily')
+        DailyMission.objects.create(user=self.user, mission=m, date=timezone.localdate())
+        a = self.attempt(m, correct=True, confidence='certain')
+        Attempt.objects.filter(pk=a.pk).update(daily_date=timezone.localdate())
+        response = self.client.get(reverse('mission_list'), {'start':'1'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['today_queue_size'], 0)
+        self.assertNotIn('review_mission_ids', self.client.session)
+        self.assertContains(response, '오늘 추천 학습을 마쳤어요')

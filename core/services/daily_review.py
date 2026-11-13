@@ -52,8 +52,8 @@ def weekly_changes(user, subject):
             "delayed_count": delayed.count(), "delayed": list(delayed.select_related("mission").order_by("-created_at", "-pk")[:3]), "remaining": review_plan(user, subject)["count"]}
 
 
-def start_study_queue(request, subject, missions, *, label, mode=''):
-    ids = [m.pk for m in missions][:5]
+def start_study_queue(request, subject, missions, *, label, mode='', limit=5):
+    ids = list(dict.fromkeys(m.pk for m in missions))[:limit]
     for key in list(request.session.keys()):
         if key.startswith(('problem_set_', 'pattern_training_', 'learning_type_training_', 'review_')):
             request.session.pop(key, None)

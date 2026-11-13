@@ -5,11 +5,12 @@
 {% block extra_css %}<link rel="stylesheet" href="{% static 'core/home_ads.css' %}">{% endblock %}
 
 {% block content %}
-<section class="card"><a class="main-button" href="{% url 'study_library' %}">새 문제·복습 선택과 챕터별 학습 현황 →</a></section>
 
-{% include 'core/includes/exam_countdown.html' with exam_countdown=personal_coach %}
+
+{% if not is_logistics_subject %}{% include 'core/includes/exam_countdown.html' with exam_countdown=personal_coach %}{% endif %}
 
 <div class="home-primary-grid">
+{% if is_logistics_subject %}{% include 'core/includes/logistics_focus.html' %}{% else %}
 <section class="card daily-focus-card coach-summary-card coach-summary-action study-home-hero{% if is_logistics_subject %} study-home-hero--logistics{% endif %} {% if daily_progress.total and daily_progress.done == daily_progress.total %}is-complete{% endif %}">
   <p class="eyebrow">{{ current_subject.name }} · 오늘 학습{% if selected_course %} · {% if selected_area %}{{ selected_area.title }}{% else %}{{ selected_course }}{% endif %}{% endif %}</p>
   <h1 class="section-title">{% if subject_mission_count == 0 %}준비된 과목부터 시작해요{% elif recent_attempts %}지난 학습을 이어가요{% else %}오늘 {{ selected_daily_minutes }}분만 시작해요{% endif %}</h1>
@@ -124,8 +125,10 @@
   </div></details>
 </section>
 
+{% endif %}
+
 {% if recent_attempts %}
-{% if is_logistics_subject %}<div class="home-insight-stack">{% endif %}
+{% if is_logistics_subject %}<details class="card home-insight-stack home-muted-details"><summary>복습 일정·약점·최근 학습 변화</summary>{% endif %}
 {% include 'core/includes/review_start.html' %}
 {% include 'core/includes/weekly_changes.html' %}
 <section class="card coach-summary-card coach-summary-warning {% if selected_course %}{% if selected_course_weakness.state != 'found' %}is-empty{% endif %}{% elif not personal_coach.priority_weakness %}is-empty{% endif %}">
@@ -168,7 +171,7 @@
   {% endif %}
   {% if personal_coach.recent_improvement %}<a href="{% url 'stats' %}" class="sub-button">학습 변화 자세히</a>{% endif %}
 </section>
-{% if is_logistics_subject %}</div>{% endif %}
+{% if is_logistics_subject %}</details>{% endif %}
 {% endif %}
 </div>
 
@@ -197,7 +200,8 @@
 {% endif %}
 
 <details class="home-learning-more" {% if chapter %}open{% endif %}>
-<summary><b>로드맵·모의고사·상세 학습 도구</b><span>필요할 때 펼쳐보기</span></summary>
+<summary><b>모의고사·학습 도구</b><span>필요할 때 펼쳐보기</span></summary>
+<p><a href="{% url 'study_library' %}">새 문제·복습을 직접 고르기 · 챕터별 학습 현황</a></p>
 
 <section class="card mobile-coach-strip">
   <div>

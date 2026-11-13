@@ -1,0 +1,24 @@
+<section class="card logistics-focus focused-study-home" aria-labelledby="today-focus-title">
+  <p class="eyebrow">물류관리사 · {{ selected_course|default:current_subject.name }}</p>
+  {% if today_queue_size %}
+  <h1 id="today-focus-title">오늘은 한 문제씩, 차근차근</h1>
+  <p>복습할 시점이 된 문제를 먼저 확인하고 추천 문제로 이어가요.</p>
+  <p class="focus-session-size">이번 학습 <strong>{{ today_queue_size }}문제</strong></p>
+  <a class="main-button main-button-large" href="{% url 'mission_list' %}?start=1">오늘 학습 시작</a>
+  <p class="meta-text">답안을 제출하고 해설을 확인한 뒤 다음 문제로 넘어가세요.</p>
+  {% elif subject_mission_count %}
+  <h1 id="today-focus-title">오늘 추천 학습을 마쳤어요</h1>
+  <p>수고했어요. 기록을 확인하거나 원하는 단원을 더 공부할 수 있어요.</p>
+  <a class="sub-button" href="{% url 'stats' %}">오늘 학습 기록 보기</a>
+  {% else %}
+  <h1 id="today-focus-title">이 과목은 준비 중이에요</h1>
+  <p>다른 과목을 선택하거나 아래 단원 목차의 이론을 살펴보세요.</p>
+  {% endif %}
+  <details class="focus-settings"><summary>학습 분량·과목 바꾸기</summary>
+    <p>학습 분량을 바꾸면 오늘 추천 목록을 다시 구성해요. 풀이 기록은 유지됩니다.</p>
+    <div class="study-time-picker"><span>학습 분량</span><a href="?minutes=5" {% if selected_daily_minutes == 5 %}aria-current="true"{% endif %}>짧게 · 3문제</a><a href="?minutes=10" {% if selected_daily_minutes == 10 %}aria-current="true"{% endif %}>보통 · 5문제</a><a href="?minutes=20" {% if selected_daily_minutes == 20 %}aria-current="true"{% endif %}>넉넉히 · 10문제</a></div>
+    <div class="course-switcher-options">{% for option in course_options %}{% if option.name != selected_course %}<form method="post">{% csrf_token %}<input type="hidden" name="course" value="{{ option.name }}"><button type="submit" class="sub-button">{{ option.name }}</button></form>{% endif %}{% endfor %}</div>
+    <p><a href="{% url 'landing' %}">다른 자격증 선택</a></p>
+  </details>
+  {% if ongoing_exam %}<p class="focus-resume">진행 중인 모의고사 · <a href="{% if ongoing_exam.expired %}{% url 'exam_result' ongoing_exam.exam.id %}{% else %}{% url 'exam_take' ongoing_exam.exam.id ongoing_exam.resume_order %}{% endif %}">{% if ongoing_exam.expired %}결과 확인{% else %}시험 이어하기{% endif %}</a></p>{% endif %}
+</section>

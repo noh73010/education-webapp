@@ -534,8 +534,18 @@ def mission_list(request):
         (mission for mission in recommended if not mission.today_done),
         None,
     )
-    if request.GET.get("start") == "1" and today_start_mission:
-        return redirect("mission_detail", mission_id=today_start_mission.id)
+    # One bounded queue combines due review and today's remaining recommendations.
+    # Already completed questions stay out; review is scoped by the saved course.
+    today_queue = [mission for mission in recommended if not mission.today_done]
+    if current_subject.code == LOGISTICS_SUBJECT_CODE:
+        due = review_plan(request.user, current_subject, limit=daily_question_limit)
+        due_missions = [a.mission for a in due["attempts"] if a.mission_id not in done_ids]
+        today_queue = list({m.pk: m for m in due_missions + today_queue}.values())[:daily_question_limit]
+    if request.GET.get("start") == "1" and today_queue:
+        from core.services.daily_review import start_study_queue
+        start_study_queue(request, current_subject, today_queue,
+                          label=selected_course or current_subject.name, mode="today", limit=10)
+        return redirect("mission_detail", mission_id=today_queue[0].pk)
 
     skill_choices = (
         Mission.objects
@@ -762,6 +772,7 @@ def mission_list(request):
         "today_guide_learning_type": today_guide_learning_type,
         "today_guide_text": today_guide_text,
         "today_start_mission": today_start_mission,
+        "today_queue_size": len(today_queue),
         "weak_learning_type": weak_learning_type,
         "learning_roadmap": learning_roadmap,
         "logistics_chapter_roadmap": logistics_chapter_roadmap,
@@ -1351,12 +1362,15 @@ def mission_detail(request, mission_id):
             reason_continue_label = "학습 종료" if daily_completion else "다음 문제"
     from core.services.efficient_learning import alternatives
     concept_alternatives = alternatives(request.user, mission) if saved else []
+    queue_ids = queue_state.get("mission_ids", []) if queue_state.get("subject_id") == current_subject.pk else []
+    in_queue_feedback = bool(saved_attempt and saved_attempt.pk in queue_state.get("attempt_ids", []))
+    show_queue = mission.pk in queue_ids and (mission.pk in request.session.get("review_mission_ids", []) or in_queue_feedback)
     return render(request, "core/mission_detail.html", {
         "content_updated": Attempt.objects.filter(user=request.user, mission=mission, grading_valid=False).exists(),
         "concept_alternatives": concept_alternatives,
         "mission": mission,
-        "daily_review_state": request.session.get("daily_review_state") if mission.pk in request.session.get("review_mission_ids", []) else None,
-        "daily_review_number": request.session.get("review_mission_ids", []).index(mission.pk) + 1 if mission.pk in request.session.get("review_mission_ids", []) else None,
+        "daily_review_state": queue_state if show_queue else None,
+        "daily_review_number": queue_ids.index(mission.pk) + 1 if show_queue else None,
         "wrong_reasons": wrong_reasons,
         "saved": saved,
         "error": error,

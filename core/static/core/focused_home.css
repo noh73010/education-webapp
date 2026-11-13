@@ -1,0 +1,20 @@
+/* Keep the learning action ahead of optional analysis and configuration. */
+.home-primary-grid:has(.logistics-focus) { display: flex; flex-direction: column; gap: 1rem; }
+.logistics-focus { width: 100%; box-sizing: border-box; }
+.logistics-focus h1 { font-size: clamp(1.5rem, 5vw, 2rem); line-height: 1.4; }
+.logistics-focus > .main-button { display: block; text-align: center; margin: 1.5rem 0 .75rem; }
+.focus-session-size { margin: 1.5rem 0; font-size: 1.125rem; }
+.focus-session-size strong { color: #173d8f; }
+.focus-settings { margin-top: 1.5rem; border-top: 1px solid #d9dfeb; padding-top: 1rem; }
+.focus-settings summary, .home-muted-details > summary { cursor: pointer; font-weight: 700; line-height: 1.6; }
+.focus-settings .study-time-picker { flex-wrap: wrap; }
+.focus-settings [aria-current="true"] { background: #e6edff; color: #173d8f; font-weight: 700; }
+.home-insight-stack.home-muted-details { display: block; }
+.home-muted-details:not([open]) > :not(summary) { display: none; }
+.home-muted-details[open] > summary { margin-bottom: 1rem; }
+.focused-study-home .study-home-art { display: none; }
+.focused-study-home .realtor-next-step { margin-top: 0; }
+.focused-study-home .realtor-chapters { margin-top: 1rem; }
+.focused-study-home .realtor-chapter-expanded { padding-top: .5rem; }
+.focus-resume { border-top: 1px solid #d9dfeb; padding-top: 1rem; }
+.focused-study-home .study-home-hero-main { display: block; min-height: 0; }
