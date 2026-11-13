@@ -1,5 +1,9 @@
-{% load static %}
+{% load static mission_tags %}
 {% if mission.question_image %}
+  {% with visual=mission.question_image.static_path|readable_figure %}
+  {% if visual %}
+    {% include 'core/includes/question_figure.html' with visual=visual mission=mission %}
+  {% else %}
   <figure class="question-image-wrap" data-question-image>
     <button
       type="button"
@@ -64,4 +68,6 @@
       dialog.addEventListener("close", () => trigger.focus());
     })();
   </script>
+  {% endif %}
+  {% endwith %}
 {% endif %}

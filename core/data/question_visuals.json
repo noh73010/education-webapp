@@ -1,0 +1,556 @@
+{
+  "images/questions/logistics/28회-1/q065_r20261113.webp": {
+    "kind": "table",
+    "sha256": "bf87549509f41ae1c080532aad62c49900d392c68e920e160cfed8a53e5d954a",
+    "unit": "(운송비 단위: 천 원/톤)",
+    "headers": [
+      "공급지 / 수요지",
+      "D1",
+      "D2",
+      "D3",
+      "공급량(톤)"
+    ],
+    "rows": [
+      [
+        "S1",
+        "8",
+        "6",
+        "10",
+        "300"
+      ],
+      [
+        "S2",
+        "9",
+        "12",
+        "7",
+        "250"
+      ],
+      [
+        "S3",
+        "14",
+        "9",
+        "11",
+        "150"
+      ],
+      [
+        "수요량(톤)",
+        "200",
+        "300",
+        "200",
+        "700"
+      ]
+    ]
+  },
+  "images/questions/logistics/29회-1/q104_r20261113.webp": {
+    "kind": "comparison",
+    "sha256": "7a1c38e5d74b16c7e54ca363630fa41da3cf77b3d057fb4f3ec3448d94e6da58",
+    "rows": [
+      {
+        "label": "①",
+        "liner": "정해진 항로와 일정에 따라 운항",
+        "tramp": "계약에 따라 항로와 일정 결정"
+      },
+      {
+        "label": "②",
+        "liner": "선사 중심의 정기 운항 서비스",
+        "tramp": "화주 또는 용선자와의 개별 운송계약 중심"
+      },
+      {
+        "label": "③",
+        "liner": "시장운임에 의한 경쟁 운임",
+        "tramp": "운임표에 따른 운임 적용"
+      },
+      {
+        "label": "④",
+        "liner": "개품화물·컨테이너화물 위주",
+        "tramp": "벌크화물 위주"
+      },
+      {
+        "label": "⑤",
+        "liner": "다수 화주와 반복적인 운송 거래",
+        "tramp": "대량 화물의 일회성·프로젝트성 운송"
+      }
+    ]
+  },
+  "images/questions/logistics/29회-2/q003_r20261113.webp": {
+    "kind": "statements",
+    "sha256": "a93323cfa188b8435c1c2755107429e64724743b1e1b184f932a9a944f0b32a3",
+    "statements": [
+      {
+        "label": "ㄱ.",
+        "text": "두 가지 이상의 운송수단을 연계하여 화물의 환적 기능을 수행한다."
+      },
+      {
+        "label": "ㄴ.",
+        "text": "대규모 보관시설과 하역장비를 갖추고 창고·유통가공·포장 등의 물류서비스를 제공한다."
+      },
+      {
+        "label": "ㄷ.",
+        "text": "운송정보·재고정보·위치정보 등을 통합 관리하여 운영 효율성을 높인다."
+      },
+      {
+        "label": "ㄹ.",
+        "text": "항만 배후지역에만 설치되며 내륙에는 설치되지 않는다."
+      },
+      {
+        "label": "ㅁ.",
+        "text": "단일 운송수단만을 이용하여 화물을 목적지까지 직접 운송하는 것이 주된 기능이다."
+      }
+    ]
+  },
+  "images/questions/logistics/29회-2/q021_r20261113.webp": {
+    "kind": "statements",
+    "sha256": "dbcbf5b85b8edce6d46f6f190a30dca716f1f0c56d44cc459b2a5a6d2cdda1cf",
+    "statements": [
+      {
+        "label": "ㄱ.",
+        "text": "구매자가 제공하는 판매·재고정보를 바탕으로 공급자가 보충 시점과 수량을 결정하여 구매자의 재고를 관리하는 방식"
+      },
+      {
+        "label": "ㄴ.",
+        "text": "생산공정에서 아직 완제품이 되지 않은 상태의 재고"
+      },
+      {
+        "label": "ㄷ.",
+        "text": "계절적 수요 증가에 대비하여 미리 확보해 두는 재고"
+      }
+    ],
+    "terms": [
+      {
+        "label": "A.",
+        "text": "재공품 (WIP)"
+      },
+      {
+        "label": "B.",
+        "text": "공급자관리재고 (VMI)"
+      },
+      {
+        "label": "C.",
+        "text": "안전재고 (Safety Stock)"
+      },
+      {
+        "label": "D.",
+        "text": "운송중재고 (In-transit Stock)"
+      },
+      {
+        "label": "E.",
+        "text": "예비재고 (Anticipation Stock)"
+      }
+    ]
+  },
+  "images/questions/logistics/25회-2/q030_r20261113.webp": {
+    "kind": "panels",
+    "sha256": "dc41b7bad39e1e1791819feb915e2279cf0da7abfc9dcd34fdc6c33d0e870106",
+    "width": 1536,
+    "height": 1024,
+    "panels": [
+      {
+        "label": "A의 1층과 2층",
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      },
+      {
+        "label": "B의 1층과 2층",
+        "x": 768,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    ]
+  },
+  "images/questions/logistics/27회-2/q036_r20261113.webp": {
+    "kind": "panels",
+    "sha256": "712fd4e5b1eb9e2edf0586b7f4710ef8e3d9ca7b6c20aea21079dcae02a05864",
+    "width": 1774,
+    "height": 887,
+    "panels": [
+      {
+        "label": "1층 평면도",
+        "x": 0,
+        "y": 0,
+        "width": 887,
+        "height": 887
+      },
+      {
+        "label": "2층 평면도",
+        "x": 887,
+        "y": 0,
+        "width": 887,
+        "height": 887
+      }
+    ]
+  },
+  "images/questions/logistics/29회-2/q013_r20261113.webp": {
+    "kind": "panels",
+    "sha256": "ee2a939d3297a452fcd4a06a7125cd99740ebfb3d59183f488eb0c04b0d4baaf",
+    "width": 1536,
+    "height": 1024,
+    "panels": [
+      {
+        "label": "A",
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 512
+      },
+      {
+        "label": "B",
+        "x": 768,
+        "y": 0,
+        "width": 768,
+        "height": 512
+      },
+      {
+        "label": "C",
+        "x": 0,
+        "y": 512,
+        "width": 768,
+        "height": 512
+      },
+      {
+        "label": "D",
+        "x": 768,
+        "y": 512,
+        "width": 768,
+        "height": 512
+      }
+    ]
+  },
+  "images/questions/logistics/26회-1/q099_r20261113.webp": {
+    "kind": "panels",
+    "sha256": "58b2470e46e994992cd0138dcece1d06e0bd19e0964fe5737aa416693fb20944",
+    "width": 2172,
+    "height": 724,
+    "flow": true,
+    "panels": [
+      {
+        "label": "도로운송 구간",
+        "x": 0,
+        "y": 100,
+        "width": 530,
+        "height": 550
+      },
+      {
+        "label": "해상운송 구간",
+        "x": 590,
+        "y": 100,
+        "width": 690,
+        "height": 550
+      },
+      {
+        "label": "철도운송 구간 및 손상 발생 위치",
+        "x": 1350,
+        "y": 100,
+        "width": 822,
+        "height": 550
+      }
+    ]
+  },
+  "images/questions/logistics/26회-1/q071_r20261113.webp": {
+    "kind": "graph",
+    "sha256": "08751de4d0bea4d4612017e2281e5076be7cafdb86a2fb3939bcec2f08f7e07f",
+    "width": 910,
+    "height": 620,
+    "nodes": [
+      {
+        "label": "A",
+        "x": 85,
+        "y": 130
+      },
+      {
+        "label": "B",
+        "x": 330,
+        "y": 130
+      },
+      {
+        "label": "C",
+        "x": 575,
+        "y": 130
+      },
+      {
+        "label": "F",
+        "x": 820,
+        "y": 130
+      },
+      {
+        "label": "D",
+        "x": 85,
+        "y": 400
+      },
+      {
+        "label": "E",
+        "x": 330,
+        "y": 400
+      },
+      {
+        "label": "G",
+        "x": 575,
+        "y": 400
+      },
+      {
+        "label": "H",
+        "x": 820,
+        "y": 400
+      }
+    ],
+    "edges": [
+      {
+        "start": "A",
+        "end": "B",
+        "weight": 5,
+        "path": "M85 130 L330 130",
+        "label_x": 207,
+        "label_y": 100
+      },
+      {
+        "start": "B",
+        "end": "C",
+        "weight": 8,
+        "path": "M330 130 L575 130",
+        "label_x": 452,
+        "label_y": 100
+      },
+      {
+        "start": "C",
+        "end": "F",
+        "weight": 10,
+        "path": "M575 130 L820 130",
+        "label_x": 697,
+        "label_y": 100
+      },
+      {
+        "start": "A",
+        "end": "D",
+        "weight": 3,
+        "path": "M85 130 L85 400",
+        "label_x": 45,
+        "label_y": 265
+      },
+      {
+        "start": "A",
+        "end": "E",
+        "weight": 9,
+        "path": "M85 130 L330 400",
+        "label_x": 200,
+        "label_y": 265
+      },
+      {
+        "start": "B",
+        "end": "E",
+        "weight": 4,
+        "path": "M330 130 L330 400",
+        "label_x": 365,
+        "label_y": 265
+      },
+      {
+        "start": "C",
+        "end": "E",
+        "weight": 5,
+        "path": "M575 130 L330 400",
+        "label_x": 455,
+        "label_y": 255
+      },
+      {
+        "start": "E",
+        "end": "F",
+        "weight": 6,
+        "path": "M330 400 L820 130",
+        "label_x": 615,
+        "label_y": 300
+      },
+      {
+        "start": "F",
+        "end": "H",
+        "weight": 2,
+        "path": "M820 130 L820 400",
+        "label_x": 865,
+        "label_y": 265
+      },
+      {
+        "start": "D",
+        "end": "E",
+        "weight": 7,
+        "path": "M85 400 L330 400",
+        "label_x": 207,
+        "label_y": 430
+      },
+      {
+        "start": "E",
+        "end": "G",
+        "weight": 4,
+        "path": "M330 400 L575 400",
+        "label_x": 452,
+        "label_y": 430
+      },
+      {
+        "start": "G",
+        "end": "H",
+        "weight": 5,
+        "path": "M575 400 L820 400",
+        "label_x": 697,
+        "label_y": 430
+      },
+      {
+        "start": "D",
+        "end": "G",
+        "weight": 8,
+        "path": "M85 400 Q330 650 575 400",
+        "label_x": 300,
+        "label_y": 535
+      },
+      {
+        "start": "E",
+        "end": "H",
+        "weight": 3,
+        "path": "M330 400 Q575 570 820 400",
+        "label_x": 650,
+        "label_y": 500
+      }
+    ],
+    "unit": "(단위: km)"
+  },
+  "images/questions/logistics/29회-1/q065_r20261113.webp": {
+    "kind": "graph",
+    "sha256": "4c584125da7070bce39c3e3e5ffb97c20e414a3eb7a413a4e4482444833ccab3",
+    "width": 1040,
+    "height": 720,
+    "nodes": [
+      {
+        "label": "S",
+        "x": 80,
+        "y": 340
+      },
+      {
+        "label": "A",
+        "x": 280,
+        "y": 150
+      },
+      {
+        "label": "B",
+        "x": 280,
+        "y": 540
+      },
+      {
+        "label": "C",
+        "x": 510,
+        "y": 340
+      },
+      {
+        "label": "D",
+        "x": 740,
+        "y": 150
+      },
+      {
+        "label": "E",
+        "x": 740,
+        "y": 540
+      },
+      {
+        "label": "F",
+        "x": 950,
+        "y": 340
+      }
+    ],
+    "edges": [
+      {
+        "start": "S",
+        "end": "A",
+        "weight": 4,
+        "path": "M80 340 L280 150",
+        "label_x": 150,
+        "label_y": 225
+      },
+      {
+        "start": "S",
+        "end": "B",
+        "weight": 7,
+        "path": "M80 340 L280 540",
+        "label_x": 150,
+        "label_y": 465
+      },
+      {
+        "start": "S",
+        "end": "C",
+        "weight": 9,
+        "path": "M80 340 L510 340",
+        "label_x": 285,
+        "label_y": 315
+      },
+      {
+        "start": "A",
+        "end": "D",
+        "weight": 3,
+        "path": "M280 150 L740 150",
+        "label_x": 510,
+        "label_y": 125
+      },
+      {
+        "start": "B",
+        "end": "C",
+        "weight": 3,
+        "path": "M280 540 L510 340",
+        "label_x": 395,
+        "label_y": 465
+      },
+      {
+        "start": "B",
+        "end": "E",
+        "weight": 6,
+        "path": "M280 540 L740 540",
+        "label_x": 510,
+        "label_y": 575
+      },
+      {
+        "start": "C",
+        "end": "D",
+        "weight": 2,
+        "path": "M510 340 L740 150",
+        "label_x": 635,
+        "label_y": 220
+      },
+      {
+        "start": "C",
+        "end": "F",
+        "weight": 5,
+        "path": "M510 340 L950 340",
+        "label_x": 845,
+        "label_y": 315
+      },
+      {
+        "start": "D",
+        "end": "E",
+        "weight": 4,
+        "path": "M740 150 L740 540",
+        "label_x": 775,
+        "label_y": 430
+      },
+      {
+        "start": "D",
+        "end": "F",
+        "weight": 7,
+        "path": "M740 150 L950 340",
+        "label_x": 875,
+        "label_y": 230
+      },
+      {
+        "start": "E",
+        "end": "F",
+        "weight": 2,
+        "path": "M740 540 L950 340",
+        "label_x": 875,
+        "label_y": 480
+      },
+      {
+        "start": "A",
+        "end": "E",
+        "weight": 6,
+        "path": "M280 150 C280 10 1020 10 1020 340 C1020 680 740 680 740 540",
+        "label_x": 650,
+        "label_y": 70
+      }
+    ],
+    "unit": "(단위: km)"
+  }
+}

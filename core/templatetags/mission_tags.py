@@ -6,6 +6,12 @@ register = template.Library()
 
 
 @register.filter
+def readable_figure(static_path):
+    from core.services.question_visuals import question_visual
+    return question_visual(static_path)
+
+
+@register.filter
 def prompt_blocks(prompt):
     from core.services.question_layout import question_blocks
     return question_blocks(prompt)

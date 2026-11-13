@@ -1,0 +1,185 @@
+/* Problem material must be readable in the question, without opening a dialog. */
+.question-image-wrap,
+.cbt-question-card .question-image-wrap {
+  --question-media-width: 100%;
+  --question-media-max-height: none;
+  width: 100%;
+  max-width: 900px;
+  margin-inline: auto;
+}
+.question-image-wrap.is-portrait,
+.question-image-wrap.is-wide {
+  --question-media-width: 100%;
+  --question-media-max-height: none;
+}
+.question-image-trigger,
+.question-image-trigger:hover,
+.question-image-trigger:focus-visible {
+  width: 100%;
+}
+.question-image,
+.cbt-question-card .question-image,
+.question-image-wrap.is-portrait .question-image,
+.question-image-wrap.is-wide .question-image {
+  width: 100%;
+  height: auto;
+  max-height: none;
+}
+.question-image-hint { display: none; }
+
+.question-figure {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 900px;
+  min-width: 0;
+  margin: 1rem auto;
+  color: #111827;
+  background: #fff;
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+.question-figure-unit {
+  margin: 0 0 .5rem;
+  font-size: inherit;
+  line-height: 1.65;
+  text-align: right;
+}
+.question-figure-table,
+.question-figure-comparison {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font: inherit;
+  text-align: center;
+}
+.question-figure-table :is(th, td),
+.question-figure-comparison :is(th, td) {
+  padding: .6rem .3rem;
+  border: 1px solid #64748b;
+  background: #fff;
+  color: #111827;
+  font-size: inherit;
+  font-weight: 400;
+  vertical-align: middle;
+}
+.question-figure-table thead th { line-height: 1.5; }
+.question-figure-comparison :is(td, th) { text-align: left; padding: .75rem; }
+.question-figure-comparison th:first-child { width: 2.25rem; text-align: center; }
+.question-figure-statements,
+.question-figure-terms {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 1rem .75rem;
+  border: 1px solid #64748b;
+  list-style: none;
+}
+.question-figure-terms { margin-top: 1rem; }
+.question-figure-statements li,
+.question-figure-terms li {
+  display: grid;
+  grid-template-columns: 1.75em minmax(0, 1fr);
+  gap: .25em;
+  margin: 0;
+  padding: 0;
+  font-size: inherit;
+  line-height: inherit;
+}
+.question-figure-marker { white-space: nowrap; }
+.question-figure-panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.question-figure-panel { min-width: 0; }
+.question-figure-crop {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: hidden;
+  background: white;
+}
+.question-figure-graph {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  font-family: Arial, sans-serif;
+}
+.question-graph-edge,
+.question-graph-node {
+  stroke: #111827;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.question-graph-edge { fill: none; }
+.question-graph-node { fill: white; }
+.question-figure-graph text {
+  fill: #111827;
+  stroke: white;
+  stroke-width: 8;
+  stroke-linejoin: round;
+  paint-order: stroke fill;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.question-graph-weight { font-size: 3.25rem; font-weight: 400; }
+.question-graph-label { font-size: 3.5rem; font-weight: 500; }
+.question-figure-graph--large .question-graph-weight { font-size: 3.75rem; }
+.question-figure-graph--large .question-graph-label { font-size: 4rem; }
+.question-figure-panels--flow { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+@media (max-width: 600px) {
+  .cbt-question-card { padding-inline: 12px; }
+  .cbt-question-card .question-image-wrap,
+  .cbt-question-card .question-figure--panels,
+  .cbt-question-card .question-figure--graph {
+    width: calc(100% + 24px);
+    max-width: none;
+    margin-inline: -12px;
+  }
+  .question-figure-panels { grid-template-columns: minmax(0, 1fr); }
+  .question-figure-panels--flow .question-figure-panel:not(:last-child)::after {
+    content: "↓";
+    display: block;
+    text-align: center;
+    font-size: 1.5rem;
+    line-height: 1.5;
+  }
+  .question-figure-comparison thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+  .question-figure-comparison tbody { display: grid; gap: .75rem; }
+  .question-figure-comparison tr {
+    display: grid;
+    grid-template-columns: 2rem minmax(0, 1fr);
+    border: 1px solid #64748b;
+  }
+  .question-figure-comparison tbody th {
+    grid-row: span 2;
+    width: auto;
+    border: 0;
+    padding: .75rem .25rem;
+  }
+  .question-figure-comparison td {
+    grid-column: 2;
+    border: 0;
+    border-left: 1px solid #64748b;
+    padding: .75rem;
+  }
+  .question-figure-comparison td + td { border-top: 1px solid #64748b; }
+  .question-figure-comparison td::before {
+    content: attr(data-column-label);
+    display: block;
+    margin-bottom: .25rem;
+    font-size: 1rem;
+    font-weight: 650;
+  }
+}

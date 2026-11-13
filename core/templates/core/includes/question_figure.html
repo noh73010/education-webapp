@@ -1,0 +1,45 @@
+{% load static %}
+<div class="question-figure question-figure--{{ visual.kind }}" data-question-figure data-figure-kind="{{ visual.kind }}">
+  {% if visual.kind == 'table' %}
+    <p class="question-figure-unit">{{ visual.unit }}</p>
+    <table class="question-figure-table" aria-label="문제에 제시된 수송표">
+      <thead><tr>{% for cell in visual.headers %}<th scope="col">{{ cell }}</th>{% endfor %}</tr></thead>
+      <tbody>{% for row in visual.rows %}<tr>{% for cell in row %}{% if forloop.first %}<th scope="row">{{ cell }}</th>{% else %}<td>{{ cell }}</td>{% endif %}{% endfor %}</tr>{% endfor %}</tbody>
+    </table>
+  {% elif visual.kind == 'comparison' %}
+    <table class="question-figure-comparison" aria-label="문제에 제시된 운송방식 비교">
+      <thead><tr><th scope="col">구분</th><th scope="col">정기선운송</th><th scope="col">부정기선운송</th></tr></thead>
+      <tbody>{% for row in visual.rows %}<tr>
+        <th scope="row">{{ row.label }}</th>
+        <td data-column-label="정기선운송">{{ row.liner }}</td>
+        <td data-column-label="부정기선운송">{{ row.tramp }}</td>
+      </tr>{% endfor %}</tbody>
+    </table>
+  {% elif visual.kind == 'statements' %}
+    <ul class="question-figure-statements" aria-label="문제에 제시된 지문">
+      {% for item in visual.statements %}<li><span class="question-figure-marker">{{ item.label }}</span><span>{{ item.text }}</span></li>{% endfor %}
+    </ul>
+    {% if visual.terms %}<ul class="question-figure-terms" aria-label="문제에 제시된 용어">
+      {% for item in visual.terms %}<li><span class="question-figure-marker">{{ item.label }}</span><span>{{ item.text }}</span></li>{% endfor %}
+    </ul>{% endif %}
+  {% elif visual.kind == 'graph' %}
+    <p class="question-figure-unit">{{ visual.unit }}</p>
+    <svg class="question-figure-graph{% if visual.width > 1000 %} question-figure-graph--large{% endif %}" xmlns="http://www.w3.org/2000/svg" width="{{ visual.width }}" height="{{ visual.height }}" viewBox="0 0 {{ visual.width }} {{ visual.height }}" role="img" aria-label="문제에 제시된 도로망">
+      <desc>{% for edge in visual.edges %}{{ edge.start }}–{{ edge.end }}: {{ edge.weight }}km; {% endfor %}</desc>
+      {% for edge in visual.edges %}<path class="question-graph-edge" d="{{ edge.path }}" />{% endfor %}
+      {% for node in visual.nodes %}<circle class="question-graph-node" cx="{{ node.x }}" cy="{{ node.y }}" r="45" />{% endfor %}
+      {% for edge in visual.edges %}<text class="question-graph-weight" x="{{ edge.label_x }}" y="{{ edge.label_y }}">{{ edge.weight }}</text>{% endfor %}
+      {% for node in visual.nodes %}<text class="question-graph-label" x="{{ node.x }}" y="{{ node.y }}">{{ node.label }}</text>{% endfor %}
+    </svg>
+  {% elif visual.kind == 'panels' %}
+    <div class="question-figure-panels{% if visual.flow %} question-figure-panels--flow{% endif %}">
+      {% for panel in visual.panels %}
+        <div class="question-figure-panel">
+          <svg class="question-figure-crop" xmlns="http://www.w3.org/2000/svg" width="{{ panel.width }}" height="{{ panel.height }}" viewBox="{{ panel.x }} {{ panel.y }} {{ panel.width }} {{ panel.height }}" role="img" aria-label="{{ panel.label }}">
+            <image href="{% static mission.question_image.static_path %}" width="{{ visual.width }}" height="{{ visual.height }}" />
+          </svg>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
