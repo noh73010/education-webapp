@@ -88,6 +88,13 @@
       </form>
     {% else %}
       <p>과목을 고르면 바로 시작합니다. 한국시간 자정에 오늘의 5문제가 바뀌며, 같은 날에는 같은 문제가 나와요. 문제가 5개뿐인 과목은 동일한 문제가 제공됩니다. 정답과 해설, 최종 결과까지 로그인 없이 볼 수 있어요.</p>
+      {% if preferred %}
+        <form method="post" action="{% url 'guest_practice' %}">{% csrf_token %}
+          <input type="hidden" name="subject" value="logistics">
+          <input type="hidden" name="course" value="{{ preferred }}">
+          <button class="main-button" name="action" value="start">{{ preferred }} 맛보기 5문제 시작</button>
+        </form>
+      {% endif %}
       {% regroup courses by subject__name as subjects %}
       {% for subject in subjects %}
         <h2>{{ subject.grouper }}</h2>

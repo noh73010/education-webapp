@@ -5,6 +5,14 @@
 {% block content %}
 <main class="page-shell compact-page">
   <section class="card">
+    <h2>네이버 블로그 맛보기 유입 · 최근 14일</h2>
+    <p>도착은 같은 과목 링크를 연 브라우저 세션 기준입니다. 시작·완료·로그인은 체험 단계별 횟수이며 순 방문자 수는 아닙니다.</p>
+    <div class="table-scroll"><table class="data-table">
+      <thead><tr><th>과목</th><th>도착</th><th>시작</th><th>완료</th><th>로그인 후 결과 복귀</th></tr></thead>
+      <tbody>{% for name, counts in blog_rows %}<tr><th scope="row">{{ name }}</th>{% for count in counts %}<td>{{ count }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+    </table></div>
+  </section>
+  <section class="card">
     <h1 class="section-title">방문 계정 통계</h1>
     <p>한국 시간 기준, 로그인한 학습 계정 한 개를 하루에 한 번만 셉니다. 관리자 계정과 비로그인 방문은 제외합니다.</p>
     <div class="feature-grid">

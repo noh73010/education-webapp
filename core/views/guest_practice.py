@@ -13,11 +13,22 @@ from django.views.decorators.http import require_http_methods
 
 from core.models import Attempt, Mission, UserEvent
 from core.services.attempts import save_attempt
+from core.services.analytics import record_event
 from core.services.grading import parse_choice_schema
 from core.services.subjects import set_current_subject
 
 KEY = "guest_practice"
 SIZE = 5
+BLOG_COURSES = {
+    "management": "물류관리론", "transport": "화물운송론",
+    "international": "국제물류론", "warehouse": "보관하역론",
+    "law": "물류관련법규",
+}
+BLOG_SESSION = "guest_blog_course"
+
+
+def track_blog(stage, course):
+    record_event(None, f"blog_guest_{stage}", page="guest_practice", metadata={"course": course})
 
 
 def eligible():
@@ -73,11 +84,26 @@ def guest_practice(request):
     state = request.session.get(KEY)
     action = request.POST.get("action")
     error = ""
+    blog_code = request.GET.get("blog")
+    preferred = BLOG_COURSES.get(blog_code)
+    if request.method == "GET" and preferred and not request.user.is_authenticated:
+        if request.session.get(BLOG_SESSION) != blog_code:
+            track_blog("arrival", blog_code)
+            request.session[BLOG_SESSION] = blog_code
+    if request.user.is_authenticated and state and state.get("blog") and state["step"] == SIZE and not state.get("blog_login"):
+        track_blog("login", state["blog"])
+        state["blog_login"] = True
+        request.session[KEY] = state
     if action == "start":
         sample = sample_questions(request.POST.get("subject"), request.POST.get("course", ""))
         selected = [[mission.pk, mission.content_version] for mission in sample]
         if len(selected) == SIZE:
-            request.session[KEY] = {"id": uuid4().hex, "questions": selected, "answers": [], "step": 0}
+            blog = request.session.get(BLOG_SESSION)
+            if request.user.is_authenticated or sample[0].subject.code != "logistics" or BLOG_COURSES.get(blog) != sample[0].course:
+                blog = None
+            if blog:
+                track_blog("start", blog)
+            request.session[KEY] = {"id": uuid4().hex, "questions": selected, "answers": [], "step": 0, "blog": blog}
             return redirect("guest_practice")
         error = "이 과목의 맛보기 문제는 아직 준비 중입니다. 다른 과목을 선택해 주세요."
     if action in ("answer", "confidence", "next", "save") and (
@@ -93,7 +119,7 @@ def guest_practice(request):
             request.session.pop(KEY)
             state = None
             error = "문제가 업데이트되었습니다. 맛보기를 다시 시작해 주세요."
-    if state and not (request.method == "GET" and request.GET.get("choose") == "1"):
+    if state and not (request.method == "GET" and (request.GET.get("choose") == "1" or preferred)):
         step = state["step"]
         answers = state["answers"]
         if action == "save" and step == SIZE:
@@ -131,6 +157,8 @@ def guest_practice(request):
                 return JsonResponse({"saved": False, "error": "문제 상태가 변경됐어요. 새로고침 후 다시 선택해 주세요."}, status=409)
             if action == "next" and graded and request.POST.get("step") == str(step):
                 state["step"] += 1
+                if state["step"] == SIZE and state.get("blog"):
+                    track_blog("complete", state["blog"])
                 request.session[KEY] = state
                 return redirect("guest_practice")
             return render(request, "core/guest_practice.html", {
@@ -155,4 +183,4 @@ def guest_practice(request):
             "uncertain": sum(row[2] and row[1] in ("guessed", "unsure") for row in answers),
         })
     courses = eligible().order_by("subject__name", "course").values("subject__code", "subject__name", "course").distinct()
-    return render(request, "core/guest_practice.html", {"courses": courses, "error": error})
+    return render(request, "core/guest_practice.html", {"courses": courses, "error": error, "preferred": preferred})
