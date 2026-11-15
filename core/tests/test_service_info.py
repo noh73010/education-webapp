@@ -15,10 +15,11 @@ class ServiceInfoPageTests(TestCase):
         self.assertContains(response, "학습 통계")
         self.assertContains(response, "반복 학습")
 
-    def test_service_info_does_not_hardcode_subject_names(self):
+    def test_service_info_links_to_public_examples_for_both_qualifications(self):
         response = self.client.get(reverse("service_info"))
 
-        self.assertNotContains(response, "물류관리사")
+        self.assertContains(response, reverse("study_examples") + "#inventory")
+        self.assertContains(response, reverse("study_examples") + "#contract")
         self.assertNotContains(response, "컴활 2급")
 
     def test_service_info_shows_all_features_free_during_launch(self):
