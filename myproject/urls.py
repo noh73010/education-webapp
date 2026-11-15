@@ -61,6 +61,7 @@ from core.views.seo import ads_txt, robots_txt, sitemap_xml
 from core.views.visit_stats import visit_stats
 from core.views.stats import wrong_reason_attempts
 from core.views.guest_practice import guest_practice
+from django.views.generic import TemplateView
 
 from core.views.efficient_learning import study_library, learning_signal, next_learning_mission
 
@@ -71,6 +72,7 @@ urlpatterns = [
     path("study-library/", study_library, name="study_library"),
     path("missions/<int:mission_id>/learning-signal/", learning_signal, name="learning_signal"),
     path("practice/", guest_practice, name="guest_practice"),
+    path("study-examples/", TemplateView.as_view(template_name="core/study_examples.html"), name="study_examples"),
     path("ads.txt", ads_txt, name="ads_txt"),
     path("robots.txt", robots_txt, name="robots_txt"),
     path("sitemap.xml", sitemap_xml, name="sitemap_xml"),
