@@ -4,7 +4,7 @@ from django.utils.html import escape
 from django.views.decorators.http import require_safe
 
 
-PUBLIC_PAGES = ("landing", "service_info", "content_sources", "privacy_info")
+PUBLIC_PAGES = ("landing", "service_info", "study_examples", "content_sources", "privacy_info")
 
 
 @require_safe
