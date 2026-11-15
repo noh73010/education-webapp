@@ -149,6 +149,7 @@ def realtor_home(request):
         )),
         "recommended_area": recommended_area,
         "has_focus": bool(saved_area),
+        "plan_all_courses": request.user.subjectstudyplan_set.filter(subject=subject, all_courses=True).exists(),
         "recent_attempt": recent_attempt,
         "pending_work": pending_work,
         "first_visit": first_visit,
@@ -189,5 +190,5 @@ def realtor_choose_course(request):
     )
     set_current_subject(request, subject)
     if request.POST.get("start") == "1":
-        return redirect(f"{reverse('mission_list')}?minutes=5&start=1")
+        return redirect(f"{reverse('mission_list')}?start=1")
     return redirect("realtor_home")

@@ -8,13 +8,13 @@
   <section class="card realtor-next-step study-home-hero study-home-hero--realtor" aria-labelledby="realtor-next-title">
     <div class="study-home-hero-main">
     <p class="eyebrow">공인중개사 · {% if selected_area.stage == 'first' %}1차{% else %}2차{% endif %} {{ selected_area_number }}과목</p>
-    <h2 id="realtor-next-title">{{ selected_area.title }}</h2>
+    <h2 id="realtor-next-title">{% if plan_all_courses %}전체 과목으로 이어가는 내 계획{% else %}{{ selected_area.title }}{% endif %}</h2>
     {% if pending_work %}
       <p>저장해 둔 답안이 있어요. 풀던 곳부터 이어갈 수 있습니다.</p>
       <a class="main-button" href="{% url 'mission_detail' pending_work.mission_id %}">지난 학습 이어하기</a>
     {% elif selected_group.total_count %}
       <p>{% if recent_attempt %}지난 학습을 이어서 오늘의 추천 문제를 풀어보세요.{% else %}추천 문제부터 시작하거나 아래에서 원하는 단원을 골라보세요.{% endif %}</p>
-      {% if has_focus %}<a class="main-button" href="{% url 'mission_list' %}?minutes=5&amp;start=1">{{ selected_area.title }} 학습 이어가기</a>
+      {% if has_focus %}<a class="main-button" href="{% url 'mission_list' %}?start=1">내 계획으로 학습 이어가기</a>
       {% else %}<form method="post" action="{% url 'realtor_choose_course' %}">{% csrf_token %}<input type="hidden" name="area_code" value="{{ selected_area.code }}"><input type="hidden" name="start" value="1"><button class="main-button" type="submit">{{ selected_area.title }} 학습 이어가기</button></form>{% endif %}
     {% else %}
       <p class="realtor-unavailable">{{ selected_area.title }} 문제는 준비 중이에요.{% if selected_group_has_content %} 지금은 단원 이론부터 살펴볼 수 있어요.{% else %} 다른 과목을 골라 학습을 시작해 보세요.{% endif %}</p>
@@ -22,6 +22,7 @@
     {% endif %}
     <img class="study-home-art" src="{% static 'core/illustrations/home-realtor.webp' %}" width="1536" height="1024" alt="동네 지도와 집을 살펴보며 공부하는 수험생" decoding="async">
     </div>
+<p><a href="{% url 'study_plan' %}">내 공부 계획·학습 변화 보기</a></p>
     <details class="realtor-change" {% if filter_stage != 'all' %}open{% endif %}><summary>다른 과목 선택하기</summary>
   {% else %}
   <section class="card realtor-next-step study-home-hero study-home-hero--realtor" aria-labelledby="realtor-next-title">

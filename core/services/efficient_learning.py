@@ -15,17 +15,19 @@ def suppressed_ids(user):
 
 
 def scoped_missions(subject):
-    return Mission.objects.filter(subject=subject, is_usable_for_set=True).exclude(review_status=Mission.REVIEW_CONFIRMED_ERROR)
+    return Mission.objects.filter(subject=subject, is_usable_for_set=True, source_enabled=True).exclude(review_status=Mission.REVIEW_CONFIRMED_ERROR)
 
 
 def alternatives(user, mission, limit=3):
     qs = scoped_missions(mission.subject).exclude(pk=mission.pk)
     # Only explicit concept links qualify; sharing a chapter is insufficient.
-    if mission.concept_unit_id and mission.concept_unit.reviewed_on and mission.concept_unit.reviewed_on <= timezone.localdate() and mission.concept_unit.subject_id == mission.subject_id:
+    from core.services.learning_experience import reviewed_concept
+    if reviewed_concept(mission):
         qs = qs.filter(concept_unit_id=mission.concept_unit_id)
     else:
         return []
-    return list(qs.exclude(pk__in=LearningExposure.objects.filter(user=user).values("mission_id")).exclude(pk__in=Attempt.objects.valid_for_learning().filter(user=user).values('mission_id')).exclude(pk__in=suppressed_ids(user)).order_by('pk')[:limit])
+    candidates = list(qs.exclude(pk__in=LearningExposure.objects.filter(user=user).values("mission_id")).exclude(pk__in=Attempt.objects.valid_for_learning().filter(user=user).values('mission_id')).exclude(pk__in=suppressed_ids(user)).select_related('concept_unit', 'subject').order_by('pk'))
+    return [m for m in candidates if reviewed_concept(m)][:limit]
 
 
 def chapter_rows(user, subject):

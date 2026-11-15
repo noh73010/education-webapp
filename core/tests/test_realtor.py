@@ -101,7 +101,7 @@ class RealtorLearningTests(TestCase):
         self.assertFalse(CourseFocus.objects.filter(user=self.user, subject=self.realtor).exists())
         self.client.post(reverse("realtor_choose_course"), {"area_code": "RE01"})
         page = self.client.get(reverse("realtor_home"))
-        self.assertContains(page, "부동산학개론 학습 이어가기")
+        self.assertContains(page, "내 계획으로 학습 이어가기")
         started = self.client.get(reverse("mission_list"), {"minutes": "5", "start": "1"})
         self.assertRedirects(started, reverse("mission_detail", args=[mission.id]))
         self.assertEqual(CourseFocus.objects.get(user=self.user, subject=self.realtor).course, REALTOR_COURSES[0])

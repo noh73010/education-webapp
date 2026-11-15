@@ -3,11 +3,14 @@ from datetime import timedelta
 
 from django.utils import timezone
 
-from core.models import Attempt, LearningStart, Mission, MissionWork
+from core.models import Attempt, LearningStart, Mission, MissionWork, LearningExposure
 
 
 def reviewed_concept(mission):
+    from core.services.concept_catalog import concept_link_current
     unit = mission.concept_unit
+    if unit and not concept_link_current(mission):
+        return None
     if (unit and unit.subject_id == mission.subject_id and unit.reviewed_on
             and unit.reviewed_on <= timezone.localdate()):
         return unit
@@ -24,8 +27,9 @@ def repetition_guidance(user, mission):
     alternative = None
     if unit:
         alternative = Mission.objects.filter(
-            subject_id=mission.subject_id, concept_unit=unit, is_usable_for_set=True,
-        ).exclude(pk=mission.pk).exclude(question_type="manual").order_by("level", "pk").first()
+            subject_id=mission.subject_id, concept_unit=unit, is_usable_for_set=True, source_enabled=True,
+        ).exclude(pk=mission.pk).exclude(review_status=Mission.REVIEW_CONFIRMED_ERROR).exclude(question_type="manual").select_related("concept_unit", "subject").order_by("level", "pk")
+        alternative = next((m for m in alternative if reviewed_concept(m)), None)
     return {"unit": unit, "alternative": alternative,
             "message": "이 문제를 반복해서 틀렸어요. 답을 외우기 전에 개념의 차이를 확인해 보세요."
             if unit else "이 문제를 반복해서 틀렸어요. 해설과 관련 이론을 먼저 확인해 보세요. 개념별 비교 자료는 아직 준비 중입니다."}
@@ -37,8 +41,8 @@ def progress_evidence(user, attempt):
     mission = attempt.mission
     if attempt.confidence_level in (Attempt.CONFIDENCE_GUESSED, Attempt.CONFIDENCE_UNSURE):
         return {"label": "정답 확인", "message": "맞혔지만 아직 확신이 부족해요. 다음 복습에서 다시 확인해요."}
-    if not attempt.confidence_level and not attempt.learning_evidence:
-        return {"label": "정답 기록", "message": "정답으로 기록했어요. 확신도는 입력되지 않았으며, 시간이 지난 뒤 다시 확인합니다."}
+    if not attempt.learning_evidence:
+        return {"label": "정답 기록", "message": "정답으로 기록했어요. 해설을 보지 않고 풀었는지 확인할 근거가 부족해, 시간이 지난 뒤 다시 확인합니다."}
     unit = reviewed_concept(mission)
     if unit:
         # A different, previously unseen question in an explicitly reviewed concept group.
@@ -49,7 +53,9 @@ def progress_evidence(user, attempt):
             user=user, mission__subject_id=mission.subject_id, mission__concept_unit=unit,
             is_correct=False, created_at__lte=attempt.created_at - timedelta(days=3),
         ).exclude(mission=mission).order_by("-created_at").first()
-        if prior_failure and not previous_target:
+        previously_viewed = LearningExposure.objects.filter(
+            user=user, mission=mission, viewed_at__lt=attempt.created_at).exists()
+        if prior_failure and reviewed_concept(prior_failure.mission) and not previous_target and not previously_viewed:
             return {"label": "다른 문제에서도 확인했어요", "message":
                     f"{unit.title}: 틀린 날로부터 3일 이상 지난 뒤, 처음 푼 다른 문제를 맞혔어요. 한 번의 확인이므로 다음 복습도 이어가세요."}
     previous = Attempt.objects.valid_for_learning().filter(
@@ -83,6 +89,8 @@ def summarize_attempt_evidence(attempts):
         }
     if any(not attempt.confidence_level for attempt in attempts):
         return {"status": "correct", "label": "정답 기록", "message": "정답을 기록했어요. 확신도를 입력하지 않았다는 이유로 헷갈린 문제로 분류하지 않으며, 숙달은 별도의 시간 간격과 반복 정답 근거로 판단합니다."}
+    if any(not attempt.learning_evidence for attempt in attempts):
+        return {"status": "correct", "label": "정답 기록", "message": "정답을 기록했어요. 해설을 보지 않은 풀이와 시간 간격이 확인되면 안정 여부를 판단합니다."}
     ordered = sorted(attempts, key=lambda attempt: attempt.created_at)
     delayed = len(ordered) >= 2 and ordered[-1].created_at >= ordered[0].created_at + timedelta(days=3)
     if delayed and len(ordered) >= 3:

@@ -375,7 +375,7 @@ class LearningExperienceTests(TestCase):
     def test_transfer_evidence_requires_time_different_unseen_question_and_confidence(self):
         self.unit()
         failure = Attempt.objects.create(user=self.user, mission=self.mission, is_correct=False)
-        correct = Attempt.objects.create(user=self.user, mission=self.second, is_correct=True, confidence_level="certain")
+        correct = Attempt.objects.create(user=self.user, mission=self.second, is_correct=True, confidence_level="certain", learning_evidence=True)
         self.assertNotIn("다른 문제에서도", progress_evidence(self.user, correct)["label"])
         Attempt.objects.filter(pk=failure.pk).update(created_at=timezone.now() - timedelta(days=4))
         self.assertIn("다른 문제에서도", progress_evidence(self.user, correct)["label"])
@@ -393,7 +393,7 @@ class LearningExperienceTests(TestCase):
         self.second.refresh_from_db()
         failure = Attempt.objects.create(user=self.user, mission=self.mission)
         Attempt.objects.filter(pk=failure.pk).update(created_at=timezone.now() - timedelta(days=4))
-        correct = Attempt.objects.create(user=self.user, mission=self.second, is_correct=True, confidence_level="certain")
+        correct = Attempt.objects.create(user=self.user, mission=self.second, is_correct=True, confidence_level="certain", learning_evidence=True)
         self.assertNotIn("다른 문제에서도", progress_evidence(self.user, correct)["label"])
 
     def test_reset_clears_drafts_receipts_and_diagnostic(self):

@@ -43,7 +43,7 @@ def weekly_changes(user, subject):
         return {"total": total, "correct": correct, "rate": round(correct * 100 / total, 1) if total else None,
                 "days": rows.order_by().values("created_at__date").distinct().count()}
     latest = recent.filter(mission_id=OuterRef("mission_id")).order_by("-created_at", "-pk").values("pk")[:1]
-    certain = recent.filter(pk=Subquery(latest), is_correct=True).filter(
+    certain = recent.filter(pk=Subquery(latest), is_correct=True, learning_evidence=True).filter(
         Q(confidence_level=Attempt.CONFIDENCE_CERTAIN) | Q(confidence_level="", learning_evidence=True))
     prior_wrong = qs.filter(mission_id=OuterRef("mission_id"), is_correct=False,
                             created_at__lte=OuterRef("created_at") - timedelta(days=3))

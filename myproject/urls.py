@@ -1,3 +1,4 @@
+from core.views.study_plan import study_plan, study_plan_start
 from django.contrib import admin
 from django.urls import include, path
 from django.contrib.auth import views as auth_views
@@ -64,6 +65,8 @@ from core.views.guest_practice import guest_practice
 from core.views.efficient_learning import study_library, learning_signal, next_learning_mission
 
 urlpatterns = [
+    path("study-plan/", study_plan, name="study_plan"),
+    path("study-plan/start/", study_plan_start, name="study_plan_start"),
     path("missions/<int:mission_id>/next-learning/", next_learning_mission, name="next_learning_mission"),
     path("study-library/", study_library, name="study_library"),
     path("missions/<int:mission_id>/learning-signal/", learning_signal, name="learning_signal"),

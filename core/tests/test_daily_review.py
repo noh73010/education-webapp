@@ -28,7 +28,7 @@ class DailyReviewTests(TestCase):
 
     def attempt(self, mission, correct=False, confidence='', days=0):
         a = Attempt.objects.create(user=self.user, mission=mission, is_correct=correct,
-                                   confidence_level=confidence, submitted_answer='2' if correct else '1')
+                                   confidence_level=confidence, learning_evidence=True, submitted_answer='2' if correct else '1')
         Attempt.objects.filter(pk=a.pk).update(created_at=timezone.now() - timedelta(days=days))
         return a
 

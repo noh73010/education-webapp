@@ -509,6 +509,9 @@ def mission_list(request):
     if requested_minutes in {"5", "10", "20"}:
         profile.daily_minutes = int(requested_minutes)
         profile.save(update_fields=["daily_minutes", "updated_at"])
+        from core.models import SubjectStudyPlan
+        SubjectStudyPlan.objects.update_or_create(user=request.user, subject=current_subject,
+            defaults={"daily_minutes": int(requested_minutes)})
     daily_question_limit = {5: 3, 10: 5, 20: 10}.get(profile.daily_minutes, 5)
     reset_daily = request.GET.get("reset_daily") == "1" or bool(requested_minutes)
 
@@ -534,17 +537,17 @@ def mission_list(request):
         (mission for mission in recommended if not mission.today_done),
         None,
     )
-    # One bounded queue combines due review and today's remaining recommendations.
-    # Already completed questions stay out; review is scoped by the saved course.
-    today_queue = [mission for mission in recommended if not mission.today_done]
-    if current_subject.code == LOGISTICS_SUBJECT_CODE:
-        due = review_plan(request.user, current_subject, limit=daily_question_limit)
-        due_missions = [a.mission for a in due["attempts"] if a.mission_id not in done_ids]
-        today_queue = list({m.pk: m for m in due_missions + today_queue}.values())[:daily_question_limit]
+    from core.services.guided_study import build_guided_plan
+    guided_plan = build_guided_plan(request.user, current_subject)
+    today_queue = guided_plan['missions']
     if request.GET.get("start") == "1" and today_queue:
+        record_event(request.user, "study_plan_start", page="mission_list", metadata={"subject":current_subject.code,"size":guided_plan["size"],"minutes":guided_plan["minutes"],"all_courses":guided_plan["all_courses"]})
         from core.services.daily_review import start_study_queue
         start_study_queue(request, current_subject, today_queue,
-                          label=selected_course or current_subject.name, mode="today", limit=10)
+                          label=guided_plan["label"], mode="today", limit=10)
+        state=request.session["daily_review_state"]
+        state["reasons"]={str(m.pk):m.plan_reason for m in today_queue}
+        request.session["daily_review_state"]=state
         return redirect("mission_detail", mission_id=today_queue[0].pk)
 
     skill_choices = (
@@ -750,7 +753,7 @@ def mission_list(request):
         "today": today_str,
         "daily_progress": daily_progress,
         "daily_study_plan": daily_study_plan,
-        "selected_daily_minutes": profile.daily_minutes,
+        "selected_daily_minutes": guided_plan["minutes"],
         "streak": streak,
         "today_sets": recommendation_data["today_sets"],
         "recent_sessions": recent_sessions,
@@ -773,6 +776,7 @@ def mission_list(request):
         "today_guide_text": today_guide_text,
         "today_start_mission": today_start_mission,
         "today_queue_size": len(today_queue),
+        "guided_label": guided_plan["label"],
         "weak_learning_type": weak_learning_type,
         "learning_roadmap": learning_roadmap,
         "logistics_chapter_roadmap": logistics_chapter_roadmap,
@@ -1370,6 +1374,7 @@ def mission_detail(request, mission_id):
         "concept_alternatives": concept_alternatives,
         "mission": mission,
         "daily_review_state": queue_state if show_queue else None,
+        "plan_reason": queue_state.get("reasons", {}).get(str(mission.pk), "") if show_queue else "",
         "daily_review_number": queue_ids.index(mission.pk) + 1 if show_queue else None,
         "wrong_reasons": wrong_reasons,
         "saved": saved,

@@ -135,7 +135,7 @@ class PersonalizedLearningTests(TestCase):
         self.assertContains(response, "지금 가장 위험한 약점")
         self.assertContains(response, "최근 좋아진 점")
         self.assertContains(response, 'class="home-learning-more"')
-        self.assertContains(response, "로드맵·모의고사·상세 학습 도구")
+        self.assertContains(response, "모의고사·학습 도구")
         content = response.content.decode()
         self.assertLess(content.index("오늘 학습"), content.index("지금 가장 위험한 약점"))
         self.assertLess(content.index("지금 가장 위험한 약점"), content.index("최근 좋아진 점"))

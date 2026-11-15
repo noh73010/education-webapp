@@ -965,3 +965,15 @@ class ContentSourceSync(models.Model):
     fingerprint = models.CharField(max_length=64)
     mission_ids = models.JSONField(default=list)
     synced_at = models.DateTimeField(auto_now=True)
+
+
+class SubjectStudyPlan(models.Model):
+    """A learner's workload and scope, independently stored per qualification."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    daily_minutes = models.PositiveSmallIntegerField(default=10)
+    all_courses = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['user', 'subject'], name='unique_subject_study_plan')]

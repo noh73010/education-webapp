@@ -411,7 +411,7 @@ def get_mission_learning_concept(mission):
     unit = reviewed_concept(mission)
     if unit:
         return {"title": unit.title, "summary": unit.comparison, "formula": "",
-                "points": (), "is_specific": True, "is_curated": True, "anchor": "related-concept"}
+                "points": (unit.example,) if unit.example else (), "is_specific": True, "is_curated": True, "anchor": "related-concept"}
     stored_summary = (getattr(mission, "concept_summary", "") or "").strip()
     stored_tip = (getattr(mission, "exam_tip", "") or "").strip()
     if stored_summary:

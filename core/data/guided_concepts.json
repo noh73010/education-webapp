@@ -1,0 +1,32 @@
+[
+  {
+    "subject": "logistics",
+    "title": "기본 EOQ와 수량할인·분할입고의 구별",
+    "comparison": "기본 EOQ는 일정하고 알려진 수요, 일정한 주문비·단위당 유지비, 한 번에 이루어지는 보충을 전제로 합니다. 수량할인, 재고부족, 생산속도에 따른 점진적 입고는 기본 모형과 구분해야 합니다.",
+    "example": "문제에 주문량별 할인 단가가 있다면 기본 EOQ만 계산해 구매비용을 무시해서는 안 됩니다. 단가별 적용 조건과 총비용을 함께 비교해야 합니다.",
+    "references": [
+      "https://scm.ncsu.edu/scm-articles/article/economic-order-quantity-eoq-model-inventory-management-models-a-tutorial",
+      "https://edge.sagepub.com/venkataraman/student-resources/chapter-16/learning-objectives"
+    ],
+    "reviewed_on": "2026-11-14",
+    "missions": {
+      "LOGISTICS-BH04-LOGISTICS-26-2-0017": "d07bde300fbc6b74a5cbc70683ae348eed62d89dff484bf7377dab4244244817",
+      "LOGISTICS-BH04-LOGISTICS-28-2-0025": "8ac0a3bf7e608a6d32f46f206bac9683043eb799865aef26b2a9a112a20db8e0"
+    }
+  },
+  {
+    "subject": "realtor",
+    "title": "자기 가격과 대체재 가격의 수요량 효과",
+    "comparison": "우하향하는 수요곡선에서 자기 가격 상승은 수요량 감소로 연결됩니다. 대체재 가격 상승의 효과는 양의 교차탄력성으로 따로 계산합니다. 탄력성의 절댓값과 변화 방향을 구별하세요.",
+    "example": "자기 가격탄력성의 절댓값이 2이고 자기 가격이 1% 오르면, 제시된 변화율 관계에서 수요량 효과는 -2%입니다. 대체재 가격 효과가 +3%이고 선형 합산 조건이 주어졌다면 전체 효과는 +1%입니다.",
+    "references": [
+      "https://openstax.org/books/principles-economics-3e/pages/5-1-price-elasticity-of-demand-and-price-elasticity-of-supply",
+      "https://openstax.org/books/principles-economics-2e/pages/5-4-elasticity-in-areas-other-than-price"
+    ],
+    "reviewed_on": "2026-11-14",
+    "missions": {
+      "REALTOR-RE01-02-REALTOR-35-1-1-0009": "44aa48dcc82d6078de3ca0e83db41393de6abf05d5003a7dc8a13e2a1ca2a67f",
+      "REALTOR-RE01-02-REALTOR-36-1-1-0012": "5a6df676a499f2ed6eac664253896b0360eb83927a198d4e653a6e64c650301b"
+    }
+  }
+]

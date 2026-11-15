@@ -86,7 +86,9 @@ def _build_review_state(attempts, *, today):
     )
     explicit_certain = all(a.confidence_level == Attempt.CONFIDENCE_CERTAIN for a in attempts[:consecutive_correct])
     has_delayed_confirmation = has_delayed_confirmation and (
-        explicit_certain or (all(a.learning_evidence for a in attempts[:consecutive_correct]) and consecutive_correct >= 3 and len(set(certain_correct_dates)) >= 3 and (max(certain_correct_dates) - min(certain_correct_dates)).days >= 7)
+        all(a.learning_evidence for a in attempts[:consecutive_correct]) and (
+            explicit_certain or (consecutive_correct >= 3 and len(set(certain_correct_dates)) >= 3
+                and (max(certain_correct_dates) - min(certain_correct_dates)).days >= 7))
     )
     if has_delayed_confirmation:
         return {

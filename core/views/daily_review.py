@@ -35,5 +35,6 @@ def daily_review_result(request):
                     mission__subject=subject).select_related("mission"))
     valid_state = state if state.get("subject_id") == subject.pk else {}
     return render(request, "core/daily_review_result.html", {"review_attempts": attempts,
+        "study_complete": bool(valid_state.get("mission_ids")) and len(attempts)+len(valid_state.get("viewed_ids", [])) >= len(valid_state.get("mission_ids", [])),
         "study_mode": valid_state.get("study_mode", ""), "viewed_count": len(valid_state.get("viewed_ids", [])),
         "review_correct": sum(a.is_correct for a in attempts), "review_total": len(valid_state.get("mission_ids", []))})

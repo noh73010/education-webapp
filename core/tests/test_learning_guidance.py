@@ -78,6 +78,7 @@ class LearningGuidanceTests(TestCase):
                 user=self.user,
                 mission=self.missions[0],
                 is_correct=is_correct,
+                learning_evidence=True,
                 confidence_level=(
                     Attempt.CONFIDENCE_CERTAIN if is_correct else ""
                 ),
@@ -95,25 +96,26 @@ class LearningGuidanceTests(TestCase):
         response = self.client.get(reverse("mission_list"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "오늘의 학습 계획")
-        self.assertContains(response, "총 5문제")
-        self.assertContains(response, "약 10분")
-        self.assertContains(response, "처음 푸는 문제")
-        self.assertContains(response, "오늘 10분 학습 시작")
-        self.assertContains(response, "시험 전 핵심 복습")
+        self.assertContains(response, "오늘은 한 문제씩, 차근차근")
+        self.assertEqual(response.context["today_queue_size"], 5)
+        self.assertContains(response, "내 공부 계획·학습 변화 보기")
+        self.assertContains(response, "오늘 학습 시작")
+        plan = self.client.get(reverse("study_plan"))
+        self.assertContains(plan, "이번에는 5문제")
+        self.assertContains(plan, "아직 풀지 않은 문제로")
 
     def test_mobile_learner_can_choose_five_ten_or_twenty_minute_plan(self):
         five_minute = self.client.get(reverse("mission_list") + "?minutes=5")
         self.assertEqual(len(five_minute.context["recommended"]), 3)
-        self.assertContains(five_minute, "총 3문제")
+        self.assertEqual(five_minute.context["today_queue_size"], 3)
 
         ten_minute = self.client.get(reverse("mission_list") + "?minutes=10")
         self.assertEqual(len(ten_minute.context["recommended"]), 5)
-        self.assertContains(ten_minute, "총 5문제")
+        self.assertEqual(ten_minute.context["today_queue_size"], 5)
 
         twenty_minute = self.client.get(reverse("mission_list") + "?minutes=20")
         self.assertEqual(len(twenty_minute.context["recommended"]), 10)
-        self.assertContains(twenty_minute, "총 10문제")
+        self.assertEqual(twenty_minute.context["today_queue_size"], 10)
         self.assertContains(twenty_minute, "약 20분")
 
     def test_guessed_correct_answer_is_scheduled_for_confidence_review(self):
@@ -135,6 +137,7 @@ class LearningGuidanceTests(TestCase):
                 user=self.user,
                 mission=mission,
                 is_correct=is_correct,
+                learning_evidence=True,
                 daily_date=timezone.localdate(),
             )
 
