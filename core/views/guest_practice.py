@@ -15,6 +15,8 @@ from core.models import Attempt, Mission, UserEvent
 from core.services.attempts import save_attempt
 from core.services.analytics import record_event
 from core.services.grading import parse_choice_schema
+from core.services.logistics_curriculum import LOGISTICS_CURRICULUM
+from core.services.realtor_curriculum import REALTOR_COURSES
 from core.services.subjects import set_current_subject
 
 KEY = "guest_practice"
@@ -41,6 +43,11 @@ BLOG_LABELS = {
     "realtor-registration": "부동산공시법", "realtor-tax": "부동산세법",
 }
 BLOG_SESSION = "guest_blog_course"
+REALTOR_SPLIT = {"부동산공시법": "RE05", "부동산세법": "RE06"}
+PRACTICE_ORDER = {
+    "realtor": (*REALTOR_COURSES[:-1], *REALTOR_SPLIT),
+    "logistics": tuple(item["course"] for item in LOGISTICS_CURRICULUM),
+}
 
 
 def blog_subject(code):
@@ -56,6 +63,20 @@ def eligible():
         subject__code__in=("logistics", "realtor"), subject__is_active=True,
         is_usable_for_set=True, question_type="choice_one", question_image__isnull=True,
     ).exclude(review_status=Mission.REVIEW_CONFIRMED_ERROR).exclude(course="").exclude(explanation="")
+
+
+def practice_courses():
+    rows = []
+    for row in eligible().values("subject__code", "subject__name", "course").distinct():
+        if row["subject__code"] == "realtor" and row["course"] == REALTOR_COURSES[-1]:
+            rows.extend({**row, "course": label} for label in REALTOR_SPLIT)
+        else:
+            rows.append(row)
+    def key(row):
+        subject, course = row["subject__code"], row["course"]
+        order = PRACTICE_ORDER[subject]
+        return (subject != "realtor", order.index(course) if course in order else len(order), course)
+    return sorted(rows, key=key)
 
 
 def daily_sample(missions):
@@ -124,10 +145,13 @@ def guest_practice(request):
     if action == "start":
         subject = request.POST.get("subject")
         course = request.POST.get("course", "")
+        chapter = REALTOR_SPLIT.get(course, "") if subject == "realtor" else ""
+        if chapter:
+            course = REALTOR_COURSES[-1]
         source = request.POST.get("blog")
         if source not in BLOG_COURSES or BLOG_COURSES[source] != course or blog_subject(source) != subject:
             source = None
-        sample = sample_questions(subject, course, BLOG_CHAPTERS.get(source, ""))
+        sample = sample_questions(subject, course, chapter or BLOG_CHAPTERS.get(source, ""))
         selected = [[mission.pk, mission.content_version] for mission in sample]
         if len(selected) == SIZE:
             blog = request.session.get(BLOG_SESSION)
@@ -135,7 +159,10 @@ def guest_practice(request):
                 blog = None
             if blog:
                 track_blog("start", blog)
-            request.session[KEY] = {"id": uuid4().hex, "questions": selected, "answers": [], "step": 0, "blog": blog}
+            practice_label = next((label for label, prefix in REALTOR_SPLIT.items()
+                                   if prefix == (chapter or BLOG_CHAPTERS.get(source))), "")
+            request.session[KEY] = {"id": uuid4().hex, "questions": selected, "answers": [], "step": 0,
+                                    "blog": blog, "practice_label": practice_label}
             return redirect("guest_practice")
         error = "이 과목의 맛보기 문제는 아직 준비 중입니다. 다른 과목을 선택해 주세요."
     if action in ("answer", "confidence", "next", "save") and (
@@ -195,6 +222,7 @@ def guest_practice(request):
                 return redirect("guest_practice")
             return render(request, "core/guest_practice.html", {
                 "run_id": state["id"], "mission": mission, "choices": choices, "step": step, "number": step + 1,
+                "practice_label": state.get("practice_label"),
                 "graded": graded, "correct": graded and answers[step][2],
                 "confidence": answers[step][1] if graded else "", "error": error,
             })
@@ -208,14 +236,14 @@ def guest_practice(request):
                 "choices": parse_choice_schema(mission.answer_schema),
             })
         return render(request, "core/guest_practice.html", {
-            "run_id": state["id"], "review": review, "course": review[0]["mission"].course,
+            "run_id": state["id"], "review": review, "course": state.get("practice_label") or review[0]["mission"].course,
             "share_realtor": review[0]["mission"].subject.code == "realtor",
             "review_count": sum(not row[2] or row[1] in ("guessed", "unsure") for row in answers),
             "finished": True, "score": sum(row[2] for row in answers),
             "wrong": sum(not row[2] for row in answers),
             "uncertain": sum(row[2] and row[1] in ("guessed", "unsure") for row in answers),
         })
-    courses = eligible().order_by("subject__name", "course").values("subject__code", "subject__name", "course").distinct()
+    courses = practice_courses()
     return render(request, "core/guest_practice.html", {"courses": courses, "error": error, "preferred": preferred,
                   "preferred_label": BLOG_LABELS.get(blog_code, preferred), "preferred_blog": blog_code if blog_code in BLOG_COURSES else "",
                   "preferred_subject": blog_subject(blog_code) if blog_code in BLOG_COURSES else (lesson[0] if lesson else "logistics")})

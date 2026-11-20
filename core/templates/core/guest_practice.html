@@ -59,7 +59,7 @@
         </section>
       {% endif %}
     {% elif mission %}
-      <div class="guest-question-meta"><span>{{ mission.subject.name }} · {{ mission.course }}</span><strong>{{ number }} / 5</strong></div>
+      <div class="guest-question-meta"><span>{{ mission.subject.name }} · {{ practice_label|default:mission.course }}</span><strong>{{ number }} / 5</strong></div>
       <progress class="guest-progress" value="{{ number }}" max="5" aria-label="현재 문제 진행 상황">{{ number }} / 5</progress>
       {% include "core/includes/question_prompt.html" with prompt=mission.prompt %}
       <form method="post">{% csrf_token %}<input type="hidden" name="run_id" value="{{ run_id }}">

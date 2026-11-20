@@ -37,3 +37,9 @@ class BlogGuestLinksTests(TestCase):
         self.assertEqual(set(UserEvent.objects.filter(metadata__course=code).values_list("event_type", flat=True)), {
             "blog_guest_arrival", "blog_guest_start", "blog_guest_complete",
         })
+        chooser = self.client.get(url, {"choose": "1"})
+        self.assertEqual([row["course"] for row in chooser.context["courses"]], ["부동산공시법", "부동산세법"])
+        self.client.post(url, {"action": "start", "subject": "realtor", "course": "부동산세법"})
+        state = self.client.session["guest_practice"]
+        self.assertEqual(state["practice_label"], "부동산세법")
+        self.assertEqual(set(Mission.objects.filter(pk__in=[pk for pk, _ in state["questions"]]).values_list("chapter_code", flat=True)), {"RE06-02"})
