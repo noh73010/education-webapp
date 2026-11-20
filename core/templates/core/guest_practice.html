@@ -1,12 +1,14 @@
 {% extends 'core/base.html' %}
 {% load static %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'core/guest_practice.css' %}?v=20261112-3">{% endblock %}
+{% block extra_css %}{{ block.super }}<link rel="stylesheet" href="{% static 'core/guest_practice.css' %}?v=20261120-6">{% endblock %}
 {% block title %}무료 5문제 맛보기 | 합격한걸음{% endblock %}
 {% block content %}
-<main class="page-shell compact-page guest-practice">
+<main class="page-shell compact-page guest-practice{% if not mission and not finished %} guest-chooser{% endif %}">
   <section class="card guest-practice-card">
-    <p class="guest-eyebrow">매일 새로운 시작 · 오늘의 5문제</p>
-    <h1 class="section-title">무료 5문제 맛보기</h1>
+    <header class="guest-heading">
+      <p class="guest-eyebrow">{% if mission or finished %}오늘의 5문제{% else %}무료 5문제 맛보기{% endif %}</p>
+      <h1 class="section-title">{% if mission or finished %}무료 5문제 맛보기{% else %}오늘은 5문제만 가볍게{% endif %}</h1>
+    </header>
     {% if error %}<p role="alert">{{ error }}</p>{% endif %}
     {% if finished %}
       <p>오늘의 문제 세트는 날짜에 따라 바뀝니다. 다음에 같은 과목을 다시 선택해 연습해 보세요.</p>
@@ -96,28 +98,35 @@
         {% endif %}
       </form>
     {% else %}
-      <p>과목을 고르면 바로 시작합니다. 한국시간 자정에 오늘의 5문제가 바뀌며, 같은 날에는 같은 문제가 나와요. 문제가 5개뿐인 과목은 동일한 문제가 제공됩니다. 정답과 해설, 최종 결과까지 로그인 없이 볼 수 있어요.</p>
+      <p class="guest-intro">과목 하나를 골라 시작해 보세요.<br>로그인 없이 한 문제씩 풀고, 바로 해설을 볼 수 있어요.</p>
       {% if preferred %}
-        <form method="post" action="{% url 'guest_practice' %}">{% csrf_token %}
+        <form class="guest-recommended" method="post" action="{% url 'guest_practice' %}">{% csrf_token %}
+          <div><span class="guest-recommended-label">추천 시작</span><strong>{{ preferred_label }}</strong></div>
           <input type="hidden" name="subject" value="{{ preferred_subject }}">
           <input type="hidden" name="course" value="{{ preferred }}">
           {% if preferred_blog %}<input type="hidden" name="blog" value="{{ preferred_blog }}">{% endif %}
           <button class="main-button" name="action" value="start">{{ preferred_label }} 맛보기 5문제 시작</button>
         </form>
       {% endif %}
+      <p class="guest-course-caption">{% if preferred %}다른 과목으로 시작하기{% else %}과목별 무료 5문제{% endif %}</p>
       {% regroup courses by subject__name as subjects %}
       {% for subject in subjects %}
+        <section class="guest-course-group guest-course-group--{{ subject.list.0.subject__code }}">
         <h2>{{ subject.grouper }}</h2>
+        <div class="guest-course-grid">
         {% for item in subject.list %}
           <form method="post" class="inline-form">{% csrf_token %}
             <input type="hidden" name="subject" value="{{ item.subject__code }}">
-            <button class="sub-button" name="course" value="{{ item.course }}">{{ item.course }}</button>
+            <button class="sub-button guest-course-button" name="course" value="{{ item.course }}">{{ item.course }}</button>
             <input type="hidden" name="action" value="start">
           </form>
         {% endfor %}
+        </div>
+        </section>
       {% empty %}
         <p>아직 준비된 맛보기 문제가 없습니다.</p>
       {% endfor %}
+      <p class="guest-rotation-note">문제는 한국시간 자정에 바뀌어요. 준비된 문제가 5개뿐인 과목은 같은 문제가 나옵니다.</p>
     {% endif %}
     {% if mission or finished %}<p class="guest-back"><a href="?choose=1">다른 과목 선택</a></p>{% endif %}
   </section>
