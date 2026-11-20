@@ -73,6 +73,8 @@ urlpatterns = [
     path("missions/<int:mission_id>/learning-signal/", learning_signal, name="learning_signal"),
     path("practice/", guest_practice, name="guest_practice"),
     path("study-examples/", TemplateView.as_view(template_name="core/study_examples.html"), name="study_examples"),
+    path("study-examples/reorder-point/", TemplateView.as_view(template_name="core/reorder_point.html"), name="reorder_point"),
+    path("study-examples/building-ratios/", TemplateView.as_view(template_name="core/building_ratios.html"), name="building_ratios"),
     path("ads.txt", ads_txt, name="ads_txt"),
     path("robots.txt", robots_txt, name="robots_txt"),
     path("sitemap.xml", sitemap_xml, name="sitemap_xml"),

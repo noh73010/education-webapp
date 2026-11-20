@@ -1,0 +1,14 @@
+{% extends "core/base.html" %}
+{% block title %}공인중개사 건폐율·용적률 계산 문제 | 합격한걸음{% endblock %}
+{% block meta_description %}대지면적과 건축면적, 용적률 산정용 연면적을 구분하는 계산 연습문제입니다.{% endblock %}
+{% block meta_robots %}index, follow{% endblock %}
+{% block content %}
+<main class="page-shell compact-page"><article class="card">
+<h1>건폐율과 용적률 계산 문제</h1>
+<p>대지면적은 250㎡, 건축면적은 100㎡, 용적률 산정용 연면적은 300㎡입니다. 건폐율과 용적률을 순서대로 고르세요.</p>
+<ol><li>40%, 40%</li><li>40%, 120%</li><li>120%, 40%</li></ol>
+<details><summary>정답과 해설 보기</summary><p><strong>② 40%, 120%.</strong> 건폐율은 100 ÷ 250 × 100, 용적률은 300 ÷ 250 × 100입니다. ①은 용적률에도 건축면적을 넣었고, ③은 두 분자를 바꿨습니다. 이 예제는 산정용 연면적을 이미 제시했으므로 별도로 면적을 차감하지 않습니다.</p></details>
+<p><a class="main-button" href="{% url 'guest_practice' %}?lesson=building-ratios">부동산공법 5문제 이어 풀기</a></p>
+<a href="{% url 'study_examples' %}">다른 공개 문제와 해설</a>
+</article></main>
+{% endblock %}

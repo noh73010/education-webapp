@@ -1,0 +1,14 @@
+{% extends "core/base.html" %}
+{% block title %}물류관리사 재주문점 계산 문제 | 합격한걸음{% endblock %}
+{% block meta_description %}입고까지 걸리는 시간과 안전재고로 재주문점을 구하는 연습문제를 풀어보세요.{% endblock %}
+{% block meta_robots %}index, follow{% endblock %}
+{% block content %}
+<main class="page-shell compact-page"><article class="card">
+<h1>안전재고와 재주문점 계산 문제</h1>
+<p>매일 8개가 팔리는 상품이 있습니다. 발주하면 3일 뒤 입고되고, 안전재고는 10개입니다. 미입고 주문과 미처리 수요가 없다면 언제 발주할까요?</p>
+<ol><li>10개</li><li>24개</li><li>34개</li></ol>
+<details><summary>정답과 해설 보기</summary><p><strong>③ 34개.</strong> 입고를 기다리는 동안 팔릴 8 × 3 = 24개에 안전재고 10개를 더합니다. ①은 대기 기간의 수요를, ②는 수요 변동에 대비할 여유분을 빼먹었습니다. 입고까지 하루 더 걸린다면 재주문점은 42개입니다.</p></details>
+<p><a class="main-button" href="{% url 'guest_practice' %}?lesson=reorder-point">물류관리론 5문제 이어 풀기</a></p>
+<a href="{% url 'study_examples' %}">다른 공개 문제와 해설</a>
+</article></main>
+{% endblock %}

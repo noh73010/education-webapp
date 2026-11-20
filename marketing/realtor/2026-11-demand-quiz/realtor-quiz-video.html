@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>합격한걸음 · 공인중개사 세로 퀴즈</title>
+<style>
+body{font:16px system-ui,sans-serif;background:#f5f0fa;color:#242036;text-align:center;margin:24px}
+canvas{display:block;width:min(100%,320px);height:auto;margin:16px auto;border-radius:16px}
+button{padding:12px 18px;border:0;border-radius:10px;background:#543486;color:white;font:inherit;cursor:pointer}
+a{color:#543486}
+</style>
+<h1>공인중개사 23초 퀴즈</h1>
+<button id="render">미리보기 재생 및 영상 저장</button>
+<p id="status" role="status">영상은 무음이며 모든 설명이 화면에 표시됩니다.</p>
+<canvas id="video" width="1080" height="1920"></canvas>
+<p><a href="https://passstep.onrender.com/practice/?lesson=realtor-intro">합격한걸음 무료 5문제 체험 링크</a></p>
+<script>
+const canvas=document.querySelector('#video'), c=canvas.getContext('2d');
+const status=document.querySelector('#status'), button=document.querySelector('#render');
+const scenes=[
+  [7000,'공인중개사 · 학개론 퀴즈','집값이 내려가면',['다른 조건은 그대로인데','집값이 내려 사려는 양이 늘었어요.','수요곡선도 이동했을까요?'],'O인가요, X인가요?'],
+  [10000,'정답 공개','정답은 X',['가격만 변했다면','같은 수요곡선 위의 이동.','가격 외 조건이 변해야','수요곡선 자체가 이동해요.'],'수요량의 변화 ≠ 수요의 변화'],
+  [6000,'합격한걸음','학개론 무료 5문제',['한 문제씩 풀고','정답과 해설을 바로 확인하세요.','로그인 없이 시작할 수 있어요.'],'passstep.onrender.com']
+];
+function draw(time){
+  let n=0,t=time;while(n<2&&t>=scenes[n][0])t-=scenes[n++][0];
+  const [,tag,title,lines,foot]=scenes[n];
+  c.fillStyle='#f4eefb';c.fillRect(0,0,1080,1920);
+  c.fillStyle='#fff';c.beginPath();c.roundRect(65,240,950,1330,62);c.fill();
+  c.textAlign='center';c.fillStyle='#543486';c.font='bold 45px system-ui';c.fillText(tag,540,365);
+  c.fillStyle='#242036';c.font='bold 80px system-ui';c.fillText(title,540,570,870);
+  c.font='52px system-ui';lines.forEach((line,i)=>c.fillText(line,540,790+i*100,840));
+  c.fillStyle='#543486';c.font='bold 45px system-ui';c.fillText(foot,540,1420,850);
+  c.fillStyle='#d9cce9';c.fillRect(110,1680,860,12);c.fillStyle='#543486';c.fillRect(110,1680,860*Math.min(1,time/23000),12);
+}
+draw(0);
+button.onclick=()=>{
+  if(!canvas.captureStream||!window.MediaRecorder){status.textContent='영상 저장을 지원하는 Edge 또는 Chrome에서 열어주세요.';return;}
+  button.disabled=true;
+  let stream,rec;
+  try{stream=canvas.captureStream(30);
+    const mime=['video/mp4','video/webm;codecs=vp9','video/webm'].find(x=>MediaRecorder.isTypeSupported(x));
+    rec=new MediaRecorder(stream,mime?{mimeType:mime}:undefined);
+  }catch(e){stream?.getTracks().forEach(track=>track.stop());status.textContent='영상 녹화를 시작하지 못했습니다.';button.disabled=false;return;}
+  const chunks=[];
+  rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
+  rec.onstop=()=>{
+    stream.getTracks().forEach(track=>track.stop());
+    const type=rec.mimeType||'video/webm',blob=new Blob(chunks,{type}),url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download='passstep-realtor-quiz.'+(type.includes('mp4')?'mp4':'webm');a.textContent='완성 영상 다운로드';
+    status.replaceChildren(a);button.disabled=false;
+  };
+  rec.start();status.textContent='23초 영상을 만드는 중입니다. 이 탭을 열어두세요.';
+  const start=performance.now();
+  function frame(now){const elapsed=now-start;draw(elapsed);if(elapsed<23000)requestAnimationFrame(frame);else rec.stop();}
+  requestAnimationFrame(frame);
+};
+</script>
+</html>
