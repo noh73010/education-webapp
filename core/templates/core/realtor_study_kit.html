@@ -1,0 +1,37 @@
+{% extends "core/base.html" %}
+{% block title %}공인중개사 무료 스터디 퀴즈 | 학개론 계산·공법 연습 | 합격한걸음{% endblock %}
+{% block meta_description %}공인중개사 독학·스터디에서 바로 써볼 수 있는 무료 계산 퀴즈 3문제. 정답과 풀이를 확인하고 로그인 없이 과목별 5문제를 이어 풀어보세요.{% endblock %}
+{% block meta_robots %}index, follow{% endblock %}
+{% block seo_links %}
+<link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{% url 'realtor_study_kit' %}">
+<meta property="og:title" content="공인중개사 5분 스터디 퀴즈 | 합격한걸음">
+<meta property="og:description" content="문제 3개를 함께 풀고, 왜 그 답인지 한 문장으로 설명해 보세요. 로그인 없이 이용할 수 있어요.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{% url 'realtor_study_kit' %}">
+{% endblock %}
+{% block content %}
+<main class="page-shell compact-page">
+  <article class="card">
+    <p class="meta-text">공인중개사 · 무료 학습 자료</p>
+    <h1>공인중개사 5분 스터디 퀴즈</h1>
+    <p>모임 시작 전에 이 주소를 공유하세요. 먼저 각자 풀고, 답이 갈린 문제는 계산식의 어느 부분이 달랐는지 비교해 보세요. 혼자 공부할 때는 해설을 열기 전에 자기 풀이를 한 줄 적어보세요.</p>
+    <section>
+      <h2>1. 학개론: 투자 수익률</h2>
+      <p>두 투자안의 투자금은 각각 2억 원입니다. 1년 순수익이 A는 1,000만 원, B는 1,200만 원이라면 B의 단순 연 수익률은 A보다 몇 %p 높을까요?</p>
+      <details><summary>정답과 풀이</summary><p><strong>1%p.</strong> 순수익을 투자금으로 나누면 A는 5%, B는 6%입니다. 수익률 두 값의 차이는 1%가 아니라 1%p로 표시합니다. 이 계산에는 시세 차익이나 시간가치가 포함되지 않습니다.</p></details>
+    </section>
+    <section>
+      <h2>2. 학개론: 순현재가치</h2>
+      <p>오늘 100만 원을 투자하고, 1년 뒤 110만 원을 한 번 받습니다. 할인율이 연 10%라면 순현재가치는 얼마일까요?</p>
+      <details><summary>정답과 풀이</summary><p><strong>0원.</strong> 1년 뒤 110만 원을 현재가치로 바꾸면 110만 원 ÷ 1.10 = 100만 원입니다. 여기서 최초 투자금 100만 원을 빼면 0원입니다. 미래 금액에서 투자금을 바로 빼면 시간가치를 놓칩니다.</p></details>
+    </section>
+    <section>
+      <h2>3. 공법: 건폐율과 용적률</h2>
+      <p>대지면적 400㎡, 건축면적 160㎡, 용적률 산정용 연면적 480㎡입니다. 건폐율과 용적률은 각각 얼마일까요?</p>
+      <details><summary>정답과 풀이</summary><p><strong>건폐율 40%, 용적률 120%.</strong> 두 식의 분모는 대지면적 400㎡입니다. 건폐율에는 건축면적 160㎡를, 용적률에는 문제에서 제시한 산정용 연면적 480㎡를 분자로 넣습니다.</p></details>
+    </section>
+    <p><a class="main-button" href="{% url 'guest_practice' %}?lesson=realtor-intro">로그인 없이 부동산학개론 5문제 풀기</a></p>
+    <p><a href="{% url 'guest_practice' %}?lesson=building-ratios">부동산공법 5문제 풀기</a> · <a href="{% url 'study_examples' %}">다른 공개 예제 보기</a></p>
+  </article>
+</main>
+{% endblock %}
