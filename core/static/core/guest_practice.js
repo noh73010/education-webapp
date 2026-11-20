@@ -1,3 +1,22 @@
+document.querySelectorAll('[data-study-share]').forEach(function (link) {
+  link.addEventListener('click', async function (event) {
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    if (!navigator.share && !navigator.clipboard) return;
+    event.preventDefault();
+    const status = link.parentElement.querySelector('[data-study-share-status]');
+    try {
+      if (navigator.share) {
+        await navigator.share({title: '합격한걸음｜공인중개사 무료 5문제', url: link.href});
+      } else {
+        await navigator.clipboard.writeText(link.href);
+        status.textContent = '공유 링크를 복사했어요.';
+      }
+    } catch (error) {
+      if (error.name !== 'AbortError') status.textContent = '링크를 길게 누르거나 우클릭해서 복사할 수 있어요.';
+    }
+  });
+});
+
 /* Save optional confidence without navigating away from the explanation. */
 document.querySelectorAll('.guest-confidence').forEach(function (section) {
   const form = section.closest('form');

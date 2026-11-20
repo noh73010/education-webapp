@@ -9,6 +9,7 @@
     <h1 class="section-title">무료 5문제 맛보기</h1>
     {% if error %}<p role="alert">{{ error }}</p>{% endif %}
     {% if finished %}
+      <p>오늘의 문제 세트는 날짜에 따라 바뀝니다. 다음에 같은 과목을 다시 선택해 연습해 보세요.</p>
       <div class="guest-result-hero">
         <span class="guest-result-kicker">첫 학습 완료 · {{ course }}</span>
         <h2>5문제, 끝까지 해냈어요!</h2>
@@ -47,6 +48,14 @@
         {% endfor %}
       </section>
       <div class="guest-review-end"><h2>오늘의 5문제가 다음 실력으로 이어지도록</h2><p>기록을 남기면 다시 볼 문제를 놓치지 않아요.</p>{% if user.is_authenticated %}<form method="post">{% csrf_token %}<input type="hidden" name="run_id" value="{{ run_id }}"><button class="main-button" name="action" value="save">학습 기록 저장하고 복습 이어가기</button></form>{% else %}<a class="main-button" href="{% url 'login' %}?next={% url 'guest_practice' %}">로그인하고 복습 이어가기</a>{% endif %}</div>
+      {% if share_realtor %}
+        <section class="guest-next-step" aria-labelledby="study-share-title">
+          <h2 id="study-share-title">스터디 친구도 풀어볼까요?</h2>
+          <p>보내는 링크에는 내 점수나 답안이 들어가지 않아요. 받는 사람도 로그인 없이 시작할 수 있어요.</p>
+          <a href="{% url 'guest_practice' %}?lesson=realtor-intro" data-study-share>공인중개사 무료 5문제 공유</a>
+          <p role="status" data-study-share-status></p>
+        </section>
+      {% endif %}
     {% elif mission %}
       <div class="guest-question-meta"><span>{{ mission.subject.name }} · {{ mission.course }}</span><strong>{{ number }} / 5</strong></div>
       <progress class="guest-progress" value="{{ number }}" max="5" aria-label="현재 문제 진행 상황">{{ number }} / 5</progress>
@@ -90,9 +99,10 @@
       <p>과목을 고르면 바로 시작합니다. 한국시간 자정에 오늘의 5문제가 바뀌며, 같은 날에는 같은 문제가 나와요. 문제가 5개뿐인 과목은 동일한 문제가 제공됩니다. 정답과 해설, 최종 결과까지 로그인 없이 볼 수 있어요.</p>
       {% if preferred %}
         <form method="post" action="{% url 'guest_practice' %}">{% csrf_token %}
-          <input type="hidden" name="subject" value="logistics">
+          <input type="hidden" name="subject" value="{{ preferred_subject }}">
           <input type="hidden" name="course" value="{{ preferred }}">
-          <button class="main-button" name="action" value="start">{{ preferred }} 맛보기 5문제 시작</button>
+          {% if preferred_blog %}<input type="hidden" name="blog" value="{{ preferred_blog }}">{% endif %}
+          <button class="main-button" name="action" value="start">{{ preferred_label }} 맛보기 5문제 시작</button>
         </form>
       {% endif %}
       {% regroup courses by subject__name as subjects %}

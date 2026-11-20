@@ -37,6 +37,7 @@ class GuestPracticeTests(TestCase):
             self.guest_post(url, {"action": "next", "step": index})
         self.assertContains(self.client.get(url), "5문제 중 5문제 정답")
         result = self.client.get(url)
+        self.assertContains(result, 'href="/practice/?lesson=realtor-intro"')
         self.assertEqual(len(result.context["review"]), 5)
         for pk in question_ids:
             self.assertContains(result, Mission.objects.get(pk=pk).prompt)
@@ -51,6 +52,11 @@ class GuestPracticeTests(TestCase):
         self.assertRedirects(self.guest_post(url, {"action": "save"}), reverse("wrong_notes"), fetch_redirect_response=False)
         self.guest_post(url, {"action": "save"})
         self.assertEqual(Attempt.objects.filter(user=user, mission__subject__code="realtor").count(), 5)
+
+    def test_shared_link_targets_public_realtor_intro(self):
+        response = self.client.get(reverse("guest_practice"), {"lesson": "realtor-intro"})
+        self.assertContains(response, "부동산학개론 맛보기 5문제 시작")
+        self.assertEqual(response.context["preferred_subject"], "realtor")
 
     def test_landing_starts_complete_subject_sample_without_course(self):
         subject, _ = Subject.objects.get_or_create(code="realtor", defaults={"name": "공인중개사"})

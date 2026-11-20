@@ -23,8 +23,28 @@ BLOG_COURSES = {
     "management": "물류관리론", "transport": "화물운송론",
     "international": "국제물류론", "warehouse": "보관하역론",
     "law": "물류관련법규",
+    "realtor-economics": "부동산학개론",
+    "realtor-civil": "민법 및 민사특별법",
+    "realtor-brokerage": "공인중개사법령 및 중개실무",
+    "realtor-public-law": "부동산공법",
+    "realtor-registration": "부동산공시법 및 부동산세법",
+    "realtor-tax": "부동산공시법 및 부동산세법",
+}
+BLOG_CHAPTERS = {
+    "realtor-civil": "RE02-01",
+    "realtor-public-law": "RE04-06",
+    "realtor-registration": "RE05",
+    "realtor-tax": "RE06",
+}
+BLOG_LABELS = {
+    "realtor-civil": "민법 총칙", "realtor-public-law": "건축법",
+    "realtor-registration": "부동산공시법", "realtor-tax": "부동산세법",
 }
 BLOG_SESSION = "guest_blog_course"
+
+
+def blog_subject(code):
+    return "realtor" if (code or "").startswith("realtor-") else "logistics"
 
 
 def track_blog(stage, course):
@@ -51,8 +71,10 @@ def daily_sample(missions):
     return [pool[(start + index) % len(pool)] for index in range(SIZE)]
 
 
-def sample_questions(subject, course=""):
+def sample_questions(subject, course="", chapter=""):
     candidates = eligible().filter(subject__code=subject)
+    if chapter:
+        candidates = candidates.filter(chapter_code__startswith=chapter + "-") if len(chapter) == 4 else candidates.filter(chapter_code=chapter)
     if course:
         candidates = candidates.filter(course=course)
     else:
@@ -86,7 +108,12 @@ def guest_practice(request):
     error = ""
     blog_code = request.GET.get("blog")
     preferred = BLOG_COURSES.get(blog_code)
-    if request.method == "GET" and preferred and not request.user.is_authenticated:
+    lesson = {"reorder-point": ("logistics", "물류관리론"),
+              "realtor-intro": ("realtor", "부동산학개론"),
+              "building-ratios": ("realtor", "부동산공법")}.get(request.GET.get("lesson"))
+    if lesson and not preferred:
+        preferred = lesson[1]
+    if request.method == "GET" and blog_code in BLOG_COURSES and not request.user.is_authenticated:
         if request.session.get(BLOG_SESSION) != blog_code:
             track_blog("arrival", blog_code)
             request.session[BLOG_SESSION] = blog_code
@@ -95,11 +122,16 @@ def guest_practice(request):
         state["blog_login"] = True
         request.session[KEY] = state
     if action == "start":
-        sample = sample_questions(request.POST.get("subject"), request.POST.get("course", ""))
+        subject = request.POST.get("subject")
+        course = request.POST.get("course", "")
+        source = request.POST.get("blog")
+        if source not in BLOG_COURSES or BLOG_COURSES[source] != course or blog_subject(source) != subject:
+            source = None
+        sample = sample_questions(subject, course, BLOG_CHAPTERS.get(source, ""))
         selected = [[mission.pk, mission.content_version] for mission in sample]
         if len(selected) == SIZE:
             blog = request.session.get(BLOG_SESSION)
-            if request.user.is_authenticated or sample[0].subject.code != "logistics" or BLOG_COURSES.get(blog) != sample[0].course:
+            if request.user.is_authenticated or sample[0].subject.code != blog_subject(blog) or BLOG_COURSES.get(blog) != sample[0].course or (blog in BLOG_CHAPTERS and source != blog):
                 blog = None
             if blog:
                 track_blog("start", blog)
@@ -119,7 +151,7 @@ def guest_practice(request):
             request.session.pop(KEY)
             state = None
             error = "문제가 업데이트되었습니다. 맛보기를 다시 시작해 주세요."
-    if state and not (request.method == "GET" and (request.GET.get("choose") == "1" or preferred)):
+    if state and action != "start" and not (request.method == "GET" and (request.GET.get("choose") == "1" or preferred)):
         step = state["step"]
         answers = state["answers"]
         if action == "save" and step == SIZE:
@@ -177,10 +209,13 @@ def guest_practice(request):
             })
         return render(request, "core/guest_practice.html", {
             "run_id": state["id"], "review": review, "course": review[0]["mission"].course,
+            "share_realtor": review[0]["mission"].subject.code == "realtor",
             "review_count": sum(not row[2] or row[1] in ("guessed", "unsure") for row in answers),
             "finished": True, "score": sum(row[2] for row in answers),
             "wrong": sum(not row[2] for row in answers),
             "uncertain": sum(row[2] and row[1] in ("guessed", "unsure") for row in answers),
         })
     courses = eligible().order_by("subject__name", "course").values("subject__code", "subject__name", "course").distinct()
-    return render(request, "core/guest_practice.html", {"courses": courses, "error": error, "preferred": preferred})
+    return render(request, "core/guest_practice.html", {"courses": courses, "error": error, "preferred": preferred,
+                  "preferred_label": BLOG_LABELS.get(blog_code, preferred), "preferred_blog": blog_code if blog_code in BLOG_COURSES else "",
+                  "preferred_subject": blog_subject(blog_code) if blog_code in BLOG_COURSES else (lesson[0] if lesson else "logistics")})

@@ -9,7 +9,7 @@ from django.shortcuts import render
 from django.views.decorators.cache import never_cache
 
 from core.models import DailyVisit, UserEvent
-from core.views.guest_practice import BLOG_COURSES
+from core.views.guest_practice import BLOG_COURSES, BLOG_LABELS
 from core.services.visit_stats import daily_visit_report, is_visit_stats_owner, parse_report_end_day
 
 
@@ -43,7 +43,7 @@ def visit_stats(request):
               ).values("metadata__course", "event_type").annotate(total=Count("pk"))}
     return render(request, "core/visit_stats.html", {
         "rows": rows,
-        "blog_rows": [(name, [counts.get((code, f"blog_guest_{stage}"), 0) for stage in stages])
+        "blog_rows": [(BLOG_LABELS.get(code, name), [counts.get((code, f"blog_guest_{stage}"), 0) for stage in stages])
                       for code, name in BLOG_COURSES.items()],
         "today": daily_visit_report(days=1)[0],
         "yesterday": daily_visit_report(end_day=parse_report_end_day(None) - timedelta(days=1), days=1)[0],
