@@ -10,13 +10,15 @@ from core.services.content_sources import logistics_source_notices, realtor_sour
 class ContentSourcesTests(TestCase):
     def test_realtor_rounds_and_sittings_link_to_qnet_sources(self):
         sources = realtor_source_notices()
-        self.assertEqual([item["round_number"] for item in sources], [35, 36])
+        self.assertEqual([item["round_number"] for item in sources], list(range(28, 37)))
         for source in sources:
             self.assertEqual(
                 [item["label"] for item in source["sittings"]],
-                ["1차", "2차 1교시", "2차 2교시"],
+                ["1차 1교시", "2차 1교시", "2차 2교시"],
             )
         response = self.client.get(reverse("content_sources"))
+        for article_id in ("5202172", "5204010", "5206273", "5207817", "5209170", "5211107", "5212459"):
+            self.assertContains(response, f"artlSeq={article_id}&amp;boardId=Q004")
         self.assertContains(response, "제35회 공인중개사")
         self.assertContains(response, "제36회 공인중개사")
         self.assertContains(response, "artlSeq=5214724&amp;boardId=Q004")
