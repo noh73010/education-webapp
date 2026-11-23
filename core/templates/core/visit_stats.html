@@ -6,9 +6,9 @@
 <main class="page-shell compact-page">
   <section class="card">
     <h2>네이버 블로그 맛보기 유입 · 최근 14일</h2>
-    <p>도착은 같은 과목 링크를 연 브라우저 세션 기준입니다. 시작·완료·로그인은 체험 단계별 횟수이며 순 방문자 수는 아닙니다.</p>
+    <p>도착은 비로그인 브라우저 세션에서 유입 링크를 열었을 때, 나머지는 체험 단계별로 셉니다. 순방문자나 신규 가입자 수가 아닙니다.</p>
     <div class="table-scroll"><table class="data-table">
-      <thead><tr><th>과목</th><th>도착</th><th>시작</th><th>완료</th><th>로그인 후 결과 복귀</th></tr></thead>
+      <thead><tr><th>글·과목</th><th>도착</th><th>시작</th><th>완료</th><th>로그인 버튼 클릭</th><th>로그인 후 결과 복귀</th></tr></thead>
       <tbody>{% for name, counts in blog_rows %}<tr><th scope="row">{{ name }}</th>{% for count in counts %}<td>{{ count }}</td>{% endfor %}</tr>{% endfor %}</tbody>
     </table></div>
   </section>

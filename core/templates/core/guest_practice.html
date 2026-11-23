@@ -31,8 +31,8 @@
         {% if user.is_authenticated %}
           <form method="post">{% csrf_token %}<input type="hidden" name="run_id" value="{{ run_id }}"><button class="main-button" name="action" value="save">학습 기록 저장하고 복습 이어가기</button></form>
         {% else %}
-          <a class="main-button" href="{% url 'login' %}?next={% url 'guest_practice' %}">로그인하고 내 학습 기록으로 저장</a>
-          <p class="guest-save-note">같은 브라우저에서 로그인한 뒤 저장을 누르면 이어집니다. 아래 정답과 해설은 로그인 없이 모두 볼 수 있어요.</p>
+          <form method="post">{% csrf_token %}<input type="hidden" name="run_id" value="{{ run_id }}"><button class="main-button" name="action" value="login">로그인하고 오늘 풀이 저장하기</button></form>
+          <p class="guest-save-note">같은 브라우저에서 로그인한 뒤 저장을 누르면 오답노트에서 다시 볼 수 있어요. 아래 정답과 해설은 로그인 없이 모두 볼 수 있어요.</p>
         {% endif %}
       </section>
       <section class="guest-review" aria-labelledby="review-title">
@@ -49,7 +49,7 @@
           </article>
         {% endfor %}
       </section>
-      <div class="guest-review-end"><h2>오늘의 5문제가 다음 실력으로 이어지도록</h2><p>기록을 남기면 다시 볼 문제를 놓치지 않아요.</p>{% if user.is_authenticated %}<form method="post">{% csrf_token %}<input type="hidden" name="run_id" value="{{ run_id }}"><button class="main-button" name="action" value="save">학습 기록 저장하고 복습 이어가기</button></form>{% else %}<a class="main-button" href="{% url 'login' %}?next={% url 'guest_practice' %}">로그인하고 복습 이어가기</a>{% endif %}</div>
+      <div class="guest-review-end"><h2>오늘 푼 문제를 다음에도 복습하세요</h2><p>풀이를 저장하면 틀리거나 헷갈린 문제를 다시 확인할 수 있어요.</p><form method="post">{% csrf_token %}<input type="hidden" name="run_id" value="{{ run_id }}">{% if user.is_authenticated %}<button class="main-button" name="action" value="save">학습 기록 저장하고 복습 이어가기</button>{% else %}<button class="main-button" name="action" value="login">로그인하고 오늘 풀이 저장하기</button>{% endif %}</form></div>
       {% if share_realtor %}
         <section class="guest-next-step" aria-labelledby="study-share-title">
           <h2 id="study-share-title">스터디 친구도 풀어볼까요?</h2>

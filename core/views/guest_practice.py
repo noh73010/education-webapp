@@ -31,17 +31,25 @@ BLOG_COURSES = {
     "realtor-public-law": "부동산공법",
     "realtor-registration": "부동산공시법 및 부동산세법",
     "realtor-tax": "부동산공시법 및 부동산세법",
+    "realtor-worker-plan": "부동산학개론",
+    "realtor-land-zones": "부동산공법",
+    "realtor-land-readjustment": "부동산공법",
 }
 BLOG_CHAPTERS = {
     "realtor-civil": "RE02-01",
     "realtor-public-law": "RE04-06",
     "realtor-registration": "RE05",
     "realtor-tax": "RE06",
+    "realtor-land-zones": "RE04-02",
+    "realtor-land-readjustment": "RE04-04",
 }
 BLOG_LABELS = {
     "realtor-civil": "민법 총칙", "realtor-public-law": "건축법",
     "realtor-registration": "부동산공시법", "realtor-tax": "부동산세법",
+    "realtor-land-zones": "용도지역·지구·구역 관련 단원",
+    "realtor-land-readjustment": "도시개발법(환지방식 관련 단원)",
 }
+BLOG_REPORT_LABELS = {**BLOG_LABELS, "realtor-worker-plan": "직장인 공부 계획 · 부동산학개론"}
 BLOG_SESSION = "guest_blog_course"
 REALTOR_SPLIT = {"부동산공시법": "RE05", "부동산세법": "RE06"}
 PRACTICE_ORDER = {
@@ -181,6 +189,12 @@ def guest_practice(request):
     if state and action != "start" and not (request.method == "GET" and (request.GET.get("choose") == "1" or preferred)):
         step = state["step"]
         answers = state["answers"]
+        if action == "login" and step == SIZE and request.POST.get("run_id") == state["id"] and not request.user.is_authenticated:
+            if state.get("blog") and not state.get("blog_login_click"):
+                track_blog("login_click", state["blog"])
+                state["blog_login_click"] = True
+                request.session[KEY] = state
+            return redirect_to_login(request.path)
         if action == "save" and step == SIZE:
             if not request.user.is_authenticated:
                 return redirect_to_login(request.path)
