@@ -58,6 +58,7 @@ from core.views.account_settings import account_settings
 from core.views.learning_experience import problem_report, learning_start, diagnostic_result, save_mission_draft
 from core.views.exams import exam_draft, exam_question_review
 from core.views.seo import ads_txt, robots_txt, sitemap_xml
+from core.views.public_law_examples import public_law_example
 from core.views.visit_stats import visit_stats
 from core.views.stats import wrong_reason_attempts
 from core.views.guest_practice import guest_practice
@@ -76,6 +77,8 @@ urlpatterns = [
     path("realtor/study-quiz/", TemplateView.as_view(template_name="core/realtor_study_kit.html"), name="realtor_study_kit"),
     path("study-examples/reorder-point/", TemplateView.as_view(template_name="core/reorder_point.html"), name="reorder_point"),
     path("study-examples/building-ratios/", TemplateView.as_view(template_name="core/building_ratios.html"), name="building_ratios"),
+    path("study-examples/land-zones/", public_law_example, {"topic": "land-zones"}, name="land_zones"),
+    path("study-examples/land-readjustment/", public_law_example, {"topic": "land-readjustment"}, name="land_readjustment"),
     path("ads.txt", ads_txt, name="ads_txt"),
     path("robots.txt", robots_txt, name="robots_txt"),
     path("sitemap.xml", sitemap_xml, name="sitemap_xml"),

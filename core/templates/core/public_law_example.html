@@ -1,0 +1,20 @@
+{% extends "core/base.html" %}
+{% block title %}{{ title }} | 공인중개사 합격한걸음{% endblock %}
+{% block meta_description %}{{ intro }} 로그인 없이 정답과 해설을 확인할 수 있습니다.{% endblock %}
+{% block meta_robots %}index, follow{% endblock %}
+{% block content %}
+<main class="page-shell compact-page"><article class="card">
+  <p class="meta-text">공인중개사 · 부동산공법 · 직접 만든 확인 문제</p>
+  <h1>{{ title }}</h1>
+  <p>{{ intro }}</p>
+  <h2>먼저 한 문제 풀어보세요</h2>
+  <p>{{ question }}</p>
+  <ol>{% for choice in choices %}<li>{{ choice }}</li>{% endfor %}</ol>
+  <details><summary>정답과 해설 보기</summary>
+    <p><strong>{{ answer }}</strong></p><p>{{ explanation }}</p>
+    <p>근거: <a href="{{ law_url }}">{{ law }}</a></p>
+  </details>
+  <p><a class="main-button" href="{% url 'guest_practice' %}?blog={{ campaign }}">{{ course_label }} 5문제 이어 풀기</a></p>
+  <a href="{% url 'study_examples' %}">다른 공개 문제와 해설</a>
+</article></main>
+{% endblock %}

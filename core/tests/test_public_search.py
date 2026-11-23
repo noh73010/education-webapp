@@ -46,7 +46,7 @@ class PublicSearchTests(TestCase):
         self.assertEqual(
             locations,
             {f"http://example.com{reverse(name)}" for name in (
-                "landing", "service_info", "study_examples", "reorder_point", "building_ratios",
+                "landing", "service_info", "study_examples", "reorder_point", "building_ratios", "land_zones", "land_readjustment",
                 "content_sources", "privacy_info", "realtor_study_kit"
             )},
         )
