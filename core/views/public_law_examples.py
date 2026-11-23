@@ -1,5 +1,8 @@
 from django.shortcuts import render
 from django.views.decorators.http import require_safe
+from django.views.decorators.cache import never_cache
+
+from core.views.guest_practice import track_blog
 
 
 EXAMPLES = {
@@ -13,7 +16,7 @@ EXAMPLES = {
         "law": "국토의 계획 및 이용에 관한 법률 제36~38조",
         "law_url": "https://www.law.go.kr/lsLinkCommonInfo.do?lsJoLnkSeq=1028408089",
         "course_label": "용도지역·지구·구역 관련 단원",
-        "campaign": "realtor-land-zones",
+        "campaign": "realtor-quiz-zones",
     },
     "land-readjustment": {
         "title": "도시개발법 수용·사용과 환지방식 구별 문제",
@@ -25,11 +28,18 @@ EXAMPLES = {
         "law": "도시개발법 제21조",
         "law_url": "https://www.law.go.kr/lsLinkCommonInfo.do?chrClsCd=010202&lsJoLnkSeq=1029378289",
         "course_label": "도시개발법 단원",
-        "campaign": "realtor-land-readjustment",
+        "campaign": "realtor-quiz-readjustment",
     },
 }
 
 
+@never_cache
 @require_safe
 def public_law_example(request, topic):
-    return render(request, "core/public_law_example.html", EXAMPLES[topic])
+    example = EXAMPLES[topic]
+    if request.method == "GET" and not request.user.is_authenticated:
+        seen = request.session.get("public_quiz_arrivals", [])
+        if topic not in seen:
+            track_blog("quiz_arrival", example["campaign"])
+            request.session["public_quiz_arrivals"] = [*seen, topic]
+    return render(request, "core/public_law_example.html", example)

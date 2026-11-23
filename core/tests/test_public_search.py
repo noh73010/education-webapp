@@ -2,9 +2,23 @@ from xml.etree import ElementTree
 
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from core.models import UserEvent
 
 
 class PublicSearchTests(TestCase):
+    def test_public_quiz_and_practice_arrivals_are_separate(self):
+        url = reverse("land_zones")
+        campaign = "realtor-quiz-zones"
+        self.client.head(url)
+        self.assertFalse(UserEvent.objects.filter(event_type="blog_guest_quiz_arrival").exists())
+        for _ in range(2):
+            self.assertContains(self.client.get(url), f"?blog={campaign}")
+        events = UserEvent.objects.filter(metadata__course=campaign)
+        self.assertEqual(events.filter(event_type="blog_guest_quiz_arrival").count(), 1)
+        self.assertEqual(events.filter(event_type="blog_guest_arrival").count(), 0)
+        self.client.get(reverse("guest_practice"), {"blog": campaign})
+        self.assertEqual(events.filter(event_type="blog_guest_arrival").count(), 1)
+
     @override_settings(ALLOWED_HOSTS=["example.com", "testserver"])
     def test_public_pages_have_search_metadata(self):
         for name in ("landing", "service_info", "content_sources", "privacy_info", "realtor_study_kit"):

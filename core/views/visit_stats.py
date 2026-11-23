@@ -35,7 +35,7 @@ def visit_stats(request):
         ).order_by("-date_joined"),
         50,
     ).get_page(request.GET.get("member_page"))
-    stages = ("arrival", "start", "complete", "login_click", "login")
+    stages = ("quiz_arrival", "arrival", "start", "complete", "login_click", "login")
     counts = {(row["metadata__course"], row["event_type"]): row["total"] for row in
               UserEvent.objects.filter(
                   created_at__date__range=(end_day - timedelta(days=13), end_day),
