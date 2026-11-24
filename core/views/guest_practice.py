@@ -36,6 +36,9 @@ BLOG_COURSES = {
     "realtor-land-readjustment": "부동산공법",
     "realtor-quiz-zones": "부동산공법",
     "realtor-quiz-readjustment": "부동산공법",
+    "realtor-free-economics": "부동산학개론",
+    "realtor-free-civil": "민법 및 민사특별법",
+    "realtor-free-law": "부동산공법",
 }
 BLOG_CHAPTERS = {
     "realtor-civil": "RE02-01",
@@ -46,6 +49,7 @@ BLOG_CHAPTERS = {
     "realtor-land-readjustment": "RE04-04",
     "realtor-quiz-zones": "RE04-02",
     "realtor-quiz-readjustment": "RE04-04",
+    "realtor-free-civil": "RE02-01",
 }
 BLOG_LABELS = {
     "realtor-civil": "민법 총칙", "realtor-public-law": "건축법",
@@ -54,10 +58,16 @@ BLOG_LABELS = {
     "realtor-land-readjustment": "도시개발법(환지방식 관련 단원)",
     "realtor-quiz-zones": "용도지역·지구·구역 관련 단원",
     "realtor-quiz-readjustment": "도시개발법(환지방식 관련 단원)",
+    "realtor-free-civil": "민법 총칙",
 }
 BLOG_REPORT_LABELS = {
     **BLOG_LABELS,
     "realtor-worker-plan": "직장인 공부 계획 · 부동산학개론",
+    "realtor-land-zones": "네이버 글 · 용도지역·지구·구역",
+    "realtor-land-readjustment": "네이버 글 · 수용·사용과 환지",
+    "realtor-free-economics": "무료 5문제 안내 · 부동산학개론",
+    "realtor-free-civil": "무료 5문제 안내 · 민법 총칙",
+    "realtor-free-law": "무료 5문제 안내 · 부동산공법",
     "realtor-quiz-zones": "공개 퀴즈 · 용도지역·지구·구역",
     "realtor-quiz-readjustment": "공개 퀴즈 · 수용·사용과 환지",
 }

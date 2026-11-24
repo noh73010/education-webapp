@@ -17,6 +17,7 @@ EXAMPLES = {
         "law_url": "https://www.law.go.kr/lsLinkCommonInfo.do?lsJoLnkSeq=1028408089",
         "course_label": "용도지역·지구·구역 관련 단원",
         "campaign": "realtor-quiz-zones",
+        "blog_campaign": "realtor-land-zones",
     },
     "land-readjustment": {
         "title": "도시개발법 수용·사용과 환지방식 구별 문제",
@@ -29,6 +30,7 @@ EXAMPLES = {
         "law_url": "https://www.law.go.kr/lsLinkCommonInfo.do?chrClsCd=010202&lsJoLnkSeq=1029378289",
         "course_label": "도시개발법 단원",
         "campaign": "realtor-quiz-readjustment",
+        "blog_campaign": "realtor-land-readjustment",
     },
 }
 
@@ -37,9 +39,10 @@ EXAMPLES = {
 @require_safe
 def public_law_example(request, topic):
     example = EXAMPLES[topic]
+    campaign = example["blog_campaign"] if request.GET.get("source") == "naver" else example["campaign"]
     if request.method == "GET" and not request.user.is_authenticated:
         seen = request.session.get("public_quiz_arrivals", [])
-        if topic not in seen:
-            track_blog("quiz_arrival", example["campaign"])
-            request.session["public_quiz_arrivals"] = [*seen, topic]
-    return render(request, "core/public_law_example.html", example)
+        if campaign not in seen:
+            track_blog("quiz_arrival", campaign)
+            request.session["public_quiz_arrivals"] = [*seen, campaign]
+    return render(request, "core/public_law_example.html", {**example, "campaign": campaign})

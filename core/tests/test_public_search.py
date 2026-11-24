@@ -18,6 +18,9 @@ class PublicSearchTests(TestCase):
         self.assertEqual(events.filter(event_type="blog_guest_arrival").count(), 0)
         self.client.get(reverse("guest_practice"), {"blog": campaign})
         self.assertEqual(events.filter(event_type="blog_guest_arrival").count(), 1)
+        self.assertContains(self.client.get(url, {"source": "naver"}), "?blog=realtor-land-zones")
+        self.assertEqual(UserEvent.objects.filter(event_type="blog_guest_quiz_arrival", metadata__course="realtor-land-zones").count(), 1)
+        self.assertEqual(events.filter(event_type="blog_guest_quiz_arrival").count(), 1)
 
     @override_settings(ALLOWED_HOSTS=["example.com", "testserver"])
     def test_public_pages_have_search_metadata(self):
