@@ -15,12 +15,24 @@ class PublicSearchTests(TestCase):
             self.assertContains(self.client.get(url), f"?blog={campaign}")
         events = UserEvent.objects.filter(metadata__course=campaign)
         self.assertEqual(events.filter(event_type="blog_guest_quiz_arrival").count(), 1)
+
         self.assertEqual(events.filter(event_type="blog_guest_arrival").count(), 0)
         self.client.get(reverse("guest_practice"), {"blog": campaign})
         self.assertEqual(events.filter(event_type="blog_guest_arrival").count(), 1)
         self.assertContains(self.client.get(url, {"source": "naver"}), "?blog=realtor-land-zones")
         self.assertEqual(UserEvent.objects.filter(event_type="blog_guest_quiz_arrival", metadata__course="realtor-land-zones").count(), 1)
         self.assertEqual(events.filter(event_type="blog_guest_quiz_arrival").count(), 1)
+
+    def test_law_quizzes_explain_practice_scope(self):
+        for view, scope in (
+            ("land_zones", "도시·군관리계획을 함께 다루는 단원"),
+            ("land_readjustment", "도시개발사업의 시행 방식과 절차"),
+        ):
+            with self.subTest(view=view):
+                response = self.client.get(reverse(view))
+                self.assertContains(response, scope)
+                self.assertContains(response, "무료 5문제 풀기")
+                self.assertContains(response, "답을 제출하면 바로 정답과 해설")
 
     @override_settings(ALLOWED_HOSTS=["example.com", "testserver"])
     def test_public_pages_have_search_metadata(self):

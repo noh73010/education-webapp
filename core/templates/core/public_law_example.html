@@ -14,7 +14,11 @@
     <p><strong>{{ answer }}</strong></p><p>{{ explanation }}</p>
     <p>근거: <a href="{{ law_url }}">{{ law }}</a></p>
   </details>
-  <p><a class="main-button" href="{% url 'guest_practice' %}?blog={{ campaign }}">{{ course_label }} 5문제 이어 풀기</a></p>
+  <section aria-labelledby="next-practice">
+    <h2 id="next-practice">이제 관련 단원 5문제로 연습해 보세요</h2>
+    <p>{{ practice_scope }} 로그인 없이 한 문제씩 풀고, 답을 제출하면 바로 정답과 해설을 볼 수 있어요.</p>
+    <p><a class="main-button" href="{% url 'guest_practice' %}?blog={{ campaign }}">{{ course_label }} 무료 5문제 풀기</a></p>
+  </section>
   <a href="{% url 'study_examples' %}">다른 공개 문제와 해설</a>
 </article></main>
 {% endblock %}
