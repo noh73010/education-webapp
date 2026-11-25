@@ -5,6 +5,14 @@ from core.models import Mission, Subject, UserEvent
 
 
 class BlogGuestLinksTests(TestCase):
+    def test_article_links_track_separately_and_do_not_offer_empty_set(self):
+        url = reverse("guest_practice")
+        for code in ("realtor-naver-results", "realtor-naver-assistant", "realtor-naver-fees"):
+            response = self.client.get(url, {"blog": code})
+            self.assertContains(response, "맞춤 5문제는 아직 준비 중")
+            self.assertNotContains(response, 'name="blog"')
+            self.assertEqual(UserEvent.objects.filter(event_type="blog_guest_arrival", metadata__course=code).count(), 1)
+
     def test_valid_link_preselects_course_and_refresh_does_not_add_arrival(self):
         url = reverse("guest_practice")
         for _ in range(2):

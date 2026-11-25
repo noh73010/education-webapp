@@ -5,10 +5,16 @@
 {% block content %}
 <main class="page-shell compact-page">
   <section class="card">
-    <h2>공개 퀴즈·블로그 맛보기 유입 · 최근 14일</h2>
+    <h2>공개 퀴즈·블로그 맛보기 유입 · {{ funnel_days }}일</h2>
+    <p>{{ funnel_start|date:"Y.m.d" }} ~ {{ funnel_end|date:"Y.m.d" }} · 한국 시간</p>
+    <form method="get">
+      <label>종료일 <input type="date" name="funnel_end" value="{{ funnel_end|date:'Y-m-d' }}"></label>
+      <label>기간 <select name="funnel_days"><option value="7" {% if funnel_days == 7 %}selected{% endif %}>7일</option><option value="14" {% if funnel_days == 14 %}selected{% endif %}>14일</option></select></label>
+      <button type="submit">기간 보기</button>
+    </form>
     <p>공개 퀴즈 도착은 비로그인 브라우저 세션 기준입니다. 네이버 글의 전용 링크와 출처 표시가 없는 공개 퀴즈 링크는 따로 집계합니다. 5문제 화면 도착과 이후 단계는 별도 집계하며 순방문자나 가입자 수가 아닙니다.</p>
     <div class="table-scroll"><table class="data-table">
-      <thead><tr><th>글·과목</th><th>공개 퀴즈 도착</th><th>5문제 화면 도착</th><th>시작</th><th>완료</th><th>로그인 버튼 클릭</th><th>로그인 후 결과 복귀</th></tr></thead>
+      <thead><tr><th>글·과목</th><th>공개 퀴즈 도착</th><th>5문제 화면 도착</th><th>시작</th><th>완료</th><th>로그인 버튼 클릭</th><th>로그인 후 결과 복귀</th><th>기록 저장</th></tr></thead>
       <tbody>{% for name, counts in blog_rows %}<tr><th scope="row">{{ name }}</th>{% for count in counts %}<td>{{ count }}</td>{% endfor %}</tr>{% endfor %}</tbody>
     </table></div>
   </section>

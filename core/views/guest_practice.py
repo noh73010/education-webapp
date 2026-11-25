@@ -39,6 +39,9 @@ BLOG_COURSES = {
     "realtor-free-economics": "부동산학개론",
     "realtor-free-civil": "민법 및 민사특별법",
     "realtor-free-law": "부동산공법",
+    "realtor-naver-results": "부동산학개론",
+    "realtor-naver-assistant": "공인중개사법령 및 중개실무",
+    "realtor-naver-fees": "공인중개사법령 및 중개실무",
 }
 BLOG_CHAPTERS = {
     "realtor-civil": "RE02-01",
@@ -50,6 +53,8 @@ BLOG_CHAPTERS = {
     "realtor-quiz-zones": "RE04-02",
     "realtor-quiz-readjustment": "RE04-04",
     "realtor-free-civil": "RE02-01",
+    "realtor-naver-assistant": "RE03-03",
+    "realtor-naver-fees": "RE03-06",
 }
 BLOG_LABELS = {
     "realtor-civil": "민법 총칙", "realtor-public-law": "건축법",
@@ -59,6 +64,8 @@ BLOG_LABELS = {
     "realtor-quiz-zones": "용도지역·지구·구역 관련 단원",
     "realtor-quiz-readjustment": "도시개발법(환지방식 관련 단원)",
     "realtor-free-civil": "민법 총칙",
+    "realtor-naver-assistant": "중개업무 및 중개사무소 운영",
+    "realtor-naver-fees": "중개보수 및 실비",
 }
 BLOG_REPORT_LABELS = {
     **BLOG_LABELS,
@@ -70,8 +77,12 @@ BLOG_REPORT_LABELS = {
     "realtor-free-law": "무료 5문제 안내 · 부동산공법",
     "realtor-quiz-zones": "공개 퀴즈 · 용도지역·지구·구역",
     "realtor-quiz-readjustment": "공개 퀴즈 · 수용·사용과 환지",
+    "realtor-naver-results": "네이버 글 · 합격 발표 날 확인할 3가지",
+    "realtor-naver-assistant": "네이버 글 · 중개보조원 업무 범위 OX",
+    "realtor-naver-fees": "네이버 글 · 중개보수 계산",
 }
 BLOG_SESSION = "guest_blog_course"
+NAVER_ARTICLE_CODES = {"realtor-naver-results", "realtor-naver-assistant", "realtor-naver-fees"}
 REALTOR_SPLIT = {"부동산공시법": "RE05", "부동산세법": "RE06"}
 PRACTICE_ORDER = {
     "realtor": (*REALTOR_COURSES[:-1], *REALTOR_SPLIT),
@@ -184,11 +195,11 @@ def guest_practice(request):
         selected = [[mission.pk, mission.content_version] for mission in sample]
         if len(selected) == SIZE:
             blog = request.session.get(BLOG_SESSION)
-            if request.user.is_authenticated or sample[0].subject.code != blog_subject(blog) or BLOG_COURSES.get(blog) != sample[0].course or (blog in BLOG_CHAPTERS and source != blog):
+            if request.user.is_authenticated or sample[0].subject.code != blog_subject(blog) or BLOG_COURSES.get(blog) != sample[0].course or (blog in BLOG_CHAPTERS or blog in NAVER_ARTICLE_CODES) and source != blog:
                 blog = None
             if blog:
                 track_blog("start", blog)
-            practice_label = next((label for label, prefix in REALTOR_SPLIT.items()
+            practice_label = BLOG_LABELS.get(source) or next((label for label, prefix in REALTOR_SPLIT.items()
                                    if prefix == (chapter or BLOG_CHAPTERS.get(source))), "")
             request.session[KEY] = {"id": uuid4().hex, "questions": selected, "answers": [], "step": 0,
                                     "blog": blog, "practice_label": practice_label}
@@ -226,6 +237,8 @@ def guest_practice(request):
                         save_attempt(user=request.user, mission=missions[pk], submitted_answer=answer,
                                      confidence_level=confidence, is_correct=correct)
                     UserEvent.objects.create(user=request.user, event_type="guest_practice_saved", metadata={"run": state["id"]})
+                    if state.get("blog"):
+                        track_blog("saved", state["blog"])
             set_current_subject(request, missions[state["questions"][0][0]].subject)
             request.session.pop(KEY, None)
             return redirect("wrong_notes")
@@ -279,6 +292,10 @@ def guest_practice(request):
             "uncertain": sum(row[2] and row[1] in ("guessed", "unsure") for row in answers),
         })
     courses = practice_courses()
+    article_practice_unavailable = blog_code in NAVER_ARTICLE_CODES and not sample_questions(
+        blog_subject(blog_code), preferred, BLOG_CHAPTERS.get(blog_code, ""),
+    )
     return render(request, "core/guest_practice.html", {"courses": courses, "error": error, "preferred": preferred,
+                  "article_practice_unavailable": article_practice_unavailable,
                   "preferred_label": BLOG_LABELS.get(blog_code, preferred), "preferred_blog": blog_code if blog_code in BLOG_COURSES else "",
                   "preferred_subject": blog_subject(blog_code) if blog_code in BLOG_COURSES else (lesson[0] if lesson else "logistics")})

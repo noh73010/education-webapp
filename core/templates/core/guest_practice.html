@@ -32,7 +32,7 @@
           <form method="post">{% csrf_token %}<input type="hidden" name="run_id" value="{{ run_id }}"><button class="main-button" name="action" value="save">학습 기록 저장하고 복습 이어가기</button></form>
         {% else %}
           <form method="post">{% csrf_token %}<input type="hidden" name="run_id" value="{{ run_id }}"><button class="main-button" name="action" value="login">로그인하고 오늘 풀이 저장하기</button></form>
-          <p class="guest-save-note">같은 브라우저에서 로그인한 뒤 저장을 누르면 오답노트에서 다시 볼 수 있어요. 아래 정답과 해설은 로그인 없이 모두 볼 수 있어요.</p>
+          <p class="guest-save-note">틀린 문제와 찍어서 맞힌 문제를 오답노트에 남겨 내일 다시 풀 수 있어요. 같은 브라우저에서 로그인한 뒤 ‘학습 기록 저장’을 눌러 주세요. 아래 정답과 해설은 로그인 없이 볼 수 있어요.</p>
         {% endif %}
       </section>
       <section class="guest-review" aria-labelledby="review-title">
@@ -99,7 +99,9 @@
       </form>
     {% else %}
       <p class="guest-intro">과목 하나를 골라 시작해 보세요.<br>로그인 없이 한 문제씩 풀고, 바로 해설을 볼 수 있어요.</p>
-      {% if preferred %}
+      {% if article_practice_unavailable %}
+        <p>{{ preferred_label }} 맞춤 5문제는 아직 준비 중이에요. 아래에서 다른 과목을 골라 무료로 풀 수 있어요.</p>
+      {% elif preferred %}
         <form class="guest-recommended" method="post" action="{% url 'guest_practice' %}">{% csrf_token %}
           <div><span class="guest-recommended-label">추천 시작</span><strong>{{ preferred_label }}</strong></div>
           <input type="hidden" name="subject" value="{{ preferred_subject }}">
