@@ -236,7 +236,13 @@ def guest_practice(request):
                     for (pk, _), (answer, confidence, correct) in zip(state["questions"], answers):
                         save_attempt(user=request.user, mission=missions[pk], submitted_answer=answer,
                                      confidence_level=confidence, is_correct=correct)
-                    UserEvent.objects.create(user=request.user, event_type="guest_practice_saved", metadata={"run": state["id"]})
+                    metadata = {"run": state["id"]}
+                    if state.get("blog"):
+                        metadata.update(course=state["blog"], review_missions=[
+                            pk for (pk, _), (_, confidence, correct) in zip(state["questions"], answers)
+                            if not correct or confidence in (Attempt.CONFIDENCE_GUESSED, Attempt.CONFIDENCE_UNSURE)
+                        ])
+                    UserEvent.objects.create(user=request.user, event_type="guest_practice_saved", metadata=metadata)
                     if state.get("blog"):
                         track_blog("saved", state["blog"])
             set_current_subject(request, missions[state["questions"][0][0]].subject)

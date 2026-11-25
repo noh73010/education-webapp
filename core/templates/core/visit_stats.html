@@ -14,9 +14,10 @@
     </form>
     <p>공개 퀴즈 도착은 비로그인 브라우저 세션 기준입니다. 네이버 글의 전용 링크와 출처 표시가 없는 공개 퀴즈 링크는 따로 집계합니다. 5문제 화면 도착과 이후 단계는 별도 집계하며 순방문자나 가입자 수가 아닙니다.</p>
     <div class="table-scroll"><table class="data-table">
-      <thead><tr><th>글·과목</th><th>공개 퀴즈 도착</th><th>5문제 화면 도착</th><th>시작</th><th>완료</th><th>로그인 버튼 클릭</th><th>로그인 후 결과 복귀</th><th>기록 저장</th></tr></thead>
+      <thead><tr><th>글·과목</th><th>공개 퀴즈 도착</th><th>5문제 화면 도착</th><th>시작</th><th>완료</th><th>로그인 버튼 클릭</th><th>로그인 후 결과 복귀</th><th>기록 저장</th><th>다음 날 복습</th></tr></thead>
       <tbody>{% for name, counts in blog_rows %}<tr><th scope="row">{{ name }}</th>{% for count in counts %}<td>{{ count }}</td>{% endfor %}</tr>{% endfor %}</tbody>
     </table></div>
+    <p class="meta-text">다음 날 복습은 이 기간에 저장한 풀이 중, 같은 계정이 한국 시간 기준 다음 날 오답 또는 확신이 낮았던 정답을 하나 이상 다시 푼 건입니다. 오늘 저장한 풀이는 아직 집계하지 않으며, 기능 추가 이전 기록에는 소급 적용하지 않습니다.</p>
   </section>
   <section class="card">
     <h1 class="section-title">방문 계정 통계</h1>

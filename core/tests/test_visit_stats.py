@@ -8,7 +8,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from core.models import DailyVisit, DailyVisitTotal, UserEvent
+from core.models import Attempt, DailyVisit, DailyVisitTotal, Mission, UserEvent
 from core.services.visit_stats import daily_visit_report
 
 
@@ -19,6 +19,29 @@ class VisitStatsTests(TestCase):
         EmailAddress.objects.create(user=self.owner, email="owner@example.com", verified=True)
         SocialAccount.objects.create(user=self.owner, provider="google", uid="owner-google")
         self.learner = User.objects.create_user(username="learner")
+
+    def test_next_day_review_requires_same_account_and_saved_question(self):
+        mission = Mission.objects.create(external_id="review-first", title="Review", prompt="Review")
+        other_mission = Mission.objects.create(external_id="review-other", title="Another", prompt="Another")
+        now = timezone.now()
+        yesterday = timezone.localdate() - timedelta(days=1)
+        save = UserEvent.objects.create(user=self.learner, event_type="guest_practice_saved", metadata={
+            "course": "realtor-naver-fees", "review_missions": [mission.pk],
+        })
+        UserEvent.objects.filter(pk=save.pk).update(created_at=now - timedelta(days=1))
+        Attempt.objects.create(user=self.owner, mission=mission, submitted_answer="1")
+        Attempt.objects.create(user=self.learner, mission=other_mission, submitted_answer="1")
+        same_day = Attempt.objects.create(user=self.learner, mission=mission, submitted_answer="1")
+        Attempt.objects.filter(pk=same_day.pk).update(created_at=now - timedelta(days=1))
+        self.client.force_login(self.owner)
+        url = reverse("visit_stats")
+        def reviews():
+            response = self.client.get(url, {"funnel_days": "7", "funnel_end": yesterday.isoformat()})
+            return dict(response.context["blog_rows"])["네이버 글 · 중개보수 계산"][-1]
+        self.assertEqual(reviews(), 0)
+        for _ in range(2):
+            Attempt.objects.create(user=self.learner, mission=mission, submitted_answer="2")
+        self.assertEqual(reviews(), 1)
 
     def test_owner_only_even_when_another_account_has_same_email(self):
         other = User.objects.create_user(username="other", email="owner@example.com", is_staff=True)

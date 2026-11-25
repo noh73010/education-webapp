@@ -1,3 +1,4 @@
+from collections import Counter
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
@@ -6,11 +7,29 @@ from django.core.paginator import Paginator
 from django.db.models import Count
 from django.http import Http404
 from django.shortcuts import render
+from django.utils import timezone
 from django.views.decorators.cache import never_cache
 
-from core.models import DailyVisit, UserEvent
+from core.models import Attempt, DailyVisit, UserEvent
 from core.views.guest_practice import BLOG_COURSES, BLOG_REPORT_LABELS
 from core.services.visit_stats import daily_visit_report, is_visit_stats_owner, parse_report_end_day
+
+
+def next_day_review_counts(start_day, end_day):
+    counts = Counter()
+    saves = UserEvent.objects.filter(
+        event_type="guest_practice_saved", user__isnull=False,
+        metadata__course__in=tuple(BLOG_COURSES),
+        created_at__date__range=(start_day, min(end_day, timezone.localdate() - timedelta(days=1))),
+    ).values_list("user_id", "created_at", "metadata")
+    for user_id, saved_at, metadata in saves.iterator():
+        missions = metadata.get("review_missions")
+        if missions and Attempt.objects.valid_for_learning().filter(
+            user_id=user_id, mission_id__in=missions,
+            created_at__date=timezone.localtime(saved_at).date() + timedelta(days=1),
+        ).exclude(submitted_answer="").exists():
+            counts[metadata["course"]] += 1
+    return counts
 
 
 @login_required
@@ -44,12 +63,13 @@ def visit_stats(request):
                   created_at__date__range=(funnel_start, funnel_end),
                   event_type__in=[f"blog_guest_{stage}" for stage in stages],
               ).values("metadata__course", "event_type").annotate(total=Count("pk"))}
+    reviews = next_day_review_counts(funnel_start, funnel_end)
     return render(request, "core/visit_stats.html", {
         "rows": rows,
         "funnel_days": funnel_days,
         "funnel_start": funnel_start,
         "funnel_end": funnel_end,
-        "blog_rows": [(BLOG_REPORT_LABELS.get(code, name), [counts.get((code, f"blog_guest_{stage}"), 0) for stage in stages])
+        "blog_rows": [(BLOG_REPORT_LABELS.get(code, name), [counts.get((code, f"blog_guest_{stage}"), 0) for stage in stages] + [reviews[code]])
                       for code, name in BLOG_COURSES.items()],
         "today": daily_visit_report(days=1)[0],
         "yesterday": daily_visit_report(end_day=parse_report_end_day(None) - timedelta(days=1), days=1)[0],
