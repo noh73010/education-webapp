@@ -5,6 +5,25 @@ from core.models import Mission, Subject, UserEvent
 
 
 class BlogGuestLinksTests(TestCase):
+    def test_fee_article_starts_with_calculation_and_counts_first_answer_once(self):
+        subject, _ = Subject.objects.get_or_create(code="realtor", defaults={"name": "공인중개사"})
+        course = "공인중개사법령 및 중개실무"
+        ids = ["REALTOR-RE03-06-REALTOR-33-2-1-0038", *(f"fee-{i}" for i in range(6))]
+        for external_id in ids:
+            Mission.objects.create(subject=subject, course=course, chapter_code="RE03-06",
+                external_id=external_id, title="Fee", prompt="Fee", question_type="choice_one",
+                correct_answer="1", answer_schema="1|One\n2|Two\n3|Three\n4|Four\n5|Five", explanation="Explanation")
+        url, code = reverse("guest_practice"), "realtor-naver-fees"
+        self.assertContains(self.client.get(url, {"blog": code}), "첫 문제는 중개보수 상한액 계산")
+        self.client.post(url, {"action": "start", "subject": "realtor", "course": course, "blog": code})
+        run = self.client.session["guest_practice"]
+        self.assertEqual(Mission.objects.get(pk=run["questions"][0][0]).external_id, ids[0])
+        events = UserEvent.objects.filter(event_type="blog_guest_first_answer", metadata__course=code)
+        self.assertFalse(events.exists())
+        for _ in range(2):
+            self.client.post(url, {"action": "answer", "run_id": run["id"], "step": 0, "answer": "1"})
+        self.assertEqual(events.count(), 1)
+
     def test_article_links_track_separately_and_do_not_offer_empty_set(self):
         url = reverse("guest_practice")
         for code in ("realtor-naver-results", "realtor-naver-assistant", "realtor-naver-fees"):
@@ -43,7 +62,7 @@ class BlogGuestLinksTests(TestCase):
             for action in ("answer", "next"):
                 self.client.post(url, {"action": action, "run_id": state["id"], "step": step, "answer": "1"})
         self.assertEqual(set(UserEvent.objects.filter(metadata__course=code).values_list("event_type", flat=True)), {
-            "blog_guest_arrival", "blog_guest_start", "blog_guest_complete",
+            "blog_guest_arrival", "blog_guest_start", "blog_guest_first_answer", "blog_guest_complete",
         })
         chooser = self.client.get(url, {"choose": "1"})
         self.assertEqual([row["course"] for row in chooser.context["courses"]], ["부동산공시법", "부동산세법"])

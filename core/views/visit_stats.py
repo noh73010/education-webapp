@@ -57,7 +57,8 @@ def visit_stats(request):
     funnel_days = 7 if request.GET.get("funnel_days") == "7" else 14
     funnel_end = parse_report_end_day(request.GET.get("funnel_end") or request.GET.get("before"))
     funnel_start = funnel_end - timedelta(days=funnel_days - 1)
-    stages = ("quiz_arrival", "arrival", "start", "complete", "login_click", "login", "saved")
+    stages = ("quiz_arrival", "arrival", "start", "first_answer", "complete", "login_click", "login", "saved")
+    guest_visits = UserEvent.objects.filter(event_type="guest_visit_day", created_at__date__range=(funnel_start, funnel_end))
     counts = {(row["metadata__course"], row["event_type"]): row["total"] for row in
               UserEvent.objects.filter(
                   created_at__date__range=(funnel_start, funnel_end),
@@ -69,6 +70,8 @@ def visit_stats(request):
         "funnel_days": funnel_days,
         "funnel_start": funnel_start,
         "funnel_end": funnel_end,
+        "guest_visits": guest_visits.count(),
+        "guest_returns": guest_visits.filter(metadata__returning=True).count(),
         "blog_rows": [(BLOG_REPORT_LABELS.get(code, name), [counts.get((code, f"blog_guest_{stage}"), 0) for stage in stages] + [reviews[code]])
                       for code, name in BLOG_COURSES.items()],
         "today": daily_visit_report(days=1)[0],

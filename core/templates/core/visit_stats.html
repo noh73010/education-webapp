@@ -6,6 +6,9 @@
 <main class="page-shell compact-page">
   <section class="card">
     <h2>공개 퀴즈·블로그 맛보기 유입 · {{ funnel_days }}일</h2>
+    <h3>사이트 비회원 방문</h3>
+    <p>방문 {{ guest_visits }}건 · 다른 날 재방문 {{ guest_returns }}건</p>
+    <p class="meta-text">공개 웹페이지에 들어온 비로그인 브라우저 세션을 하루 한 번 셉니다. 재방문은 같은 세션의 다른 날 방문이며 순방문자 수가 아닙니다. 쿠키가 지워지면 새 세션으로 집계되고 이전 기록은 소급하지 않습니다.</p>
     <p>{{ funnel_start|date:"Y.m.d" }} ~ {{ funnel_end|date:"Y.m.d" }} · 한국 시간</p>
     <form method="get">
       <label>종료일 <input type="date" name="funnel_end" value="{{ funnel_end|date:'Y-m-d' }}"></label>
@@ -14,7 +17,7 @@
     </form>
     <p>공개 퀴즈 도착은 비로그인 브라우저 세션 기준입니다. 네이버 글의 전용 링크와 출처 표시가 없는 공개 퀴즈 링크는 따로 집계합니다. 5문제 화면 도착과 이후 단계는 별도 집계하며 순방문자나 가입자 수가 아닙니다.</p>
     <div class="table-scroll"><table class="data-table">
-      <thead><tr><th>글·과목</th><th>공개 퀴즈 도착</th><th>5문제 화면 도착</th><th>시작</th><th>완료</th><th>로그인 버튼 클릭</th><th>로그인 후 결과 복귀</th><th>기록 저장</th><th>다음 날 복습</th></tr></thead>
+      <thead><tr><th>글·과목</th><th>공개 퀴즈 도착</th><th>5문제 화면 도착</th><th>시작</th><th>첫 답안 제출</th><th>완료</th><th>로그인 버튼 클릭</th><th>로그인 후 결과 복귀</th><th>기록 저장</th><th>다음 날 복습</th></tr></thead>
       <tbody>{% for name, counts in blog_rows %}<tr><th scope="row">{{ name }}</th>{% for count in counts %}<td>{{ count }}</td>{% endfor %}</tr>{% endfor %}</tbody>
     </table></div>
     <p class="meta-text">다음 날 복습은 이 기간에 저장한 풀이 중, 같은 계정이 한국 시간 기준 다음 날 오답 또는 확신이 낮았던 정답을 하나 이상 다시 푼 건입니다. 오늘 저장한 풀이는 아직 집계하지 않으며, 기능 추가 이전 기록에는 소급 적용하지 않습니다.</p>

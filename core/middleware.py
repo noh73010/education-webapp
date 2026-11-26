@@ -6,6 +6,7 @@ from django.db.models import F
 from django.utils import timezone
 
 from core.models import DailyVisit, DailyVisitTotal
+from core.services.analytics import record_event
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,9 @@ class DailyVisitMiddleware:
     def __call__(self, request):
         response = self.get_response(request)
         user = request.user
+        if not user.is_authenticated:
+            self.record_guest_visit(request, response)
+            return response
         if (
             request.method != "GET"
             or response.status_code != 200
@@ -47,3 +51,18 @@ class DailyVisitMiddleware:
         else:
             request.session[self.SESSION_KEY] = marker
         return response
+
+    def record_guest_visit(self, request, response):
+        if (request.method != "GET" or response.status_code != 200
+                or not response.get("Content-Type", "").startswith("text/html")
+                or request.path.startswith(self.EXCLUDED_PREFIXES)
+                or any(term in request.headers.get("User-Agent", "").lower()
+                       for term in ("bot", "crawler", "spider", "preview", "curl", "headless"))):
+            return
+        day = timezone.localdate().isoformat()
+        marker = "guest_visit_day"
+        prior_day = request.session.get(marker)
+        if prior_day == day:
+            return
+        if record_event(None, "guest_visit_day", metadata={"returning": bool(prior_day)}):
+            request.session[marker] = day

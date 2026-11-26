@@ -65,7 +65,7 @@ BLOG_LABELS = {
     "realtor-quiz-readjustment": "도시개발법(환지방식 관련 단원)",
     "realtor-free-civil": "민법 총칙",
     "realtor-naver-assistant": "중개업무 및 중개사무소 운영",
-    "realtor-naver-fees": "중개보수 및 실비",
+    "realtor-naver-fees": "중개보수 계산과 실비",
 }
 BLOG_REPORT_LABELS = {
     **BLOG_LABELS,
@@ -83,6 +83,10 @@ BLOG_REPORT_LABELS = {
 }
 BLOG_SESSION = "guest_blog_course"
 NAVER_ARTICLE_CODES = {"realtor-naver-results", "realtor-naver-assistant", "realtor-naver-fees"}
+FEE_CALCULATION_IDS = (
+    "REALTOR-RE03-06-REALTOR-33-2-1-0038",
+    "REALTOR-RE03-06-REALTOR-34-2-1-0017",
+)
 REALTOR_SPLIT = {"부동산공시법": "RE05", "부동산세법": "RE06"}
 PRACTICE_ORDER = {
     "realtor": (*REALTOR_COURSES[:-1], *REALTOR_SPLIT),
@@ -132,6 +136,23 @@ def daily_sample(missions):
     return [pool[(start + index) % len(pool)] for index in range(SIZE)]
 
 
+def article_sample(subject, course, chapter, source):
+    sample = sample_questions(subject, course, chapter)
+    if source != "realtor-naver-fees" or not sample:
+        return sample
+    anchor = next((mission for mission in eligible().filter(
+        subject__code=subject, course=course, chapter_code=chapter,
+        external_id__in=FEE_CALCULATION_IDS,
+    ).order_by("external_id") if playable_guest_question(mission)), None)
+    return [anchor, *(mission for mission in sample if mission.pk != anchor.pk)][:SIZE] if anchor else []
+
+
+def playable_guest_question(mission):
+    choices = parse_choice_schema(mission.answer_schema)
+    keys = {choice["key"] for choice in choices}
+    return len(choices) == len(keys) == 5 and mission.correct_answer in keys and bool(mission.explanation.strip())
+
+
 def sample_questions(subject, course="", chapter=""):
     candidates = eligible().filter(subject__code=subject)
     if chapter:
@@ -154,9 +175,7 @@ def sample_questions(subject, course="", chapter=""):
                 return daily_sample(selected)
             selected = []
             current_course = mission.course
-        choices = parse_choice_schema(mission.answer_schema)
-        keys = {choice["key"] for choice in choices}
-        if len(choices) == 5 and len(keys) == 5 and mission.correct_answer in keys and mission.explanation.strip():
+        if playable_guest_question(mission):
             selected.append(mission)
     return daily_sample(selected)
 
@@ -191,7 +210,7 @@ def guest_practice(request):
         source = request.POST.get("blog")
         if source not in BLOG_COURSES or BLOG_COURSES[source] != course or blog_subject(source) != subject:
             source = None
-        sample = sample_questions(subject, course, chapter or BLOG_CHAPTERS.get(source, ""))
+        sample = article_sample(subject, course, chapter or BLOG_CHAPTERS.get(source, ""), source)
         selected = [[mission.pk, mission.content_version] for mission in sample]
         if len(selected) == SIZE:
             blog = request.session.get(BLOG_SESSION)
@@ -256,6 +275,8 @@ def guest_practice(request):
                 answer = request.POST.get("answer")
                 confidence = request.POST.get("confidence", "")
                 if answer in {choice["key"] for choice in choices} and confidence in {"", *dict(Attempt.CONFIDENCE_CHOICES)}:
+                    if step == 0 and state.get("blog"):
+                        track_blog("first_answer", state["blog"])
                     answers.append([answer, confidence if answer == mission.correct_answer else "", answer == mission.correct_answer])
                     request.session[KEY] = state
                     return redirect("guest_practice")
@@ -298,10 +319,11 @@ def guest_practice(request):
             "uncertain": sum(row[2] and row[1] in ("guessed", "unsure") for row in answers),
         })
     courses = practice_courses()
-    article_practice_unavailable = blog_code in NAVER_ARTICLE_CODES and not sample_questions(
-        blog_subject(blog_code), preferred, BLOG_CHAPTERS.get(blog_code, ""),
+    article_practice_unavailable = blog_code in NAVER_ARTICLE_CODES and not article_sample(
+        blog_subject(blog_code), preferred, BLOG_CHAPTERS.get(blog_code, ""), blog_code,
     )
     return render(request, "core/guest_practice.html", {"courses": courses, "error": error, "preferred": preferred,
                   "article_practice_unavailable": article_practice_unavailable,
+                  "fee_calculation_intro": blog_code == "realtor-naver-fees" and not article_practice_unavailable,
                   "preferred_label": BLOG_LABELS.get(blog_code, preferred), "preferred_blog": blog_code if blog_code in BLOG_COURSES else "",
                   "preferred_subject": blog_subject(blog_code) if blog_code in BLOG_COURSES else (lesson[0] if lesson else "logistics")})

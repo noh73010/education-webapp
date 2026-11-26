@@ -59,6 +59,19 @@ class VisitStatsTests(TestCase):
         self.client.force_login(self.owner)
         self.assertEqual(self.client.get(reverse("visit_stats")).status_code, 404)
 
+    def test_guest_visit_is_deduplicated_and_next_day_is_returning(self):
+        landing = reverse("landing")
+        today = timezone.localdate()
+        self.client.get(landing, HTTP_USER_AGENT="ExampleBot")
+        with patch("core.middleware.timezone.localdate", return_value=today - timedelta(days=1)):
+            self.client.get(landing)
+            self.client.get(landing)
+        self.client.get(landing)
+        self.client.get(landing)
+        events = UserEvent.objects.filter(event_type="guest_visit_day", user__isnull=True)
+        self.assertEqual(events.count(), 2)
+        self.assertEqual(events.filter(metadata__returning=True).count(), 1)
+
     def test_visit_is_unique_per_account_and_day(self):
         self.client.force_login(self.learner)
         self.client.get(reverse("landing"))

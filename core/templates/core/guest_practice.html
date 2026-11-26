@@ -102,6 +102,7 @@
       {% if article_practice_unavailable %}
         <p>{{ preferred_label }} 맞춤 5문제는 아직 준비 중이에요. 아래에서 다른 과목을 골라 무료로 풀 수 있어요.</p>
       {% elif preferred %}
+        {% if fee_calculation_intro %}<p>첫 문제는 중개보수 상한액 계산입니다. 이후에는 중개보수와 실비 단원의 다른 문제도 풀어봅니다.</p>{% endif %}
         <form class="guest-recommended" method="post" action="{% url 'guest_practice' %}">{% csrf_token %}
           <div><span class="guest-recommended-label">추천 시작</span><strong>{{ preferred_label }}</strong></div>
           <input type="hidden" name="subject" value="{{ preferred_subject }}">
