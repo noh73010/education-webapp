@@ -103,5 +103,25 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 
+{% if not user.is_authenticated %}
+<div id="guest-visit-check" hidden data-url="{% url 'confirm_guest_visit' %}">{% csrf_token %}</div>
+<script>
+(() => {
+    const check = document.getElementById('guest-visit-check');
+    const token = check.querySelector('[name=csrfmiddlewaretoken]');
+    if (!token || navigator.globalPrivacyControl || navigator.doNotTrack === '1') return;
+    function confirmVisit() {
+        if (document.visibilityState !== 'visible') return;
+        document.removeEventListener('visibilitychange', confirmVisit);
+        fetch(check.dataset.url, {
+            method: 'POST', credentials: 'same-origin', keepalive: true,
+            headers: {'X-CSRFToken': token.value},
+        }).catch(() => {});
+    }
+    document.addEventListener('visibilitychange', confirmVisit);
+    confirmVisit();
+})();
+</script>
+{% endif %}
 </body>
 </html>

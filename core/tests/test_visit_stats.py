@@ -4,7 +4,7 @@ from unittest.mock import patch
 from allauth.account.models import EmailAddress
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
-from django.test import TestCase, override_settings
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -61,16 +61,29 @@ class VisitStatsTests(TestCase):
 
     def test_guest_visit_is_deduplicated_and_next_day_is_returning(self):
         landing = reverse("landing")
+        confirm = reverse("confirm_guest_visit")
         today = timezone.localdate()
-        self.client.get(landing, HTTP_USER_AGENT="ExampleBot")
-        with patch("core.middleware.timezone.localdate", return_value=today - timedelta(days=1)):
-            self.client.get(landing)
-            self.client.get(landing)
-        self.client.get(landing)
-        self.client.get(landing)
-        events = UserEvent.objects.filter(event_type="guest_visit_day", user__isnull=True)
+        client = Client(enforce_csrf_checks=True)
+        self.assertEqual(client.post(confirm).status_code, 403)
+        self.assertEqual(client.get(confirm).status_code, 405)
+        self.assertContains(client.get(landing), 'id="guest-visit-check"')
+        token = client.cookies['csrftoken'].value
+        events = UserEvent.objects.filter(event_type="confirmed_guest_visit_day", user__isnull=True)
+        self.assertFalse(events.exists())
+        self.assertEqual(client.post(confirm, HTTP_X_CSRFTOKEN=token, HTTP_USER_AGENT="ExampleBot").status_code, 204)
+        self.assertFalse(events.exists())
+        with patch("core.views.visit_stats.timezone.localdate", return_value=today - timedelta(days=1)):
+            client.post(confirm, HTTP_X_CSRFTOKEN=token)
+            client.post(confirm, HTTP_X_CSRFTOKEN=token)
+        client.post(confirm, HTTP_X_CSRFTOKEN=token)
+        client.post(confirm, HTTP_X_CSRFTOKEN=token)
         self.assertEqual(events.count(), 2)
         self.assertEqual(events.filter(metadata__returning=True).count(), 1)
+        UserEvent.objects.create(event_type="guest_visit_day")
+        self.client.force_login(self.owner)
+        report = self.client.get(reverse("visit_stats"))
+        self.assertEqual(report.context["guest_visits"], 2)
+        self.assertEqual(report.context["legacy_guest_visits"], 1)
 
     def test_visit_is_unique_per_account_and_day(self):
         self.client.force_login(self.learner)

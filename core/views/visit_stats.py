@@ -5,14 +5,35 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Count
-from django.http import Http404
+from django.conf import settings
+from django.http import Http404, HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.http import require_POST
 
 from core.models import Attempt, DailyVisit, UserEvent
+from core.services.analytics import record_event
 from core.views.guest_practice import BLOG_COURSES, BLOG_REPORT_LABELS
 from core.services.visit_stats import daily_visit_report, is_visit_stats_owner, parse_report_end_day
+
+
+@never_cache
+@require_POST
+@csrf_protect
+def confirm_guest_visit(request):
+    if (request.user.is_authenticated or not request.COOKIES.get(settings.CSRF_COOKIE_NAME)
+            or request.headers.get("Sec-GPC") == "1" or request.headers.get("DNT") == "1"
+            or any(term in request.headers.get("User-Agent", "").lower()
+                   for term in ("bot", "crawler", "spider", "preview", "curl", "headless"))):
+        return HttpResponse(status=204)
+    day = timezone.localdate().isoformat()
+    marker = "confirmed_guest_visit_day"
+    previous = request.session.get(marker)
+    if previous != day and record_event(None, marker, metadata={"returning": bool(previous)}):
+        request.session[marker] = day
+    return HttpResponse(status=204)
 
 
 def next_day_review_counts(start_day, end_day):
@@ -58,7 +79,10 @@ def visit_stats(request):
     funnel_end = parse_report_end_day(request.GET.get("funnel_end") or request.GET.get("before"))
     funnel_start = funnel_end - timedelta(days=funnel_days - 1)
     stages = ("quiz_arrival", "arrival", "start", "first_answer", "complete", "login_click", "login", "saved")
-    guest_visits = UserEvent.objects.filter(event_type="guest_visit_day", created_at__date__range=(funnel_start, funnel_end))
+    guest_visits = UserEvent.objects.filter(event_type="confirmed_guest_visit_day", created_at__date__range=(funnel_start, funnel_end))
+    legacy_guest_visits = UserEvent.objects.filter(
+        event_type="guest_visit_day", created_at__date__range=(funnel_start, funnel_end),
+    )
     counts = {(row["metadata__course"], row["event_type"]): row["total"] for row in
               UserEvent.objects.filter(
                   created_at__date__range=(funnel_start, funnel_end),
@@ -71,6 +95,7 @@ def visit_stats(request):
         "funnel_start": funnel_start,
         "funnel_end": funnel_end,
         "guest_visits": guest_visits.count(),
+        "legacy_guest_visits": legacy_guest_visits.count(),
         "guest_returns": guest_visits.filter(metadata__returning=True).count(),
         "blog_rows": [(BLOG_REPORT_LABELS.get(code, name), [counts.get((code, f"blog_guest_{stage}"), 0) for stage in stages] + [reviews[code]])
                       for code, name in BLOG_COURSES.items()],

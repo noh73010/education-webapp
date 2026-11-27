@@ -59,7 +59,7 @@ from core.views.learning_experience import problem_report, learning_start, diagn
 from core.views.exams import exam_draft, exam_question_review
 from core.views.seo import ads_txt, robots_txt, sitemap_xml
 from core.views.public_law_examples import public_law_example
-from core.views.visit_stats import visit_stats
+from core.views.visit_stats import confirm_guest_visit, visit_stats
 from core.views.stats import wrong_reason_attempts
 from core.views.guest_practice import guest_practice
 from django.views.generic import TemplateView
@@ -67,6 +67,7 @@ from django.views.generic import TemplateView
 from core.views.efficient_learning import study_library, learning_signal, next_learning_mission
 
 urlpatterns = [
+    path("analytics/guest-visit/", confirm_guest_visit, name="confirm_guest_visit"),
     path("study-plan/", study_plan, name="study_plan"),
     path("study-plan/start/", study_plan_start, name="study_plan_start"),
     path("missions/<int:mission_id>/next-learning/", next_learning_mission, name="next_learning_mission"),
