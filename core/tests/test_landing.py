@@ -16,7 +16,7 @@ class LandingPageTests(TestCase):
         response = self.client.get(reverse("landing"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "내 자격증 실력")
+        self.assertContains(response, "외운 건지, 이해한 건지")
         self.assertNotContains(response, "core/illustrations/learning-journey.png")
         self.assertContains(response, f'href="{reverse("guest_practice")}"')
         self.assertContains(response, "자격증 선택")

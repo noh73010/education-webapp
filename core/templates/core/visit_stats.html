@@ -5,6 +5,12 @@
 {% block content %}
 <main class="page-shell compact-page">
   <section class="card">
+    <h2 class="card-title">5문제 체험 → 복습 흐름</h2>
+    <p>{{ funnel_start|date:"Y-m-d" }} ~ {{ funnel_end|date:"Y-m-d" }} · 사람 수가 아닌 체험별 행동 횟수입니다. 추가 문제는 선택 사항입니다.</p>
+    <div class="table-scroll"><table class="data-table"><thead><tr><th>단계</th><th>횟수</th></tr></thead><tbody>{% for row in trial_funnel.rows %}<tr><td>{{ row.label }}</td><td>{{ row.count }}</td></tr>{% endfor %}</tbody></table></div>
+    <p>저장한 복습 문제를 다음 날 다시 푼 체험: {{ trial_funnel.next_day_review }} / {{ trial_funnel.eligible_saves }}건. 다음 날이 끝난 저장 건 중 복습 대상이 있는 건만 집계합니다.</p>
+  </section>
+  <section class="card">
     <h2>공개 퀴즈·블로그 맛보기 유입 · {{ funnel_days }}일</h2>
     <h3>사이트 비회원 방문</h3>
     <p>방문 {{ guest_visits }}건 · 다른 날 재방문 {{ guest_returns }}건</p>

@@ -176,3 +176,11 @@ body .guest-practice button.guest-confidence-button:focus-visible { outline: 3px
 .guest-wrong-note { margin-top: 18px; color: #465267; font-size: 15px; line-height: 1.7; }
 
 body .guest-practice button.guest-confidence-button:disabled { cursor: wait; opacity: .7; }
+
+.guest-insight, .guest-followup { margin: 24px 0; padding: clamp(18px, 3vw, 28px); border: 1px solid #d9d1e5; border-radius: 18px; background: #faf8fd; }
+.guest-insight h2, .guest-followup h2 { margin: 8px 0 14px; font-size: 21px; line-height: 1.5; }
+.guest-insight p, .guest-followup p { line-height: 1.8; overflow-wrap: anywhere; }
+.guest-insight form { margin-top: 20px; }
+.guest-followup { background: #fff; scroll-margin-top: 24px; }
+.guest-insight .main-button, .guest-followup .main-button { max-width: 100%; white-space: normal; }
+.guest-focus-label { color: #625177; font-weight: 700; }

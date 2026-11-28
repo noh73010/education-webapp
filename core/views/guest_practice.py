@@ -15,12 +15,20 @@ from core.models import Attempt, Mission, UserEvent
 from core.services.attempts import save_attempt
 from core.services.analytics import record_event
 from core.services.grading import parse_choice_schema
+from core.services.guest_focus import TITLE as FOCUS_TITLE, focus_sample, focus_info, result_guidance
 from core.services.logistics_curriculum import LOGISTICS_CURRICULUM
 from core.services.realtor_curriculum import REALTOR_COURSES
 from core.services.subjects import set_current_subject
 
 KEY = "guest_practice"
 SIZE = 5
+
+
+def track_trial(request, state, stage):
+    record_event(request.user, "trial_" + stage, page="guest_practice", metadata={
+        "run": state["id"], "entry_mode": state.get("entry_mode", "daily"),
+        "subject": state.get("subject", ""),
+    })
 BLOG_COURSES = {
     "management": "물류관리론", "transport": "화물운송론",
     "international": "국제물류론", "warehouse": "보관하역론",
@@ -105,7 +113,7 @@ def track_blog(stage, course):
 def eligible():
     return Mission.objects.select_related("subject").filter(
         subject__code__in=("logistics", "realtor"), subject__is_active=True,
-        is_usable_for_set=True, question_type="choice_one", question_image__isnull=True,
+        is_usable_for_set=True, source_enabled=True, question_type="choice_one", question_image__isnull=True,
     ).exclude(review_status=Mission.REVIEW_CONFIRMED_ERROR).exclude(course="").exclude(explanation="")
 
 
@@ -210,7 +218,10 @@ def guest_practice(request):
         source = request.POST.get("blog")
         if source not in BLOG_COURSES or BLOG_COURSES[source] != course or blog_subject(source) != subject:
             source = None
-        sample = article_sample(subject, course, chapter or BLOG_CHAPTERS.get(source, ""), source)
+        focused = request.POST.get("entry_mode") == "focus" and subject == "realtor" and not source and not course
+        sample = focus_sample(eligible().filter(subject__code=subject), playable_guest_question) if focused else []
+        focused = bool(sample)
+        sample = sample or article_sample(subject, course, chapter or BLOG_CHAPTERS.get(source, ""), source)
         selected = [[mission.pk, mission.content_version] for mission in sample]
         if len(selected) == SIZE:
             blog = request.session.get(BLOG_SESSION)
@@ -221,10 +232,12 @@ def guest_practice(request):
             practice_label = BLOG_LABELS.get(source) or next((label for label, prefix in REALTOR_SPLIT.items()
                                    if prefix == (chapter or BLOG_CHAPTERS.get(source))), "")
             request.session[KEY] = {"id": uuid4().hex, "questions": selected, "answers": [], "step": 0,
-                                    "blog": blog, "practice_label": practice_label}
+                                    "blog": blog, "practice_label": FOCUS_TITLE if focused else practice_label,
+                                    "subject": subject, "entry_mode": "focus" if focused else "daily"}
+            track_trial(request, request.session[KEY], "start")
             return redirect("guest_practice")
         error = "이 과목의 맛보기 문제는 아직 준비 중입니다. 다른 과목을 선택해 주세요."
-    if action in ("answer", "confidence", "next", "save") and (
+    if action in ("answer", "confidence", "next", "save", "followup_start", "followup_answer") and (
         not state or request.POST.get("run_id") != state["id"]
     ):
         message = "다른 탭에서 맛보기를 다시 시작했거나 체험이 종료됐어요. 현재 체험으로 돌아가 주세요."
@@ -241,27 +254,42 @@ def guest_practice(request):
         step = state["step"]
         answers = state["answers"]
         if action == "login" and step == SIZE and request.POST.get("run_id") == state["id"] and not request.user.is_authenticated:
+            if not state.get("save_click"):
+                track_trial(request, state, "save_click")
+                state["save_click"] = True
+                request.session[KEY] = state
             if state.get("blog") and not state.get("blog_login_click"):
                 track_blog("login_click", state["blog"])
                 state["blog_login_click"] = True
                 request.session[KEY] = state
             return redirect_to_login(request.path)
         if action == "save" and step == SIZE:
+            if not state.get("save_click"):
+                track_trial(request, state, "save_click")
+                state["save_click"] = True
+                request.session[KEY] = state
             if not request.user.is_authenticated:
                 return redirect_to_login(request.path)
             with transaction.atomic():
                 get_user_model().objects.select_for_update().get(pk=request.user.pk)
                 if not UserEvent.objects.filter(user=request.user, event_type="guest_practice_saved", metadata__run=state["id"]).exists():
-                    for (pk, _), (answer, confidence, correct) in zip(state["questions"], answers):
-                        save_attempt(user=request.user, mission=missions[pk], submitted_answer=answer,
+                    saved_answers = [(missions[pk], answer, confidence, correct)
+                                     for (pk, _), (answer, confidence, correct) in zip(state["questions"], answers)]
+                    extra = state.get("followup", {})
+                    extra_mission = eligible().filter(pk=extra.get("pk"), content_version=extra.get("version")).first()
+                    if extra_mission and "answer" in extra:
+                        saved_answers.append((extra_mission, extra["answer"], "", extra["correct"]))
+                    for saved_mission, answer, confidence, correct in saved_answers:
+                        save_attempt(user=request.user, mission=saved_mission, submitted_answer=answer,
                                      confidence_level=confidence, is_correct=correct)
-                    metadata = {"run": state["id"]}
+                    metadata = {"run": state["id"], "entry_mode": state.get("entry_mode", "daily"),
+                                "subject": state.get("subject", ""),
+                                "review_missions": [m.pk for m, _, confidence, correct in saved_answers
+                                                    if not correct or confidence in ("guessed", "unsure")]}
                     if state.get("blog"):
-                        metadata.update(course=state["blog"], review_missions=[
-                            pk for (pk, _), (_, confidence, correct) in zip(state["questions"], answers)
-                            if not correct or confidence in (Attempt.CONFIDENCE_GUESSED, Attempt.CONFIDENCE_UNSURE)
-                        ])
+                        metadata.update(course=state["blog"])
                     UserEvent.objects.create(user=request.user, event_type="guest_practice_saved", metadata=metadata)
+                    track_trial(request, state, "saved")
                     if state.get("blog"):
                         track_blog("saved", state["blog"])
             set_current_subject(request, missions[state["questions"][0][0]].subject)
@@ -275,6 +303,8 @@ def guest_practice(request):
                 answer = request.POST.get("answer")
                 confidence = request.POST.get("confidence", "")
                 if answer in {choice["key"] for choice in choices} and confidence in {"", *dict(Attempt.CONFIDENCE_CHOICES)}:
+                    if step == 0:
+                        track_trial(request, state, "first_answer")
                     if step == 0 and state.get("blog"):
                         track_blog("first_answer", state["blog"])
                     answers.append([answer, confidence if answer == mission.correct_answer else "", answer == mission.correct_answer])
@@ -291,13 +321,15 @@ def guest_practice(request):
                 return JsonResponse({"saved": False, "error": "문제 상태가 변경됐어요. 새로고침 후 다시 선택해 주세요."}, status=409)
             if action == "next" and graded and request.POST.get("step") == str(step):
                 state["step"] += 1
+                if state["step"] == SIZE:
+                    track_trial(request, state, "complete")
                 if state["step"] == SIZE and state.get("blog"):
                     track_blog("complete", state["blog"])
                 request.session[KEY] = state
                 return redirect("guest_practice")
             return render(request, "core/guest_practice.html", {
                 "run_id": state["id"], "mission": mission, "choices": choices, "step": step, "number": step + 1,
-                "practice_label": state.get("practice_label"),
+                "practice_label": state.get("practice_label"), "focus_info": focus_info(mission) if graded else None,
                 "graded": graded, "correct": graded and answers[step][2],
                 "confidence": answers[step][1] if graded else "", "error": error,
             })
@@ -310,10 +342,35 @@ def guest_practice(request):
                 "confidence": dict(Attempt.CONFIDENCE_CHOICES).get(confidence, ""),
                 "choices": parse_choice_schema(mission.answer_schema),
             })
+        guidance = result_guidance(review, eligible(), playable_guest_question)
+        extra = state.get("followup", {})
+        extra_mission = eligible().filter(pk=extra.get("pk"), content_version=extra.get("version")).first()
+        if extra and not extra_mission:
+            state.pop("followup", None)
+            request.session[KEY] = state
+            error = "추가 문제가 업데이트되었어요. 다른 문제로 다시 확인해 주세요."
+            extra = {}
+        if action == "followup_start" and not extra and guidance["alternative"]:
+            target = guidance["alternative"]
+            state["followup"] = {"pk": target.pk, "version": target.content_version}
+            request.session[KEY] = state
+            track_trial(request, state, "followup_start")
+            return redirect(request.path + "#trial-followup")
+        if action == "followup_answer" and extra_mission and "answer" not in extra:
+            answer = request.POST.get("answer")
+            if answer in {c["key"] for c in parse_choice_schema(extra_mission.answer_schema)}:
+                extra.update(answer=answer, correct=answer == extra_mission.correct_answer)
+                state["followup"] = extra
+                request.session[KEY] = state
+                track_trial(request, state, "followup_answer")
+                return redirect(request.path + "#trial-followup")
+            error = "추가 문제의 답안을 선택해 주세요."
+        bonus = {"mission": extra_mission, "choices": parse_choice_schema(extra_mission.answer_schema),
+                 "graded": "answer" in extra, "correct": extra.get("correct"), "answer": extra.get("answer")} if extra_mission else None
         return render(request, "core/guest_practice.html", {
-            "run_id": state["id"], "review": review, "course": state.get("practice_label") or review[0]["mission"].course,
+            "run_id": state["id"], "review": review, "guidance": guidance, "bonus": bonus, "error": error, "course": state.get("practice_label") or review[0]["mission"].course,
             "share_realtor": review[0]["mission"].subject.code == "realtor",
-            "review_count": sum(not row[2] or row[1] in ("guessed", "unsure") for row in answers),
+            "review_count": sum(not row[2] or row[1] in ("guessed", "unsure") for row in answers) + int(bool(bonus and bonus["graded"] and not bonus["correct"])),
             "finished": True, "score": sum(row[2] for row in answers),
             "wrong": sum(not row[2] for row in answers),
             "uncertain": sum(row[2] and row[1] in ("guessed", "unsure") for row in answers),

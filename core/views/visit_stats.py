@@ -15,6 +15,7 @@ from django.views.decorators.http import require_POST
 
 from core.models import Attempt, DailyVisit, UserEvent
 from core.services.analytics import record_event
+from core.services.guest_focus import trial_funnel
 from core.views.guest_practice import BLOG_COURSES, BLOG_REPORT_LABELS
 from core.services.visit_stats import daily_visit_report, is_visit_stats_owner, parse_report_end_day
 
@@ -91,6 +92,7 @@ def visit_stats(request):
     reviews = next_day_review_counts(funnel_start, funnel_end)
     return render(request, "core/visit_stats.html", {
         "rows": rows,
+        "trial_funnel": trial_funnel(funnel_start, funnel_end),
         "funnel_days": funnel_days,
         "funnel_start": funnel_start,
         "funnel_end": funnel_end,
